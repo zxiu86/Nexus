@@ -318,7 +318,7 @@ fun NexusHomeTopBar(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "NEXUS v1.3",
+                        text = "NEXUS v1.4",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.2.sp,

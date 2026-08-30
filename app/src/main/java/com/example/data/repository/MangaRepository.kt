@@ -490,33 +490,36 @@ class MangaRepository(context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.3)
+     * Checks GitHub Releases for In-App Updates against current version (1.4)
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.3"
+        val currentVersion = "1.4"
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
-            val repo = GitHubNetworkModule.getConfiguredRepo()
+            // Try Nexus first for app APK releases, then Data repo
+            val reposToCheck = listOf("Nexus", GitHubNetworkModule.getConfiguredRepo())
 
-            val response = GitHubNetworkModule.apiService.getLatestRelease(owner, repo)
-            if (response.isSuccessful && response.body() != null) {
-                val release = response.body()!!
-                val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
-                val apkAsset = release.assets?.find {
-                    it.name?.endsWith(".apk", ignoreCase = true) == true ||
-                            it.contentType?.contains("android.package-archive") == true
+            for (repo in reposToCheck.distinct()) {
+                val response = GitHubNetworkModule.apiService.getLatestRelease(owner, repo)
+                if (response.isSuccessful && response.body() != null) {
+                    val release = response.body()!!
+                    val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
+                    val apkAsset = release.assets?.find {
+                        it.name?.endsWith(".apk", ignoreCase = true) == true ||
+                                it.contentType?.contains("android.package-archive") == true
+                    }
+
+                    val hasNewerVersion = isVersionGreater(tag, currentVersion)
+
+                    return@withContext AppUpdateState(
+                        isChecking = false,
+                        updateAvailable = hasNewerVersion && apkAsset?.browserDownloadUrl != null,
+                        latestVersion = tag.ifEmpty { release.name ?: "1.4" },
+                        currentVersion = currentVersion,
+                        releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً باستخدام التوكن السري.\n• تحسين أداء القارئ واستقرار التطبيق.",
+                        downloadUrl = apkAsset?.browserDownloadUrl ?: ""
+                    )
                 }
-
-                val hasNewerVersion = isVersionGreater(tag, currentVersion)
-
-                return@withContext AppUpdateState(
-                    isChecking = false,
-                    updateAvailable = hasNewerVersion && apkAsset?.browserDownloadUrl != null,
-                    latestVersion = tag.ifEmpty { release.name ?: "1.3" },
-                    currentVersion = currentVersion,
-                    releaseNotes = release.body ?: "• تحسين تصميم الهيدر وقائمة الهامبرغر.\n• قائمة منبثقة للمفضلة مع صور مصغرة.\n• فحص التحديثات الديناميكي عبر مستودع Nexus.",
-                    downloadUrl = apkAsset?.browserDownloadUrl ?: ""
-                )
             }
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed: ${e.message}")
@@ -527,7 +530,7 @@ class MangaRepository(context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = "• إضافة قائمة الهامبرغر العلوية المتطورة.\n• قائمة منبثقة للأعمال المفضلة مع معاينات فورية.\n• ربط ديناميكي مباشر بمستودع zxiu86/Nexus للتحديثات وتنزيل الـ APK.\n• تحسينات شاملة على سرعة تصفح الفصول واستقرار القارئ."
+            releaseNotes = "• ربط تلقائي ديناميكي بمستودع البيانات السحابية zxiu86/Data.\n• استخدام التوكن السري لاستدعاء المانهوا والفصول والملفات مباشرة.\n• تحسين استجابة الهيدر وقائمة الهامبرغر وقائمة المفضلة المنبثقة."
         )
     }
 

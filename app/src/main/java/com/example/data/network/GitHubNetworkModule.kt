@@ -17,9 +17,9 @@ object GitHubNetworkModule {
 
     private const val GITHUB_API_BASE_URL = "https://api.github.com/"
     private const val DEFAULT_OWNER = "zxiu86"
-    private const val DEFAULT_REPO = "Nexus"
+    private const val DEFAULT_REPO = "Data"
     private const val DEFAULT_BRANCH = "main"
-    private const val DEFAULT_TOKEN = "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"
+    private const val DEFAULT_TOKEN = "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"
 
     val moshi: Moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
@@ -36,7 +36,7 @@ object GitHubNetworkModule {
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
         val builder = originalRequest.newBuilder()
-            .header("User-Agent", "Nexus-Manga-App-Android/1.3")
+            .header("User-Agent", "Nexus-Manga-App-Android/1.4")
 
         // Retrieve token safely from BuildConfig or fallback to default
         val token = runCatching {
