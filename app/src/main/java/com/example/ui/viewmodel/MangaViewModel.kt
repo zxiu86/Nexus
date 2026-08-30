@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
@@ -149,16 +151,52 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     val readerUiState: StateFlow<ReaderUiState> = _readerUiState.asStateFlow()
 
     init {
-        // Automatically sync with GitHub repository & check for updates on startup
-        refreshDataFromGitHub()
+        // Automatically start silent background auto-sync and periodic update checker
+        startSilentAutoSyncLoop()
         checkForUpdates()
+
+        // Reactively observe repo changes to keep active details screen updated silently
+        viewModelScope.launch {
+            repository.allMangaFlow.collect { mangaList ->
+                val currentDetailsManga = _detailsUiState.value.manga
+                if (currentDetailsManga != null) {
+                    val updated = mangaList.find { it.id == currentDetailsManga.id }
+                    if (updated != null && (updated.totalChaptersCount != currentDetailsManga.totalChaptersCount || updated.chapters != currentDetailsManga.chapters)) {
+                        _detailsUiState.value = _detailsUiState.value.copy(manga = updated)
+                    }
+                }
+            }
+        }
     }
 
-    fun refreshDataFromGitHub() {
+    /**
+     * Smart Background Sync Engine:
+     * - Fetches from GitHub repository silently without full-screen loading spinners.
+     * - Runs periodically (every 30 seconds) while app is active.
+     * - Gracefully updates items in place without disturbing user scrolling or reading.
+     */
+    private fun startSilentAutoSyncLoop() {
         viewModelScope.launch {
-            _isRefreshing.value = true
+            // First immediate silent fetch
             repository.refreshMangaFromGitHub()
-            _isRefreshing.value = false
+
+            // Continuous silent background polling loop
+            while (isActive) {
+                delay(30_000L) // poll every 30 seconds quietly in background
+                try {
+                    repository.refreshMangaFromGitHub()
+                } catch (e: Exception) {
+                    // Suppress any background blips to maintain uninterrupted user experience
+                }
+            }
+        }
+    }
+
+    fun refreshDataFromGitHub(showIndicator: Boolean = false) {
+        viewModelScope.launch {
+            if (showIndicator) _isRefreshing.value = true
+            repository.refreshMangaFromGitHub()
+            if (showIndicator) _isRefreshing.value = false
         }
     }
 

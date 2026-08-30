@@ -120,15 +120,13 @@ fun HomeScreen(
                 .testTag("home_screen_lazy_column"),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // App Header Brand & Hamburger / Refresh / Sync Action
+            // App Header Brand & Actions
             item {
                 NexusHomeTopBar(
-                    isRefreshing = uiState.isRefreshing,
                     favoritesCount = uiState.favorites.size,
                     hasUpdate = uiState.updateInfo.updateAvailable,
                     onHamburgerClick = { showHamburgerMenu = true },
                     onFavoritesClick = { showFavoritesPopup = true },
-                    onRefresh = onRefresh,
                     onUpdateBadgeClick = onTriggerUpdate
                 )
             }
@@ -244,24 +242,12 @@ fun HomeScreen(
 
 @Composable
 fun NexusHomeTopBar(
-    isRefreshing: Boolean = false,
     favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
     onHamburgerClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
-    onRefresh: () -> Unit = {},
     onUpdateBadgeClick: () -> Unit = {}
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "refresh_spin")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing)
-        ),
-        label = "rotation"
-    )
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,7 +323,7 @@ fun NexusHomeTopBar(
             }
         }
 
-        // Left Section: Favorites Shortcut, Update Badge, Refresh Button
+        // Left Section: Favorites Shortcut & Update Badge
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -406,25 +392,6 @@ fun NexusHomeTopBar(
                         )
                     }
                 }
-            }
-
-            IconButton(
-                onClick = onRefresh,
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(SurfaceVariantDark)
-                    .border(1.dp, SurfaceElevated, CircleShape)
-                    .testTag("refresh_button")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "تحديث البيانات",
-                    tint = if (isRefreshing) NexusGoldLight else TextSecondary,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .then(if (isRefreshing) Modifier.rotate(rotation) else Modifier)
-                )
             }
         }
     }
