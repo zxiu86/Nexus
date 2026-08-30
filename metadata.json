@@ -1,0 +1,6 @@
+{
+  "name": "Nexus",
+  "description": "تطبيق Nexus لقراءة المانها والمانهوا مع تحديثات الفصول وقارئ فصول مخصص",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
