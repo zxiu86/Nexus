@@ -20,13 +20,17 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val heroMangaList: List<MangaItem> = emptyList(),
     val latestMangaGrid: List<MangaItem> = emptyList(),
+    val allMangaList: List<MangaItem> = emptyList(),
     val favorites: Set<String> = emptySet(),
     val searchQuery: String = "",
     val selectedCategory: String = "الكل",
     val isRefreshing: Boolean = false,
     val showUpdateDialog: Boolean = false,
     val updateInfo: AppUpdateState = AppUpdateState()
-)
+) {
+    val favoriteMangaList: List<MangaItem>
+        get() = allMangaList.filter { favorites.contains(it.id) }
+}
 
 data class DetailsUiState(
     val manga: MangaItem? = null,
@@ -120,6 +124,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         HomeUiState(
             heroMangaList = allMangaList.take(5),
             latestMangaGrid = filteredList,
+            allMangaList = allMangaList,
             favorites = favorites,
             searchQuery = filterState.query,
             selectedCategory = filterState.category,
@@ -132,7 +137,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         SharingStarted.WhileSubscribed(5000),
         HomeUiState(
             heroMangaList = repository.getHeroFeaturedManga(),
-            latestMangaGrid = repository.getAllManga()
+            latestMangaGrid = repository.getAllManga(),
+            allMangaList = repository.getAllManga()
         )
     )
 
@@ -163,6 +169,15 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             if (update.updateAvailable) {
                 _showUpdateDialog.value = true
             }
+        }
+    }
+
+    fun openUpdateDialog() {
+        _showUpdateDialog.value = true
+        // trigger background check for latest releases simultaneously
+        viewModelScope.launch {
+            val update = repository.checkForAppUpdate()
+            _appUpdateState.value = update
         }
     }
 

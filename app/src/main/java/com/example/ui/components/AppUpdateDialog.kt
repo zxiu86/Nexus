@@ -99,7 +99,7 @@ fun AppUpdateDialog(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.SystemUpdate,
+                                imageVector = if (updateInfo.updateAvailable) Icons.Default.SystemUpdate else Icons.Default.AutoAwesome,
                                 contentDescription = null,
                                 tint = NexusGold,
                                 modifier = Modifier.size(28.dp)
@@ -112,49 +112,65 @@ fun AppUpdateDialog(
 
                 // Title
                 Text(
-                    text = "تحديث جديد متوفر! 🚀",
+                    text = if (updateInfo.updateAvailable) "تحديث جديد متوفر! 🚀" else "آخر التحديثات والمميزات ✨",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,
-                        fontSize = 20.sp
+                        fontSize = 19.sp
                     ),
                     textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Version comparison badge
+                // Version comparison or current version badge
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = SurfaceCard,
                     border = BorderStroke(1.dp, SurfaceElevated),
-                    modifier = Modifier.padding(vertical = 6.dp)
+                    modifier = Modifier.padding(vertical = 4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "الإصدار الحالي: v${updateInfo.currentVersion}",
-                            style = MaterialTheme.typography.labelSmall.copy(color = TextTertiary)
-                        )
-                        Text(text = "◄", color = NexusOrange, fontSize = 10.sp)
-                        Text(
-                            text = "الجديد: v${updateInfo.latestVersion}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = NexusGoldLight,
-                                fontWeight = FontWeight.Bold
+                    if (updateInfo.updateAvailable) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "الإصدار الحالي: v${updateInfo.currentVersion}",
+                                style = MaterialTheme.typography.labelSmall.copy(color = TextTertiary)
                             )
-                        )
+                            Text(text = "◄", color = NexusOrange, fontSize = 10.sp)
+                            Text(
+                                text = "الجديد: v${updateInfo.latestVersion}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = NexusGoldLight,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "الإصدار المثبت: v${updateInfo.currentVersion} (أحدث إصدار)",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = NexusGoldLight,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Release notes box
                 Text(
-                    text = "ما الجديد في هذا الإصدار:",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.3):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight
@@ -171,7 +187,7 @@ fun AppUpdateDialog(
                     border = BorderStroke(1.dp, SurfaceElevated),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(130.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -179,10 +195,13 @@ fun AppUpdateDialog(
                             .padding(10.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
+                        val notes = if (updateInfo.releaseNotes.isNotBlank()) {
+                            updateInfo.releaseNotes
+                        } else {
+                            "• قائمة الهامبرغر العلوية الجديدة للوصول السريع للمفضلة.\n• قائمة منبثقة تفاعلية للأعمال المفضلة بصور مصغرة.\n• فحص التحديثات الديناميكي عبر مستودع zxiu86/Nexus وتنزيل الـ APK.\n• تحسينات جمالية على التصميم وسرعة تحميل الفصول."
+                        }
                         Text(
-                            text = updateInfo.releaseNotes.ifBlank {
-                                "• تحسينات عامة على سرعة تصفح الفصول.\n• دعم الربط التلقائي بمستودع البيانات.\n• إصلاح مشاكل في استقرار القارئ."
-                            },
+                            text = notes,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = TextSecondary,
                                 fontSize = 12.sp,
@@ -192,47 +211,64 @@ fun AppUpdateDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Action Buttons: [تحديث الآن] [لاحقاً]
+                // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, SurfaceElevated),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextTertiary)
-                    ) {
-                        Text("لاحقاً", fontSize = 13.sp)
-                    }
-
-                    Button(
-                        onClick = onUpdateClick,
-                        modifier = Modifier
-                            .weight(1.4f)
-                            .height(46.dp)
-                            .testTag("confirm_app_update_button"),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark
-                        )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    if (updateInfo.updateAvailable) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextTertiary)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                            Text("لاحقاً", fontSize = 13.sp)
+                        }
+
+                        Button(
+                            onClick = onUpdateClick,
+                            modifier = Modifier
+                                .weight(1.4f)
+                                .height(46.dp)
+                                .testTag("confirm_app_update_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NexusGold,
+                                contentColor = BackgroundDark
                             )
-                            Text("تحديث الآن", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text("تحديث الآن", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("close_update_dialog_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NexusGold,
+                                contentColor = BackgroundDark
+                            )
+                        ) {
+                            Text("حسناً، فهمت", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }

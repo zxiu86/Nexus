@@ -137,7 +137,7 @@ data class AppUpdateState(
     val isChecking: Boolean = false,
     val updateAvailable: Boolean = false,
     val latestVersion: String = "",
-    val currentVersion: String = "1.2",
+    val currentVersion: String = "1.3",
     val releaseNotes: String = "",
     val downloadUrl: String = "",
     val isDownloading: Boolean = false,

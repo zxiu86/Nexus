@@ -69,6 +69,13 @@ fun NexusNavGraph(
                     onTriggerUpdate = {
                         viewModel.triggerAppUpdate(context)
                     },
+                    onOpenUpdatesDialog = {
+                        viewModel.openUpdateDialog()
+                    },
+                    onCheckCloudUpdates = {
+                        viewModel.checkForUpdates()
+                        viewModel.openUpdateDialog()
+                    },
                     onDismissUpdateDialog = {
                         viewModel.dismissUpdateDialog()
                     }

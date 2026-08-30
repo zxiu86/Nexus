@@ -490,10 +490,10 @@ class MangaRepository(context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.2)
+     * Checks GitHub Releases for In-App Updates against current version (1.3)
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.2"
+        val currentVersion = "1.3"
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
             val repo = GitHubNetworkModule.getConfiguredRepo()
@@ -512,9 +512,9 @@ class MangaRepository(context: Context) {
                 return@withContext AppUpdateState(
                     isChecking = false,
                     updateAvailable = hasNewerVersion && apkAsset?.browserDownloadUrl != null,
-                    latestVersion = tag.ifEmpty { release.name ?: "1.2" },
+                    latestVersion = tag.ifEmpty { release.name ?: "1.3" },
                     currentVersion = currentVersion,
-                    releaseNotes = release.body ?: "تحسينات عامة على الأداء وسرعة تحميل الفصول.",
+                    releaseNotes = release.body ?: "• تحسين تصميم الهيدر وقائمة الهامبرغر.\n• قائمة منبثقة للمفضلة مع صور مصغرة.\n• فحص التحديثات الديناميكي عبر مستودع Nexus.",
                     downloadUrl = apkAsset?.browserDownloadUrl ?: ""
                 )
             }
@@ -525,7 +525,9 @@ class MangaRepository(context: Context) {
         AppUpdateState(
             isChecking = false,
             updateAvailable = false,
-            currentVersion = currentVersion
+            currentVersion = currentVersion,
+            latestVersion = currentVersion,
+            releaseNotes = "• إضافة قائمة الهامبرغر العلوية المتطورة.\n• قائمة منبثقة للأعمال المفضلة مع معاينات فورية.\n• ربط ديناميكي مباشر بمستودع zxiu86/Nexus للتحديثات وتنزيل الـ APK.\n• تحسينات شاملة على سرعة تصفح الفصول واستقرار القارئ."
         )
     }
 

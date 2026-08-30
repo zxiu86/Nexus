@@ -51,9 +51,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +74,8 @@ import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
 import com.example.ui.components.AppUpdateDialog
+import com.example.ui.components.FavoritesPopupDialog
+import com.example.ui.components.NexusHamburgerMenuSheet
 import com.example.ui.components.NexusMangaImage
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
@@ -99,9 +105,14 @@ fun HomeScreen(
     onCategorySelect: (String) -> Unit,
     onRefresh: () -> Unit = {},
     onTriggerUpdate: () -> Unit = {},
+    onOpenUpdatesDialog: () -> Unit = {},
+    onCheckCloudUpdates: () -> Unit = {},
     onDismissUpdateDialog: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showHamburgerMenu by remember { mutableStateOf(false) }
+    var showFavoritesPopup by remember { mutableStateOf(false) }
+
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
@@ -109,12 +120,15 @@ fun HomeScreen(
                 .testTag("home_screen_lazy_column"),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // App Header Brand & Refresh / Sync Action
+            // App Header Brand & Hamburger / Refresh / Sync Action
             item {
                 NexusHomeTopBar(
                     isRefreshing = uiState.isRefreshing,
-                    onRefresh = onRefresh,
+                    favoritesCount = uiState.favorites.size,
                     hasUpdate = uiState.updateInfo.updateAvailable,
+                    onHamburgerClick = { showHamburgerMenu = true },
+                    onFavoritesClick = { showFavoritesPopup = true },
+                    onRefresh = onRefresh,
                     onUpdateBadgeClick = onTriggerUpdate
                 )
             }
@@ -182,6 +196,41 @@ fun HomeScreen(
             }
         }
 
+        // Hamburger Menu Bottom Sheet
+        if (showHamburgerMenu) {
+            NexusHamburgerMenuSheet(
+                favoritesCount = uiState.favorites.size,
+                updateInfo = uiState.updateInfo,
+                onOpenFavorites = {
+                    showHamburgerMenu = false
+                    showFavoritesPopup = true
+                },
+                onOpenUpdates = {
+                    showHamburgerMenu = false
+                    onOpenUpdatesDialog()
+                },
+                onCheckCloudUpdates = {
+                    showHamburgerMenu = false
+                    onCheckCloudUpdates()
+                },
+                onRefreshData = {
+                    showHamburgerMenu = false
+                    onRefresh()
+                },
+                onDismiss = { showHamburgerMenu = false }
+            )
+        }
+
+        // Favorites Popup Dialog (Stacked vertically with thumbnail on right & title beside it)
+        if (showFavoritesPopup) {
+            FavoritesPopupDialog(
+                favoriteMangaList = uiState.favoriteMangaList,
+                onMangaClick = onMangaClick,
+                onToggleFavorite = onToggleFavorite,
+                onDismiss = { showFavoritesPopup = false }
+            )
+        }
+
         // In-App Update Dialog Prompt
         if (uiState.showUpdateDialog) {
             AppUpdateDialog(
@@ -196,8 +245,11 @@ fun HomeScreen(
 @Composable
 fun NexusHomeTopBar(
     isRefreshing: Boolean = false,
-    onRefresh: () -> Unit = {},
+    favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
+    onHamburgerClick: () -> Unit = {},
+    onFavoritesClick: () -> Unit = {},
+    onRefresh: () -> Unit = {},
     onUpdateBadgeClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "refresh_spin")
@@ -217,10 +269,30 @@ fun NexusHomeTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Right Section: Hamburger Menu Icon + App Logo & Title
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Hamburger Menu Button
+            IconButton(
+                onClick = onHamburgerClick,
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SurfaceVariantDark)
+                    .border(1.dp, NexusGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                    .testTag("hamburger_menu_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "القائمة الرئيسية",
+                    tint = NexusGoldLight,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // Brand Logo Box
             Box(
                 modifier = Modifier
                     .size(38.dp)
@@ -241,15 +313,20 @@ fun NexusHomeTopBar(
             }
 
             Column {
-                Text(
-                    text = "NEXUS v1.2",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.5.sp,
-                        color = NexusGoldLight,
-                        fontSize = 17.sp
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "NEXUS v1.3",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.2.sp,
+                            color = NexusGoldLight,
+                            fontSize = 17.sp
+                        )
                     )
-                )
+                }
                 Text(
                     text = "بوابة المانهوا والمانها السحابية",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -260,10 +337,45 @@ fun NexusHomeTopBar(
             }
         }
 
+        // Left Section: Favorites Shortcut, Update Badge, Refresh Button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Favorites Quick Access Button
+            if (favoritesCount > 0) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = NexusOrange.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, NexusOrangeLight.copy(alpha = 0.6f)),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onFavoritesClick() }
+                        .testTag("topbar_favorites_shortcut")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = NexusOrange,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "$favoritesCount",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = NexusOrangeLight,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
+            }
+
             if (hasUpdate) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -299,7 +411,7 @@ fun NexusHomeTopBar(
             IconButton(
                 onClick = onRefresh,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(SurfaceVariantDark)
                     .border(1.dp, SurfaceElevated, CircleShape)
@@ -313,33 +425,6 @@ fun NexusHomeTopBar(
                         .size(18.dp)
                         .then(if (isRefreshing) Modifier.rotate(rotation) else Modifier)
                 )
-            }
-
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = SurfaceVariantDark,
-                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Whatshot,
-                        contentDescription = null,
-                        tint = NexusOrange,
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Text(
-                        text = "مباشر",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
             }
         }
     }
