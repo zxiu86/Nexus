@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & Release APK (Auto Release)
+    name: Build & Release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
+
+      - name: Cache Gradle Dependencies & Wrapper
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle/configuration-cache
+            .gradle/build-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew || true
@@ -44,8 +55,8 @@ jobs:
       - name: Extract Version Info
         id: version_step
         run: |
-          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.1")
-          if [ -z "$VERSION" ]; then VERSION="1.1"; fi
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.4")
+          if [ -z "$VERSION" ]; then VERSION="1.4"; fi
           echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
@@ -58,7 +69,7 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-app-v1.1-debug
+          name: nexus-app-v${{ env.VERSION_NAME }}-debug
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Create or Update GitHub Release
@@ -69,12 +80,14 @@ jobs:
           body: |
             ## 🚀 إصدار جديد لتطبيق Nexus Manga (${{ env.RELEASE_TAG }})
             
-            - تحديث نظام جلب البيانات والتوافق الكامل مع مستودع `Data`.
-            - تحسين قارئ الفصول للمانها والمانهوا الطولية بدقة كاملة.
-            - دعم نظام التحديث الديناميكي التلقائي من داخل التطبيق.
+            - الربط المباشر مع مستودع البيانات السحابية `zxiu86/Data` (`data/works.json` و `data/[series-slug]/info.json`).
+            - دعم نظام التحديث التلقائي الديناميكي من مستودع `zxiu86/Nexus`.
+            - إضافة GitHub Actions Cache لتسريع البناء وتقليل وقت الـ CI/CD.
+            - تحسين قارئ الفصول والتنقل السلس.
           draft: false
           prerelease: false
           files: |
             app/build/outputs/apk/debug/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

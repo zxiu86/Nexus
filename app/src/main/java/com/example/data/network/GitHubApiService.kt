@@ -17,7 +17,7 @@ interface GitHubApiService {
      * Fetches data/works.json as raw Map<String, WorkDto> from repository
      */
     @GET("repos/{owner}/{repo}/contents/data/works.json")
-    @Headers("Accept: application/vnd.github.v3.raw")
+    @Headers("Accept: application/vnd.github.v3.raw, application/vnd.github.raw+json, application/json")
     suspend fun getWorksRaw(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
@@ -28,7 +28,7 @@ interface GitHubApiService {
      * Fetches data/{seriesSlug}/info.json as raw SeriesInfoDto
      */
     @GET("repos/{owner}/{repo}/contents/data/{seriesSlug}/info.json")
-    @Headers("Accept: application/vnd.github.v3.raw")
+    @Headers("Accept: application/vnd.github.v3.raw, application/vnd.github.raw+json, application/json")
     suspend fun getSeriesInfoRaw(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
@@ -40,7 +40,7 @@ interface GitHubApiService {
      * Fetches data/{seriesSlug}/{chapter}.json as raw ChapterDetailDto
      */
     @GET("repos/{owner}/{repo}/contents/data/{seriesSlug}/{chapter}.json")
-    @Headers("Accept: application/vnd.github.v3.raw")
+    @Headers("Accept: application/vnd.github.v3.raw, application/vnd.github.raw+json, application/json")
     suspend fun getChapterDetailRaw(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
@@ -50,7 +50,7 @@ interface GitHubApiService {
     ): Response<ResponseBody>
 
     /**
-     * Generic content fetcher for any path in repo with raw and json headers
+     * Generic content fetcher for any path in repo
      */
     @GET("repos/{owner}/{repo}/contents/{path}")
     @Headers("Accept: application/vnd.github.v3.raw, application/vnd.github.raw+json, application/json")
@@ -65,9 +65,20 @@ interface GitHubApiService {
      * Gets the latest release info for in-app update checks
      */
     @GET("repos/{owner}/{repo}/releases/latest")
-    @Headers("Accept: application/vnd.github.v3+json")
+    @Headers("Accept: application/vnd.github.v3+json, application/json")
     suspend fun getLatestRelease(
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): Response<GitHubReleaseDto>
+
+    /**
+     * Gets all releases for fallback in-app update checks
+     */
+    @GET("repos/{owner}/{repo}/releases")
+    @Headers("Accept: application/vnd.github.v3+json, application/json")
+    suspend fun getAllReleases(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<List<GitHubReleaseDto>>
 }
+

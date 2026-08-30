@@ -67,26 +67,179 @@ class MangaRepository(context: Context) {
 
     private fun parseWorksJson(jsonStr: String): Map<String, WorkDto> {
         val cleanJson = decodeGitHubContent(jsonStr).trim()
-        if (cleanJson.startsWith("[")) {
-            return try {
+        val resultMap = mutableMapOf<String, WorkDto>()
+
+        // Strategy 1: Moshi parsing
+        try {
+            if (cleanJson.startsWith("[")) {
                 val listType = Types.newParameterizedType(List::class.java, WorkDto::class.java)
                 val listAdapter = GitHubNetworkModule.moshi.adapter<List<WorkDto>>(listType)
                 val list = listAdapter.fromJson(cleanJson) ?: emptyList()
-                list.associateBy { it.slug ?: it.id ?: it.title ?: it.name ?: "item_${it.hashCode()}" }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to parse works as List: ${e.message}")
-                emptyMap()
-            }
-        } else {
-            return try {
+                for (w in list) {
+                    val slug = w.slug ?: w.id ?: w.title ?: w.name ?: "work_${w.hashCode()}"
+                    resultMap[slug] = w
+                }
+            } else {
                 val mapType = Types.newParameterizedType(Map::class.java, String::class.java, WorkDto::class.java)
                 val mapAdapter = GitHubNetworkModule.moshi.adapter<Map<String, WorkDto>>(mapType)
-                mapAdapter.fromJson(cleanJson) ?: emptyMap()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to parse works as Map: ${e.message}")
-                emptyMap()
+                val map = mapAdapter.fromJson(cleanJson) ?: emptyMap()
+                resultMap.putAll(map)
             }
+        } catch (e: Exception) {
+            Log.w(TAG, "Moshi works parsing error: ${e.message}, using JSONObject fallback")
         }
+
+        if (resultMap.isNotEmpty()) return resultMap
+
+        // Strategy 2: org.json.JSONObject fallback (100% resilient)
+        try {
+            if (cleanJson.startsWith("[")) {
+                val jsonArray = org.json.JSONArray(cleanJson)
+                for (i in 0 until jsonArray.length()) {
+                    val obj = jsonArray.optJSONObject(i) ?: continue
+                    val slug = obj.optString("slug", obj.optString("id", "work_$i"))
+                    val genresList = mutableListOf<String>()
+                    val gArr = obj.optJSONArray("genres")
+                    if (gArr != null) {
+                        for (j in 0 until gArr.length()) {
+                            genresList.add(gArr.optString(j))
+                        }
+                    }
+                    resultMap[slug] = WorkDto(
+                        slug = slug,
+                        id = obj.optString("id", slug),
+                        title = obj.optString("title", obj.optString("name", slug)),
+                        name = obj.optString("name", obj.optString("title", slug)),
+                        cover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", ""))),
+                        thumbnail = obj.optString("thumbnail", obj.optString("cover", "")),
+                        image = obj.optString("image", obj.optString("cover", "")),
+                        summary = obj.optString("summary", obj.optString("description", "")),
+                        description = obj.optString("description", obj.optString("summary", "")),
+                        type = obj.optString("type", "مانهوا"),
+                        author = obj.optString("author", "غير محدد"),
+                        artist = obj.optString("artist", "غير محدد"),
+                        genres = genresList
+                    )
+                }
+            } else {
+                val jsonObj = org.json.JSONObject(cleanJson)
+                val keys = jsonObj.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val obj = jsonObj.optJSONObject(key)
+                    if (obj != null) {
+                        val slug = obj.optString("slug", key)
+                        val genresList = mutableListOf<String>()
+                        val gArr = obj.optJSONArray("genres")
+                        if (gArr != null) {
+                            for (j in 0 until gArr.length()) {
+                                genresList.add(gArr.optString(j))
+                            }
+                        }
+                        resultMap[key] = WorkDto(
+                            slug = slug,
+                            id = obj.optString("id", key),
+                            title = obj.optString("title", obj.optString("name", key)),
+                            name = obj.optString("name", obj.optString("title", key)),
+                            cover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", ""))),
+                            thumbnail = obj.optString("thumbnail", obj.optString("cover", "")),
+                            image = obj.optString("image", obj.optString("cover", "")),
+                            summary = obj.optString("summary", obj.optString("description", "")),
+                            description = obj.optString("description", obj.optString("summary", "")),
+                            type = obj.optString("type", "مانهوا"),
+                            author = obj.optString("author", "غير محدد"),
+                            artist = obj.optString("artist", "غير محدد"),
+                            genres = genresList
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "org.json works parsing failed", e)
+        }
+
+        return resultMap
+    }
+
+    private fun parseSeriesInfoDto(jsonStr: String): SeriesInfoDto? {
+        val cleanJson = decodeGitHubContent(jsonStr).trim()
+        try {
+            val adapter = GitHubNetworkModule.moshi.adapter(SeriesInfoDto::class.java)
+            val info = adapter.fromJson(cleanJson)
+            if (info != null && (!info.chapters.isNullOrEmpty() || info.status != null)) {
+                return info
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Moshi series info parsing error: ${e.message}")
+        }
+
+        try {
+            val obj = org.json.JSONObject(cleanJson)
+            val chList = mutableListOf<com.example.data.model.ChapterSummaryDto>()
+            val arr = obj.optJSONArray("chapters")
+            if (arr != null) {
+                for (i in 0 until arr.length()) {
+                    val chObj = arr.optJSONObject(i) ?: continue
+                    val num = chObj.optInt("number", i + 1)
+                    val title = chObj.optString("title", "الفصل $num")
+                    val releaseDate = chObj.optString("release_date", chObj.optString("releaseDate", "اليوم"))
+                    val isNew = chObj.optBoolean("is_new", chObj.optBoolean("isNew", false))
+                    chList.add(
+                        com.example.data.model.ChapterSummaryDto(
+                            number = num,
+                            title = title,
+                            releaseDate = releaseDate,
+                            isNew = isNew
+                        )
+                    )
+                }
+            }
+            return SeriesInfoDto(
+                status = obj.optString("status", "مستمر"),
+                rating = obj.optDouble("rating", 4.9),
+                views = obj.optString("views", "1.2M"),
+                chapters = chList
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "org.json series info fallback failed: ${e.message}")
+        }
+        return null
+    }
+
+    private fun parseChapterDetailDto(jsonStr: String, mangaId: String, chapterNumber: Int): ChapterDetailDto? {
+        val cleanJson = decodeGitHubContent(jsonStr).trim()
+        try {
+            val adapter = GitHubNetworkModule.moshi.adapter(ChapterDetailDto::class.java)
+            val dto = adapter.fromJson(cleanJson)
+            if (dto != null && (!dto.images.isNullOrEmpty() || !dto.pages.isNullOrEmpty())) {
+                return dto
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Moshi chapter detail parsing error: ${e.message}")
+        }
+
+        try {
+            val obj = org.json.JSONObject(cleanJson)
+            val imagesList = mutableListOf<String>()
+            val imgArr = obj.optJSONArray("images") ?: obj.optJSONArray("pages")
+            if (imgArr != null) {
+                for (i in 0 until imgArr.length()) {
+                    val imgUrl = imgArr.optString(i)
+                    if (imgUrl.isNotBlank()) imagesList.add(imgUrl)
+                }
+            }
+            return ChapterDetailDto(
+                series = obj.optString("series", mangaId),
+                chapter = obj.optInt("chapter", chapterNumber),
+                title = obj.optString("title", "الفصل $chapterNumber"),
+                totalImages = obj.optInt("total_images", imagesList.size),
+                images = imagesList,
+                pages = imagesList
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "org.json chapter detail fallback failed: ${e.message}")
+        }
+        return null
     }
 
     private fun loadMangaFromDiskCache() {
@@ -135,8 +288,7 @@ class MangaRepository(context: Context) {
             val cacheFile = java.io.File(cacheDir, "nexus_series_${slug}_cache.json")
             if (cacheFile.exists() && cacheFile.length() > 0) {
                 val json = cacheFile.readText()
-                val adapter = GitHubNetworkModule.moshi.adapter(SeriesInfoDto::class.java)
-                adapter.fromJson(json)
+                parseSeriesInfoDto(json)
             } else null
         } catch (e: Exception) {
             null
@@ -157,8 +309,7 @@ class MangaRepository(context: Context) {
             val cacheFile = java.io.File(cacheDir, "nexus_ch_${mangaId}_${chapterNumber}.json")
             if (cacheFile.exists() && cacheFile.length() > 0) {
                 val json = cacheFile.readText()
-                val adapter = GitHubNetworkModule.moshi.adapter(ChapterDetailDto::class.java)
-                adapter.fromJson(json)
+                parseChapterDetailDto(json, mangaId, chapterNumber)
             } else null
         } catch (e: Exception) {
             null
@@ -215,19 +366,19 @@ class MangaRepository(context: Context) {
     }
 
     /**
-     * Refresh data from GitHub repository following the architecture:
-     * 1. data/works.json (or works.json)
+     * Refresh data from GitHub Data repository (zxiu86/Data):
+     * 1. data/works.json
      * 2. data/[series-slug]/info.json (fetched in parallel)
      */
     suspend fun refreshMangaFromGitHub(): Result<List<MangaItem>> = withContext(Dispatchers.IO) {
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
-            val repo = GitHubNetworkModule.getConfiguredRepo()
+            val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
-            Log.d(TAG, "Fetching works from GitHub: $owner/$repo (branch: $branch)")
-            
-            // Try possible paths for works file
+            Log.d(TAG, "Fetching works from GitHub Data repo: $owner/$repo (branch: $branch)")
+
+            // Candidate paths for works file
             val candidatePaths = listOf("data/works.json", "works.json", "data/works", "works")
             var worksJsonStr: String? = null
 
@@ -236,7 +387,7 @@ class MangaRepository(context: Context) {
                     val worksResponse = GitHubNetworkModule.apiService.getContentRaw(owner, repo, path, branch)
                     if (worksResponse.isSuccessful && worksResponse.body() != null) {
                         worksJsonStr = worksResponse.body()!!.string()
-                        Log.d(TAG, "Successfully retrieved works from path: $path")
+                        Log.d(TAG, "Successfully retrieved works from API path: $path")
                         break
                     }
                 } catch (e: Exception) {
@@ -244,9 +395,20 @@ class MangaRepository(context: Context) {
                 }
             }
 
+            // Fallback: direct raw download from raw.githubusercontent.com
             if (worksJsonStr.isNullOrBlank()) {
-                Log.w(TAG, "Failed to load works.json from any known path in $owner/$repo")
-                return@withContext Result.failure(Exception("Could not retrieve works.json from $owner/$repo (branch: $branch)"))
+                val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/works.json"
+                val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
+                if (!directResult.isNullOrBlank()) {
+                    worksJsonStr = directResult
+                    Log.d(TAG, "Retrieved works via direct raw URL: $directRawUrl")
+                }
+            }
+
+            if (worksJsonStr.isNullOrBlank()) {
+                Log.w(TAG, "Failed to load works.json from $owner/$repo, using cached/default manga")
+                val current = _allMangaFlow.value
+                return@withContext if (current.isNotEmpty()) Result.success(current) else Result.success(getDefaultMangaList())
             }
 
             val decodedJson = decodeGitHubContent(worksJsonStr)
@@ -255,7 +417,7 @@ class MangaRepository(context: Context) {
             val worksMap = parseWorksJson(decodedJson)
 
             if (worksMap.isEmpty()) {
-                Log.w(TAG, "works.json was empty or could not be parsed.")
+                Log.w(TAG, "works.json parsed map was empty.")
                 return@withContext Result.success(getDefaultMangaList())
             }
 
@@ -270,8 +432,10 @@ class MangaRepository(context: Context) {
                 }.awaitAll()
             }
 
-            _allMangaFlow.value = fullMangaList
-            Log.d(TAG, "Successfully loaded and cached ${fullMangaList.size} works from GitHub!")
+            if (fullMangaList.isNotEmpty()) {
+                _allMangaFlow.value = fullMangaList
+                Log.d(TAG, "Successfully loaded and updated ${fullMangaList.size} works from GitHub!")
+            }
             Result.success(fullMangaList)
         } catch (e: Exception) {
             Log.e(TAG, "Error refreshing data from GitHub", e)
@@ -290,8 +454,7 @@ class MangaRepository(context: Context) {
             "$slug/info.json",
             "data/$slug.json",
             "$slug.json",
-            "data/$slug/details.json",
-            "$slug/details.json"
+            "data/$slug/details.json"
         )
 
         for (path in candidatePaths) {
@@ -301,14 +464,28 @@ class MangaRepository(context: Context) {
                     val rawJson = response.body()!!.string()
                     val decodedJson = decodeGitHubContent(rawJson)
                     saveSeriesInfoToDiskCache(slug, decodedJson)
-                    val adapter = GitHubNetworkModule.moshi.adapter(SeriesInfoDto::class.java)
-                    val info = adapter.fromJson(decodedJson)
+                    val info = parseSeriesInfoDto(decodedJson)
                     if (info != null) return@withContext info
                 }
             } catch (e: Exception) {
                 Log.d(TAG, "Series info path $path failed: ${e.message}")
             }
         }
+
+        // Direct raw fallback
+        try {
+            val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$slug/info.json"
+            val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
+            if (!directResult.isNullOrBlank()) {
+                val decodedJson = decodeGitHubContent(directResult)
+                saveSeriesInfoToDiskCache(slug, decodedJson)
+                val info = parseSeriesInfoDto(decodedJson)
+                if (info != null) return@withContext info
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Direct raw series info failed: ${e.message}")
+        }
+
         loadSeriesInfoFromDiskCache(slug)
     }
 
@@ -385,7 +562,7 @@ class MangaRepository(context: Context) {
             }
 
             val owner = GitHubNetworkModule.getConfiguredOwner()
-            val repo = GitHubNetworkModule.getConfiguredRepo()
+            val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
             val candidatePaths = listOf(
@@ -404,8 +581,7 @@ class MangaRepository(context: Context) {
                         val rawJson = response.body()!!.string()
                         val decodedJson = decodeGitHubContent(rawJson)
                         saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                        val adapter = GitHubNetworkModule.moshi.adapter(ChapterDetailDto::class.java)
-                        val detail = adapter.fromJson(decodedJson)
+                        val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
 
                         val imageList = if (!detail?.images.isNullOrEmpty()) {
                             detail!!.images!!
@@ -439,6 +615,36 @@ class MangaRepository(context: Context) {
                 } catch (e: Exception) {
                     Log.d(TAG, "Chapter path $path failed: ${e.message}")
                 }
+            }
+
+            // Direct raw fallback
+            try {
+                val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/$chapterNumber.json"
+                val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
+                if (!directResult.isNullOrBlank()) {
+                    val decodedJson = decodeGitHubContent(directResult)
+                    saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                    val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
+                    val imageList = detail?.images ?: detail?.pages ?: emptyList()
+                    if (imageList.isNotEmpty()) {
+                        val pages = imageList.mapIndexed { idx, url ->
+                            ChapterPage(pageNumber = idx + 1, imageUrl = url, caption = "صفحة ${idx + 1}")
+                        }
+                        val chapter = Chapter(
+                            id = "${mangaId}_ch_$chapterNumber",
+                            mangaId = mangaId,
+                            number = chapterNumber,
+                            title = detail?.title ?: "الفصل $chapterNumber",
+                            releaseDate = "اليوم",
+                            pagesCount = pages.size,
+                            pages = pages
+                        )
+                        loadedChaptersCache[cacheKey] = chapter
+                        return@withContext chapter
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Direct raw chapter fetch failed: ${e.message}")
             }
 
             // Check if available in disk cache
@@ -491,35 +697,68 @@ class MangaRepository(context: Context) {
 
     /**
      * Checks GitHub Releases for In-App Updates against current version (1.4)
+     * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
         val currentVersion = "1.4"
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
-            // Try Nexus first for app APK releases, then Data repo
-            val reposToCheck = listOf("Nexus", GitHubNetworkModule.getConfiguredRepo())
+            val appRepo = GitHubNetworkModule.getAppRepo() // "Nexus"
 
-            for (repo in reposToCheck.distinct()) {
-                val response = GitHubNetworkModule.apiService.getLatestRelease(owner, repo)
+            // 1. Try getLatestRelease from Nexus repo
+            try {
+                val response = GitHubNetworkModule.apiService.getLatestRelease(owner, appRepo)
                 if (response.isSuccessful && response.body() != null) {
                     val release = response.body()!!
                     val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
                     val apkAsset = release.assets?.find {
                         it.name?.endsWith(".apk", ignoreCase = true) == true ||
-                                it.contentType?.contains("android.package-archive") == true
+                                it.contentType?.contains("android.package-archive") == true ||
+                                it.contentType?.contains("octet-stream") == true
                     }
 
                     val hasNewerVersion = isVersionGreater(tag, currentVersion)
+                    val downloadUrl = apkAsset?.browserDownloadUrl ?: release.assets?.firstOrNull()?.browserDownloadUrl ?: ""
+
+                    if (downloadUrl.isNotBlank()) {
+                        return@withContext AppUpdateState(
+                            isChecking = false,
+                            updateAvailable = hasNewerVersion,
+                            latestVersion = tag.ifEmpty { release.name ?: "1.4" },
+                            currentVersion = currentVersion,
+                            releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً باستخدام التوكن السري.\n• فحص التحديثات وتنزيل الـ APK من مستودع zxiu86/Nexus.",
+                            downloadUrl = downloadUrl
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Latest release check failed: ${e.message}")
+            }
+
+            // 2. Try getAllReleases from Nexus repo
+            try {
+                val allResponse = GitHubNetworkModule.apiService.getAllReleases(owner, appRepo)
+                if (allResponse.isSuccessful && !allResponse.body().isNullOrEmpty()) {
+                    val release = allResponse.body()!!.first()
+                    val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
+                    val apkAsset = release.assets?.find {
+                        it.name?.endsWith(".apk", ignoreCase = true) == true ||
+                                it.contentType?.contains("android.package-archive") == true
+                    }
+                    val hasNewerVersion = isVersionGreater(tag, currentVersion)
+                    val downloadUrl = apkAsset?.browserDownloadUrl ?: ""
 
                     return@withContext AppUpdateState(
                         isChecking = false,
-                        updateAvailable = hasNewerVersion && apkAsset?.browserDownloadUrl != null,
+                        updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
                         latestVersion = tag.ifEmpty { release.name ?: "1.4" },
                         currentVersion = currentVersion,
-                        releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً باستخدام التوكن السري.\n• تحسين أداء القارئ واستقرار التطبيق.",
-                        downloadUrl = apkAsset?.browserDownloadUrl ?: ""
+                        releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً.\n• تحسين أداء القارئ واستقرار التطبيق.",
+                        downloadUrl = downloadUrl
                     )
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "All releases check failed: ${e.message}")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed: ${e.message}")
@@ -530,7 +769,7 @@ class MangaRepository(context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = "• ربط تلقائي ديناميكي بمستودع البيانات السحابية zxiu86/Data.\n• استخدام التوكن السري لاستدعاء المانهوا والفصول والملفات مباشرة.\n• تحسين استجابة الهيدر وقائمة الهامبرغر وقائمة المفضلة المنبثقة."
+            releaseNotes = "• ربط تلقائي ديناميكي بمستودع البيانات السحابية zxiu86/Data.\n• استخدام التوكن السري لاستدعاء المانهوا والفصول والملفات مباشرة.\n• فحص التحديثات من مستودع zxiu86/Nexus."
         )
     }
 
