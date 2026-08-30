@@ -68,6 +68,9 @@ class MangaRepository(context: Context) {
     private fun parseWorksJson(jsonStr: String): Map<String, WorkDto> {
         val cleanJson = decodeGitHubContent(jsonStr).trim()
         val resultMap = mutableMapOf<String, WorkDto>()
+        if (cleanJson.isBlank() || cleanJson.startsWith("<!DOCTYPE") || cleanJson.contains("404: Not Found")) {
+            return emptyMap()
+        }
 
         // Strategy 1: Moshi parsing
         try {
@@ -86,7 +89,7 @@ class MangaRepository(context: Context) {
                 resultMap.putAll(map)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Moshi works parsing error: ${e.message}, using JSONObject fallback")
+            Log.w(TAG, "Moshi works parsing error: ${e.message}, attempting org.json fallback")
         }
 
         if (resultMap.isNotEmpty()) return resultMap
@@ -98,59 +101,27 @@ class MangaRepository(context: Context) {
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.optJSONObject(i) ?: continue
                     val slug = obj.optString("slug", obj.optString("id", "work_$i"))
-                    val genresList = mutableListOf<String>()
-                    val gArr = obj.optJSONArray("genres")
-                    if (gArr != null) {
-                        for (j in 0 until gArr.length()) {
-                            genresList.add(gArr.optString(j))
-                        }
-                    }
-                    resultMap[slug] = WorkDto(
-                        slug = slug,
-                        id = obj.optString("id", slug),
-                        title = obj.optString("title", obj.optString("name", slug)),
-                        name = obj.optString("name", obj.optString("title", slug)),
-                        cover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", ""))),
-                        thumbnail = obj.optString("thumbnail", obj.optString("cover", "")),
-                        image = obj.optString("image", obj.optString("cover", "")),
-                        summary = obj.optString("summary", obj.optString("description", "")),
-                        description = obj.optString("description", obj.optString("summary", "")),
-                        type = obj.optString("type", "مانهوا"),
-                        author = obj.optString("author", "غير محدد"),
-                        artist = obj.optString("artist", "غير محدد"),
-                        genres = genresList
-                    )
+                    resultMap[slug] = parseWorkDtoFromJsonObject(slug, obj)
                 }
             } else {
                 val jsonObj = org.json.JSONObject(cleanJson)
-                val keys = jsonObj.keys()
-                while (keys.hasNext()) {
-                    val key = keys.next()
-                    val obj = jsonObj.optJSONObject(key)
-                    if (obj != null) {
-                        val slug = obj.optString("slug", key)
-                        val genresList = mutableListOf<String>()
-                        val gArr = obj.optJSONArray("genres")
-                        if (gArr != null) {
-                            for (j in 0 until gArr.length()) {
-                                genresList.add(gArr.optString(j))
-                            }
+                val nestedArray = jsonObj.optJSONArray("works") ?: jsonObj.optJSONArray("data") ?: jsonObj.optJSONArray("items")
+                if (nestedArray != null) {
+                    for (i in 0 until nestedArray.length()) {
+                        val obj = nestedArray.optJSONObject(i) ?: continue
+                        val slug = obj.optString("slug", obj.optString("id", "work_$i"))
+                        resultMap[slug] = parseWorkDtoFromJsonObject(slug, obj)
+                    }
+                } else {
+                    val targetObj = jsonObj.optJSONObject("works") ?: jsonObj.optJSONObject("data") ?: jsonObj
+                    val keys = targetObj.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val obj = targetObj.optJSONObject(key)
+                        if (obj != null) {
+                            val slug = obj.optString("slug", key)
+                            resultMap[key] = parseWorkDtoFromJsonObject(slug, obj)
                         }
-                        resultMap[key] = WorkDto(
-                            slug = slug,
-                            id = obj.optString("id", key),
-                            title = obj.optString("title", obj.optString("name", key)),
-                            name = obj.optString("name", obj.optString("title", key)),
-                            cover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", ""))),
-                            thumbnail = obj.optString("thumbnail", obj.optString("cover", "")),
-                            image = obj.optString("image", obj.optString("cover", "")),
-                            summary = obj.optString("summary", obj.optString("description", "")),
-                            description = obj.optString("description", obj.optString("summary", "")),
-                            type = obj.optString("type", "مانهوا"),
-                            author = obj.optString("author", "غير محدد"),
-                            artist = obj.optString("artist", "غير محدد"),
-                            genres = genresList
-                        )
                     }
                 }
             }
@@ -161,8 +132,55 @@ class MangaRepository(context: Context) {
         return resultMap
     }
 
+    private fun parseWorkDtoFromJsonObject(slug: String, obj: org.json.JSONObject): WorkDto {
+        val genresList = mutableListOf<String>()
+        val gArr = obj.optJSONArray("genres") ?: obj.optJSONArray("categories") ?: obj.optJSONArray("tags")
+        if (gArr != null) {
+            for (j in 0 until gArr.length()) {
+                val g = gArr.optString(j)
+                if (g.isNotBlank()) genresList.add(g)
+            }
+        }
+        val rawCover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", obj.optString("banner", ""))))
+        return WorkDto(
+            slug = slug,
+            id = obj.optString("id", slug),
+            title = obj.optString("title", obj.optString("name", slug)),
+            name = obj.optString("name", obj.optString("title", slug)),
+            cover = sanitizeImageUrl(rawCover, slug),
+            thumbnail = sanitizeImageUrl(rawCover, slug),
+            image = sanitizeImageUrl(rawCover, slug),
+            summary = obj.optString("summary", obj.optString("description", obj.optString("synopsis", ""))),
+            description = obj.optString("description", obj.optString("summary", obj.optString("synopsis", ""))),
+            type = obj.optString("type", "مانهوا"),
+            author = obj.optString("author", "غير محدد"),
+            artist = obj.optString("artist", "غير محدد"),
+            genres = if (genresList.isNotEmpty()) genresList else listOf("مانها", "أكشن")
+        )
+    }
+
+    private fun sanitizeImageUrl(url: String?, slug: String?): String? {
+        if (url.isNullOrBlank()) return null
+        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        val owner = GitHubNetworkModule.getConfiguredOwner()
+        val repo = GitHubNetworkModule.getDataRepo()
+        val branch = GitHubNetworkModule.getConfiguredBranch()
+        val cleanPath = url.removePrefix("/")
+        return if (cleanPath.startsWith("data/")) {
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/$cleanPath"
+        } else if (!slug.isNullOrBlank()) {
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$slug/$cleanPath"
+        } else {
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/$cleanPath"
+        }
+    }
+
     private fun parseSeriesInfoDto(jsonStr: String): SeriesInfoDto? {
         val cleanJson = decodeGitHubContent(jsonStr).trim()
+        if (cleanJson.isBlank() || cleanJson.startsWith("<!DOCTYPE") || cleanJson.contains("404: Not Found")) {
+            return null
+        }
+
         try {
             val adapter = GitHubNetworkModule.moshi.adapter(SeriesInfoDto::class.java)
             val info = adapter.fromJson(cleanJson)
@@ -174,32 +192,39 @@ class MangaRepository(context: Context) {
         }
 
         try {
-            val obj = org.json.JSONObject(cleanJson)
             val chList = mutableListOf<com.example.data.model.ChapterSummaryDto>()
-            val arr = obj.optJSONArray("chapters")
-            if (arr != null) {
+
+            if (cleanJson.startsWith("[")) {
+                val arr = org.json.JSONArray(cleanJson)
                 for (i in 0 until arr.length()) {
                     val chObj = arr.optJSONObject(i) ?: continue
-                    val num = chObj.optInt("number", i + 1)
+                    val num = chObj.optInt("number", chObj.optInt("chapter", i + 1))
                     val title = chObj.optString("title", "الفصل $num")
                     val releaseDate = chObj.optString("release_date", chObj.optString("releaseDate", "اليوم"))
                     val isNew = chObj.optBoolean("is_new", chObj.optBoolean("isNew", false))
-                    chList.add(
-                        com.example.data.model.ChapterSummaryDto(
-                            number = num,
-                            title = title,
-                            releaseDate = releaseDate,
-                            isNew = isNew
-                        )
-                    )
+                    chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew))
                 }
+                return SeriesInfoDto(status = "مستمر", rating = 4.9, views = "1.2M", chapters = chList)
+            } else {
+                val obj = org.json.JSONObject(cleanJson)
+                val arr = obj.optJSONArray("chapters") ?: obj.optJSONArray("chapter_list")
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val chObj = arr.optJSONObject(i) ?: continue
+                        val num = chObj.optInt("number", chObj.optInt("chapter", i + 1))
+                        val title = chObj.optString("title", "الفصل $num")
+                        val releaseDate = chObj.optString("release_date", chObj.optString("releaseDate", "اليوم"))
+                        val isNew = chObj.optBoolean("is_new", chObj.optBoolean("isNew", false))
+                        chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew))
+                    }
+                }
+                return SeriesInfoDto(
+                    status = obj.optString("status", "مستمر"),
+                    rating = obj.optDouble("rating", 4.9),
+                    views = obj.optString("views", "1.2M"),
+                    chapters = chList
+                )
             }
-            return SeriesInfoDto(
-                status = obj.optString("status", "مستمر"),
-                rating = obj.optDouble("rating", 4.9),
-                views = obj.optString("views", "1.2M"),
-                chapters = chList
-            )
         } catch (e: Exception) {
             Log.w(TAG, "org.json series info fallback failed: ${e.message}")
         }
@@ -208,34 +233,58 @@ class MangaRepository(context: Context) {
 
     private fun parseChapterDetailDto(jsonStr: String, mangaId: String, chapterNumber: Int): ChapterDetailDto? {
         val cleanJson = decodeGitHubContent(jsonStr).trim()
+        if (cleanJson.isBlank() || cleanJson.startsWith("<!DOCTYPE") || cleanJson.contains("404: Not Found")) {
+            return null
+        }
+
         try {
             val adapter = GitHubNetworkModule.moshi.adapter(ChapterDetailDto::class.java)
             val dto = adapter.fromJson(cleanJson)
             if (dto != null && (!dto.images.isNullOrEmpty() || !dto.pages.isNullOrEmpty())) {
-                return dto
+                val resolvedImages = (dto.images ?: dto.pages ?: emptyList()).mapNotNull { sanitizeImageUrl(it, mangaId) }
+                return dto.copy(images = resolvedImages, pages = resolvedImages)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Moshi chapter detail parsing error: ${e.message}")
         }
 
         try {
-            val obj = org.json.JSONObject(cleanJson)
             val imagesList = mutableListOf<String>()
-            val imgArr = obj.optJSONArray("images") ?: obj.optJSONArray("pages")
-            if (imgArr != null) {
-                for (i in 0 until imgArr.length()) {
-                    val imgUrl = imgArr.optString(i)
-                    if (imgUrl.isNotBlank()) imagesList.add(imgUrl)
+
+            if (cleanJson.startsWith("[")) {
+                val arr = org.json.JSONArray(cleanJson)
+                for (i in 0 until arr.length()) {
+                    val rawUrl = arr.optString(i)
+                    val resolved = sanitizeImageUrl(rawUrl, mangaId)
+                    if (!resolved.isNullOrBlank()) imagesList.add(resolved)
                 }
+                return ChapterDetailDto(
+                    series = mangaId,
+                    chapter = chapterNumber,
+                    title = "الفصل $chapterNumber",
+                    totalImages = imagesList.size,
+                    images = imagesList,
+                    pages = imagesList
+                )
+            } else {
+                val obj = org.json.JSONObject(cleanJson)
+                val imgArr = obj.optJSONArray("images") ?: obj.optJSONArray("pages") ?: obj.optJSONArray("urls")
+                if (imgArr != null) {
+                    for (i in 0 until imgArr.length()) {
+                        val imgUrl = imgArr.optString(i)
+                        val resolved = sanitizeImageUrl(imgUrl, mangaId)
+                        if (!resolved.isNullOrBlank()) imagesList.add(resolved)
+                    }
+                }
+                return ChapterDetailDto(
+                    series = obj.optString("series", mangaId),
+                    chapter = obj.optInt("chapter", chapterNumber),
+                    title = obj.optString("title", "الفصل $chapterNumber"),
+                    totalImages = obj.optInt("total_images", imagesList.size),
+                    images = imagesList,
+                    pages = imagesList
+                )
             }
-            return ChapterDetailDto(
-                series = obj.optString("series", mangaId),
-                chapter = obj.optInt("chapter", chapterNumber),
-                title = obj.optString("title", "الفصل $chapterNumber"),
-                totalImages = obj.optInt("total_images", imagesList.size),
-                images = imagesList,
-                pages = imagesList
-            )
         } catch (e: Exception) {
             Log.w(TAG, "org.json chapter detail fallback failed: ${e.message}")
         }
@@ -378,30 +427,46 @@ class MangaRepository(context: Context) {
 
             Log.d(TAG, "Fetching works from GitHub Data repo: $owner/$repo (branch: $branch)")
 
-            // Candidate paths for works file
-            val candidatePaths = listOf("data/works.json", "works.json", "data/works", "works")
             var worksJsonStr: String? = null
 
-            for (path in candidatePaths) {
-                try {
-                    val worksResponse = GitHubNetworkModule.apiService.getContentRaw(owner, repo, path, branch)
-                    if (worksResponse.isSuccessful && worksResponse.body() != null) {
-                        worksJsonStr = worksResponse.body()!!.string()
-                        Log.d(TAG, "Successfully retrieved works from API path: $path")
+            // Direct raw and CDN URLs for fastest & most reliable access
+            val directUrls = listOf(
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/data/works.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/works.json",
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/works.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/works.json"
+            )
+
+            for (url in directUrls) {
+                val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                if (!directResult.isNullOrBlank()) {
+                    val candidateMap = parseWorksJson(directResult)
+                    if (candidateMap.isNotEmpty()) {
+                        worksJsonStr = directResult
+                        Log.d(TAG, "Successfully retrieved works from mirror URL: $url")
                         break
                     }
-                } catch (e: Exception) {
-                    Log.d(TAG, "Path $path attempt failed: ${e.message}")
                 }
             }
 
-            // Fallback: direct raw download from raw.githubusercontent.com
+            // Fallback: GitHub API endpoint with multiple path candidates
             if (worksJsonStr.isNullOrBlank()) {
-                val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/works.json"
-                val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
-                if (!directResult.isNullOrBlank()) {
-                    worksJsonStr = directResult
-                    Log.d(TAG, "Retrieved works via direct raw URL: $directRawUrl")
+                val candidatePaths = listOf("data/works.json", "works.json", "data/works", "works")
+                for (path in candidatePaths) {
+                    try {
+                        val worksResponse = GitHubNetworkModule.apiService.getContentRaw(owner, repo, path, branch)
+                        if (worksResponse.isSuccessful && worksResponse.body() != null) {
+                            val candidate = worksResponse.body()!!.string()
+                            val candidateMap = parseWorksJson(candidate)
+                            if (candidateMap.isNotEmpty()) {
+                                worksJsonStr = candidate
+                                Log.d(TAG, "Successfully retrieved works from API path: $path")
+                                break
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.d(TAG, "API Path $path attempt failed: ${e.message}")
+                    }
                 }
             }
 
@@ -449,6 +514,29 @@ class MangaRepository(context: Context) {
         slug: String,
         branch: String
     ): SeriesInfoDto? = withContext(Dispatchers.IO) {
+        val directUrls = listOf(
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$slug/info.json",
+            "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$slug/info.json",
+            "https://raw.githubusercontent.com/$owner/$repo/$branch/$slug/info.json",
+            "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$slug/info.json"
+        )
+
+        for (url in directUrls) {
+            try {
+                val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                if (!directResult.isNullOrBlank()) {
+                    val decodedJson = decodeGitHubContent(directResult)
+                    val info = parseSeriesInfoDto(decodedJson)
+                    if (info != null) {
+                        saveSeriesInfoToDiskCache(slug, decodedJson)
+                        return@withContext info
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Direct mirror for info.json failed: $url (${e.message})")
+            }
+        }
+
         val candidatePaths = listOf(
             "data/$slug/info.json",
             "$slug/info.json",
@@ -463,27 +551,15 @@ class MangaRepository(context: Context) {
                 if (response.isSuccessful && response.body() != null) {
                     val rawJson = response.body()!!.string()
                     val decodedJson = decodeGitHubContent(rawJson)
-                    saveSeriesInfoToDiskCache(slug, decodedJson)
                     val info = parseSeriesInfoDto(decodedJson)
-                    if (info != null) return@withContext info
+                    if (info != null) {
+                        saveSeriesInfoToDiskCache(slug, decodedJson)
+                        return@withContext info
+                    }
                 }
             } catch (e: Exception) {
-                Log.d(TAG, "Series info path $path failed: ${e.message}")
+                Log.d(TAG, "Series info API path $path failed: ${e.message}")
             }
-        }
-
-        // Direct raw fallback
-        try {
-            val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$slug/info.json"
-            val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
-            if (!directResult.isNullOrBlank()) {
-                val decodedJson = decodeGitHubContent(directResult)
-                saveSeriesInfoToDiskCache(slug, decodedJson)
-                val info = parseSeriesInfoDto(decodedJson)
-                if (info != null) return@withContext info
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "Direct raw series info failed: ${e.message}")
         }
 
         loadSeriesInfoFromDiskCache(slug)
@@ -509,7 +585,7 @@ class MangaRepository(context: Context) {
                 )
             }.sortedBy { it.number }
         } else {
-            // Generate placeholder chapters if info.json had no chapters list
+            // Generate fallback chapters if info.json had no chapters list
             (1..30).map { num ->
                 Chapter(
                     id = "${slug}_ch_$num",
@@ -526,7 +602,7 @@ class MangaRepository(context: Context) {
 
         val typeEnum = MangaType.fromString(workDto.type)
         val title = workDto.title ?: workDto.name ?: slug
-        val cover = workDto.cover ?: workDto.thumbnail ?: workDto.image
+        val cover = sanitizeImageUrl(workDto.cover ?: workDto.thumbnail ?: workDto.image, slug)
         val summary = workDto.summary ?: workDto.description ?: "لا يوجد وصف متوفر للعمل حالياً."
 
         return MangaItem(
@@ -565,6 +641,44 @@ class MangaRepository(context: Context) {
             val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
+            val directUrls = listOf(
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/$chapterNumber.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$mangaId/$chapterNumber.json",
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/$mangaId/$chapterNumber.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$mangaId/$chapterNumber.json",
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/chapters/$chapterNumber.json"
+            )
+
+            for (url in directUrls) {
+                try {
+                    val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                    if (!directResult.isNullOrBlank()) {
+                        val decodedJson = decodeGitHubContent(directResult)
+                        val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
+                        val imageList = detail?.images ?: detail?.pages ?: emptyList()
+                        if (imageList.isNotEmpty()) {
+                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                            val pages = imageList.mapIndexed { idx, imgUrl ->
+                                ChapterPage(pageNumber = idx + 1, imageUrl = imgUrl, caption = "صفحة ${idx + 1}")
+                            }
+                            val chapter = Chapter(
+                                id = "${mangaId}_ch_$chapterNumber",
+                                mangaId = mangaId,
+                                number = chapterNumber,
+                                title = detail?.title ?: "الفصل $chapterNumber",
+                                releaseDate = "اليوم",
+                                pagesCount = pages.size,
+                                pages = pages
+                            )
+                            loadedChaptersCache[cacheKey] = chapter
+                            return@withContext chapter
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Direct raw chapter mirror failed: $url (${e.message})")
+                }
+            }
+
             val candidatePaths = listOf(
                 "data/$mangaId/$chapterNumber.json",
                 "$mangaId/$chapterNumber.json",
@@ -580,7 +694,6 @@ class MangaRepository(context: Context) {
                     if (response.isSuccessful && response.body() != null) {
                         val rawJson = response.body()!!.string()
                         val decodedJson = decodeGitHubContent(rawJson)
-                        saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
 
                         val imageList = if (!detail?.images.isNullOrEmpty()) {
@@ -592,6 +705,7 @@ class MangaRepository(context: Context) {
                         }
 
                         if (imageList.isNotEmpty()) {
+                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
                             val pages = imageList.mapIndexed { idx, url ->
                                 ChapterPage(
                                     pageNumber = idx + 1,
@@ -613,38 +727,8 @@ class MangaRepository(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
-                    Log.d(TAG, "Chapter path $path failed: ${e.message}")
+                    Log.d(TAG, "Chapter API path $path failed: ${e.message}")
                 }
-            }
-
-            // Direct raw fallback
-            try {
-                val directRawUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/$chapterNumber.json"
-                val directResult = GitHubNetworkModule.fetchDirectRaw(directRawUrl)
-                if (!directResult.isNullOrBlank()) {
-                    val decodedJson = decodeGitHubContent(directResult)
-                    saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                    val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
-                    val imageList = detail?.images ?: detail?.pages ?: emptyList()
-                    if (imageList.isNotEmpty()) {
-                        val pages = imageList.mapIndexed { idx, url ->
-                            ChapterPage(pageNumber = idx + 1, imageUrl = url, caption = "صفحة ${idx + 1}")
-                        }
-                        val chapter = Chapter(
-                            id = "${mangaId}_ch_$chapterNumber",
-                            mangaId = mangaId,
-                            number = chapterNumber,
-                            title = detail?.title ?: "الفصل $chapterNumber",
-                            releaseDate = "اليوم",
-                            pagesCount = pages.size,
-                            pages = pages
-                        )
-                        loadedChaptersCache[cacheKey] = chapter
-                        return@withContext chapter
-                    }
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "Direct raw chapter fetch failed: ${e.message}")
             }
 
             // Check if available in disk cache

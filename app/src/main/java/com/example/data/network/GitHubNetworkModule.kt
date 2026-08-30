@@ -52,11 +52,13 @@ object GitHubNetworkModule {
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
         val builder = originalRequest.newBuilder()
-            .header("User-Agent", "Nexus-Manga-App-Android/1.4")
+            .header("User-Agent", "Nexus-Manga-App-Android/1.5")
             .header("X-GitHub-Api-Version", "2022-11-28")
 
         val token = getActiveToken()
-        if (token.isNotEmpty()) {
+        val isGitHubApi = originalRequest.url.host.contains("api.github.com")
+
+        if (token.isNotEmpty() && isGitHubApi) {
             val authHeader = when {
                 token.startsWith("Bearer ") || token.startsWith("token ") -> token
                 token.startsWith("ghp_") -> "Bearer $token"
@@ -65,7 +67,21 @@ object GitHubNetworkModule {
             builder.header("Authorization", authHeader)
         }
 
-        chain.proceed(builder.build())
+        val response = chain.proceed(builder.build())
+
+        // If authenticated request failed with 401 Unauthorized or 403 Forbidden on a public repository, retry WITHOUT authorization header
+        if ((response.code == 401 || response.code == 403) && token.isNotEmpty()) {
+            response.close()
+            Log.w(TAG, "GitHub request received ${response.code} with token. Retrying without Authorization header for public access...")
+            val unauthRequest = originalRequest.newBuilder()
+                .header("User-Agent", "Nexus-Manga-App-Android/1.5")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+                .removeHeader("Authorization")
+                .build()
+            return@Interceptor chain.proceed(unauthRequest)
+        }
+
+        response
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -76,9 +92,9 @@ object GitHubNetworkModule {
         val builder = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(25, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(25, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(25, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
 
         okHttpCache?.let { builder.cache(it) }
         builder.build()
@@ -122,23 +138,23 @@ object GitHubNetworkModule {
     }
 
     /**
-     * Direct raw URL fetcher with auth headers for fail-safe retrieval
+     * Direct raw URL fetcher with automatic public fallback and multi-mirror support
      */
     fun fetchDirectRaw(url: String): String? {
         return try {
-            val token = getActiveToken()
-            val requestBuilder = Request.Builder()
+            val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "Nexus-Manga-App-Android/1.4")
+                .header("User-Agent", "Nexus-Manga-App-Android/1.5")
+                .build()
 
-            if (token.isNotEmpty()) {
-                val authHeader = if (token.startsWith("token ") || token.startsWith("Bearer ")) token else "token $token"
-                requestBuilder.header("Authorization", authHeader)
-            }
-
-            val response = okHttpClient.newCall(requestBuilder.build()).execute()
+            val response = okHttpClient.newCall(request).execute()
             if (response.isSuccessful && response.body != null) {
-                response.body?.string()
+                val bodyStr = response.body?.string()
+                if (!bodyStr.isNullOrBlank() && !bodyStr.contains("404: Not Found") && !bodyStr.startsWith("<!DOCTYPE html>")) {
+                    bodyStr
+                } else {
+                    null
+                }
             } else {
                 null
             }

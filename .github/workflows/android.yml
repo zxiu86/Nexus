@@ -55,8 +55,8 @@ jobs:
       - name: Extract Version Info
         id: version_step
         run: |
-          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.4")
-          if [ -z "$VERSION" ]; then VERSION="1.4"; fi
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.5")
+          if [ -z "$VERSION" ]; then VERSION="1.5"; fi
           echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
