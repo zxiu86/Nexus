@@ -36,7 +36,7 @@ class MangaRepository(context: Context) {
     private val _lastReadFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     val lastReadFlow: StateFlow<Map<String, Int>> = _lastReadFlow.asStateFlow()
 
-    private val _allMangaFlow = MutableStateFlow<List<MangaItem>>(getDefaultMangaList())
+    private val _allMangaFlow = MutableStateFlow<List<MangaItem>>(emptyList())
     val allMangaFlow: StateFlow<List<MangaItem>> = _allMangaFlow.asStateFlow()
 
     // Dynamic chapter cache with loaded images
@@ -406,12 +406,12 @@ class MangaRepository(context: Context) {
         return _lastReadFlow.value[mangaId] ?: 1
     }
 
-    fun getAllManga(): List<MangaItem> = _allMangaFlow.value.ifEmpty { getDefaultMangaList() }
+    fun getAllManga(): List<MangaItem> = _allMangaFlow.value
 
     fun getHeroFeaturedManga(): List<MangaItem> = getAllManga().take(5)
 
     fun getMangaById(id: String): MangaItem? {
-        return getAllManga().find { it.id == id } ?: getDefaultMangaList().find { it.id == id }
+        return _allMangaFlow.value.find { it.id == id }
     }
 
     /**
@@ -471,9 +471,9 @@ class MangaRepository(context: Context) {
             }
 
             if (worksJsonStr.isNullOrBlank()) {
-                Log.w(TAG, "Failed to load works.json from $owner/$repo, using cached/default manga")
+                Log.w(TAG, "Failed to load works.json from $owner/$repo, using cached manga")
                 val current = _allMangaFlow.value
-                return@withContext if (current.isNotEmpty()) Result.success(current) else Result.success(getDefaultMangaList())
+                return@withContext Result.success(current)
             }
 
             val decodedJson = decodeGitHubContent(worksJsonStr)
@@ -483,7 +483,7 @@ class MangaRepository(context: Context) {
 
             if (worksMap.isEmpty()) {
                 Log.w(TAG, "works.json parsed map was empty.")
-                return@withContext Result.success(getDefaultMangaList())
+                return@withContext Result.success(_allMangaFlow.value)
             }
 
             // Fetch info.json for each work in parallel
@@ -571,34 +571,18 @@ class MangaRepository(context: Context) {
         seriesInfo: SeriesInfoDto?
     ): MangaItem {
         val rawChapters = seriesInfo?.chapters ?: emptyList()
-        val chaptersList = if (rawChapters.isNotEmpty()) {
-            rawChapters.map { chSummary ->
-                Chapter(
-                    id = "${slug}_ch_${chSummary.number}",
-                    mangaId = slug,
-                    number = chSummary.number,
-                    title = chSummary.title ?: "الفصل ${chSummary.number}",
-                    releaseDate = chSummary.releaseDate ?: "اليوم",
-                    isNew = chSummary.isNew ?: false,
-                    pagesCount = 0,
-                    pages = emptyList()
-                )
-            }.sortedBy { it.number }
-        } else {
-            // Generate fallback chapters if info.json had no chapters list
-            (1..30).map { num ->
-                Chapter(
-                    id = "${slug}_ch_$num",
-                    mangaId = slug,
-                    number = num,
-                    title = "الفصل $num",
-                    releaseDate = if (num > 27) "اليوم" else "منذ أسبوع",
-                    isNew = num > 27,
-                    pagesCount = 8,
-                    pages = generateDefaultPagesForChapter(num)
-                )
-            }
-        }
+        val chaptersList = rawChapters.map { chSummary ->
+            Chapter(
+                id = "${slug}_ch_${chSummary.number}",
+                mangaId = slug,
+                number = chSummary.number,
+                title = chSummary.title ?: "الفصل ${chSummary.number}",
+                releaseDate = chSummary.releaseDate ?: "اليوم",
+                isNew = chSummary.isNew ?: false,
+                pagesCount = 0,
+                pages = emptyList()
+            )
+        }.sortedBy { it.number }
 
         val typeEnum = MangaType.fromString(workDto.type)
         val title = workDto.title ?: workDto.name ?: slug
@@ -762,29 +746,23 @@ class MangaRepository(context: Context) {
                 return@withContext chapter
             }
 
-            // Fallback to local chapter representation
+            // Fallback to local chapter representation if cached
             val manga = getMangaById(mangaId)
             val fallbackChapter = manga?.chapters?.find { it.number == chapterNumber }
-            if (fallbackChapter != null) {
-                val pages = if (fallbackChapter.pages.isNotEmpty()) {
-                    fallbackChapter.pages
-                } else {
-                    generateDefaultPagesForChapter(chapterNumber)
-                }
-                val fullCh = fallbackChapter.copy(pages = pages, pagesCount = pages.size)
-                loadedChaptersCache[cacheKey] = fullCh
-                return@withContext fullCh
+            if (fallbackChapter != null && fallbackChapter.pages.isNotEmpty()) {
+                loadedChaptersCache[cacheKey] = fallbackChapter
+                return@withContext fallbackChapter
             }
 
             null
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.4)
+     * Checks GitHub Releases for In-App Updates against current version (1.5)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.4"
+        val currentVersion = "1.5"
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
             val appRepo = GitHubNetworkModule.getAppRepo() // "Nexus"
@@ -808,7 +786,7 @@ class MangaRepository(context: Context) {
                         return@withContext AppUpdateState(
                             isChecking = false,
                             updateAvailable = hasNewerVersion,
-                            latestVersion = tag.ifEmpty { release.name ?: "1.4" },
+                            latestVersion = tag.ifEmpty { release.name ?: "1.5" },
                             currentVersion = currentVersion,
                             releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً باستخدام التوكن السري.\n• فحص التحديثات وتنزيل الـ APK من مستودع zxiu86/Nexus.",
                             downloadUrl = downloadUrl
@@ -835,7 +813,7 @@ class MangaRepository(context: Context) {
                     return@withContext AppUpdateState(
                         isChecking = false,
                         updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
-                        latestVersion = tag.ifEmpty { release.name ?: "1.4" },
+                        latestVersion = tag.ifEmpty { release.name ?: "1.5" },
                         currentVersion = currentVersion,
                         releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً.\n• تحسين أداء القارئ واستقرار التطبيق.",
                         downloadUrl = downloadUrl
@@ -871,214 +849,5 @@ class MangaRepository(context: Context) {
         }
         return false
     }
-
-    // ----------------------------------------------------
-    // Built-in Sample Dataset (Ensures instant offline display)
-    // ----------------------------------------------------
-    companion object {
-        private fun getDefaultMangaList(): List<MangaItem> {
-            return listOf(
-            createMangaItem(
-                id = "demonic-emperor",
-                titleAr = "سيد الشياطين العائد (Demonic Emperor)",
-                titleEn = "Demonic Emperor",
-                type = MangaType.MANHUA,
-                coverRes = R.drawable.manhua_martial_emperor_1788030575736,
-                bannerRes = R.drawable.manhua_martial_emperor_1788030575736,
-                synopsis = "تشو ييفان، إمبراطور الشياطين الأسطوري، تعرض للخيانة من تلميذه وقتل بعد عثوره على كتاب التراث السري التساعي. يستيقظ في جسد خادم ضعيف لعائلة لوه المنهارة، ويبدأ معركته للسيطرة على العالم مجدداً.",
-                author = "يه شياو (Ye Xiao)",
-                artist = "وو وي (Wu Wei)",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "المعلم كايزن",
-                cleaner = "دارك لورد",
-                typesetter = "فانتوم إكس",
-                rating = 4.96f,
-                views = "2.8M",
-                status = "مستمر",
-                genres = listOf("أكشن", "خيال", "فنون قتال", "تناسخ", "ذكاء وتخطيط"),
-                totalChapters = 90
-            ),
-            createMangaItem(
-                id = "solo-shadow-monarch",
-                titleAr = "سيد الظلال المنفرد",
-                titleEn = "Solo Shadow Monarch",
-                type = MangaType.MANHWA,
-                coverRes = R.drawable.manhwa_shadow_monarch_1788030563820,
-                bannerRes = R.drawable.manhwa_shadow_monarch_1788030563820,
-                synopsis = "في عالم ظهرت فيه بوابات غامضة تربط عالمنا بأبعاد الوحوش، يظهر الصيادون ذوو القدرات الخارقة. سونغ جين وو أضعف صياد من الرتبة E يجد نفسه محاصراً في زنزانة مزدوجة مروعة ليحصل على نظام الترقية المنفرد.",
-                author = "تشو غونغ (Chugong)",
-                artist = "دو بو ري (DUBU - Redice)",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "كايزن العرب",
-                cleaner = "أرثر دارك",
-                typesetter = "فانتوم إكس",
-                rating = 4.95f,
-                views = "2.4M",
-                status = "مستمر",
-                genres = listOf("أكشن", "فانتازيا خيالية", "بوابات", "سحر", "نظام", "مغامرات"),
-                totalChapters = 90
-            ),
-            createMangaItem(
-                id = "archmage-returns-4000",
-                titleAr = "عودة الساحر الأسطوري بعد 4000 سنة",
-                titleEn = "The Great Mage Returns After 4000 Years",
-                type = MangaType.MANHWA,
-                coverRes = R.drawable.manhwa_archmage_1788030586830,
-                bannerRes = R.drawable.manhwa_archmage_1788030586830,
-                synopsis = "أعظم ساحر بشري في التاريخ، لوكاس تراومان، تم ختم روحه من قبل الحكام السماويين لمدة 4000 عام في ظلام مطبق. يستيقظ فجأة في جسد فراي بليك، الطالب الفاشل في أكاديمية ويست رود السحرية.",
-                author = "بارناكل (Barnacle)",
-                artist = "كيم دونغ وون",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "سفير السحر",
-                cleaner = "ألكيميست",
-                typesetter = "مانا بلاست",
-                rating = 4.91f,
-                views = "1.5M",
-                status = "مستمر",
-                genres = listOf("سحر وأساطير", "إعادة تجسد", "أكاديمية", "فانتازيا", "قوى عليا"),
-                totalChapters = 75
-            ),
-            createMangaItem(
-                id = "tower-of-gods",
-                titleAr = "برج الإله والخوارق",
-                titleEn = "Tower of Gods & Mysteries",
-                type = MangaType.MANHWA,
-                coverRes = R.drawable.manhwa_shadow_monarch_1788030563820,
-                bannerRes = R.drawable.manhwa_shadow_monarch_1788030563820,
-                synopsis = "ما الذي ترغب به؟ المال؟ المجد؟ القوة؟ كل ما تريده ينتظرك في قمة البرج. بام يدخل البرج بحثاً عن راشيل ليكتشف أسراراً تفوق خيال البشر وقوى الشينسو الأسطورية.",
-                author = "إس آي يو (SIU)",
-                artist = "فريق ناكستر للرسم",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "نوفا ستار",
-                cleaner = "شينسو",
-                typesetter = "كروكس",
-                rating = 4.94f,
-                views = "3.1M",
-                status = "مستمر",
-                genres = listOf("مغامرات أسطورية", "برج التحدي", "خوارق", "أكشن وغموض", "أسرار"),
-                totalChapters = 80
-            ),
-            createMangaItem(
-                id = "divine-dragon-monarch",
-                titleAr = "ملك التنانين الإلهية",
-                titleEn = "Divine Dragon Monarch",
-                type = MangaType.MANHUA,
-                coverRes = R.drawable.manhua_martial_emperor_1788030575736,
-                bannerRes = R.drawable.manhua_martial_emperor_1788030575736,
-                synopsis = "عالم تسوده سلالات الوحوش الأسطورية والتنانين الإلهية. الشاب لين تيان يوقظ خط دم تنين الفوضى البدائي بعد أن اعتبرته عشيرته عديم الفائدة.",
-                author = "تانغ جيا سان شاو",
-                artist = "أستوديو فنون الشرق",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "روح التنين",
-                cleaner = "سكاي لورد",
-                typesetter = "بلاك وينغ",
-                rating = 4.87f,
-                views = "1.2M",
-                status = "مستمر",
-                genres = listOf("مانها صينية", "تنانين وخوارق", "زراعة خالدة", "سحر قتالي"),
-                totalChapters = 65
-            ),
-            createMangaItem(
-                id = "player-returned-10000-years",
-                titleAr = "اللاعب الذي عاد بعد 10,000 سنة",
-                titleEn = "Player Who Returned After 10,000 Years",
-                type = MangaType.MANHWA,
-                coverRes = R.drawable.manhwa_archmage_1788030586830,
-                bannerRes = R.drawable.manhwa_archmage_1788030586830,
-                synopsis = "سقط في الجحيم وعاش هناك لعشرة آلاف عام ملتهمًا الشياطين والملوك حتى أصبح المفترس الأكبر. عندما يعود إلى الأرض أخيرًا، يجد العالم قد تحول إلى بوابات وزنزانات حديثة.",
-                author = "نابان (Naban)",
-                artist = "أستوديو بيتر",
-                scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-                translator = "أوفر لورد",
-                cleaner = "ريد فاير",
-                typesetter = "إكستريم",
-                rating = 4.89f,
-                views = "1.6M",
-                status = "مستمر",
-                genres = listOf("كوميديا سوداء", "أكشن ناري", "شياطين", "عودة بالزمن", "نظام"),
-                totalChapters = 60
-            )
-        )
-    }
-
-    private fun createMangaItem(
-        id: String,
-        titleAr: String,
-        titleEn: String,
-        type: MangaType,
-        coverRes: Int,
-        bannerRes: Int,
-        synopsis: String,
-        author: String,
-        artist: String,
-        scanlationTeam: String,
-        translator: String,
-        cleaner: String,
-        typesetter: String,
-        rating: Float,
-        views: String,
-        status: String,
-        genres: List<String>,
-        totalChapters: Int
-    ): MangaItem {
-        val generatedChapters = (1..totalChapters).map { num ->
-            val isLatestThree = num > (totalChapters - 3)
-            val releaseTime = when {
-                num == totalChapters -> "اليوم"
-                num == totalChapters - 1 -> "منذ 3 ساعات"
-                num == totalChapters - 2 -> "منذ يوم"
-                else -> "2026/08/25"
-            }
-            Chapter(
-                id = "${id}_ch_$num",
-                mangaId = id,
-                number = num,
-                title = "الفصل $num : الفصل $num",
-                releaseDate = releaseTime,
-                isNew = isLatestThree,
-                pagesCount = 8,
-                pages = generateDefaultPagesForChapter(num)
-            )
-        }
-
-        return MangaItem(
-            id = id,
-            titleAr = titleAr,
-            titleEn = titleEn,
-            type = type,
-            coverRes = coverRes,
-            bannerRes = bannerRes,
-            synopsis = synopsis,
-            author = author,
-            artist = artist,
-            scanlationTeam = scanlationTeam,
-            translator = translator,
-            cleaner = cleaner,
-            typesetter = typesetter,
-            rating = rating,
-            views = views,
-            status = status,
-            genres = genres,
-            totalChaptersCount = totalChapters,
-            chapters = generatedChapters
-        )
-    }
-
-    private fun generateDefaultPagesForChapter(chapterNum: Int): List<ChapterPage> {
-        val availableImages = listOf(
-            R.drawable.comic_panel_action_1788030599626,
-            R.drawable.manhwa_shadow_monarch_1788030563820,
-            R.drawable.manhua_martial_emperor_1788030575736,
-            R.drawable.manhwa_archmage_1788030586830
-        )
-        return (1..6).map { pageIdx ->
-            val img = availableImages[(chapterNum + pageIdx) % availableImages.size]
-            ChapterPage(
-                pageNumber = pageIdx,
-                imageRes = img,
-                caption = "صفحة $pageIdx"
-            )
-        }
-    }
-    }
 }
+
