@@ -1084,7 +1084,34 @@ fun ChapterListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (chapter.isNew) {
+                if (chapter.isClosed) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFF3E2723),
+                        border = BorderStroke(1.dp, Color(0xFFFFB74D).copy(alpha = 0.6f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = Color(0xFFFFB74D),
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Text(
+                                text = "مغلق للصيانة",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFFB74D)
+                                )
+                            )
+                        }
+                    }
+                } else if (chapter.isNew) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = BadgeNew
@@ -1122,7 +1149,19 @@ fun ChapterListItem(
                 }
 
                 // Download Button / Status Icon
-                if (downloadProgress != null && !downloadProgress.isCompleted && !downloadProgress.isFailed) {
+                if (chapter.isClosed) {
+                    IconButton(
+                        onClick = onClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "تنبيه إغلاق الفصل",
+                            tint = Color(0xFFFFB74D),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                } else if (downloadProgress != null && !downloadProgress.isCompleted && !downloadProgress.isFailed) {
                     Box(
                         modifier = Modifier.size(32.dp),
                         contentAlignment = Alignment.Center

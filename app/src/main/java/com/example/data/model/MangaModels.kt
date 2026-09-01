@@ -34,6 +34,7 @@ data class Chapter(
     val title: String,
     val releaseDate: String,
     val isNew: Boolean = false,
+    val isClosed: Boolean = false,
     val pagesCount: Int = 0,
     val pages: List<ChapterPage> = emptyList()
 )
@@ -99,7 +100,8 @@ data class ChapterSummaryDto(
     val number: Int = 1,
     val title: String? = null,
     @Json(name = "release_date") val releaseDate: String? = null,
-    @Json(name = "is_new") val isNew: Boolean? = false
+    @Json(name = "is_new") val isNew: Boolean? = false,
+    @Json(name = "is_closed") val isClosed: Boolean? = false
 )
 
 @JsonClass(generateAdapter = true)
@@ -107,6 +109,7 @@ data class ChapterDetailDto(
     val series: String? = null,
     val chapter: Int = 1,
     val title: String? = null,
+    @Json(name = "is_closed") val isClosed: Boolean? = false,
     @Json(name = "total_images") val totalImages: Int? = null,
     val images: List<String>? = emptyList(),
     val pages: List<String>? = emptyList()

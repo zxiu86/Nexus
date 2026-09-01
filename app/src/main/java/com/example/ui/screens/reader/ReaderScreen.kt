@@ -844,21 +844,39 @@ fun ChapterEndCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = "✨ نهاية الفصل ${currentChapter.number}",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = NexusGoldLight
+            if (currentChapter.isClosed) {
+                Text(
+                    text = "🔒 الفصل ${currentChapter.number} قيد الصيانة والإعداد",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFFB74D)
+                    )
                 )
-            )
 
-            Text(
-                text = "نتمنى لك قراءة ممتعة! لا تنسَ متابعة الفصول القادمة أولاً بأول.",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
+                Text(
+                    text = "هذا الفصل قيد الصيانة أو إعادة التدقيق والرفع حالياً وسيتاح بأفضل جودة قريباً. يمكنك الانتقال للفصول الأخرى أدناه.",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
+                    )
                 )
-            )
+            } else {
+                Text(
+                    text = "✨ نهاية الفصل ${currentChapter.number}",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = NexusGoldLight
+                    )
+                )
+
+                Text(
+                    text = "نتمنى لك قراءة ممتعة! لا تنسَ متابعة الفصول القادمة أولاً بأول.",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
+                    )
+                )
+            }
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 4.dp),

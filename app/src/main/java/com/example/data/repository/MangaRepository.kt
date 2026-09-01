@@ -225,7 +225,8 @@ class MangaRepository(private val context: Context) {
                     val title = chObj.optString("title", "الفصل $num")
                     val releaseDate = chObj.optString("release_date", chObj.optString("releaseDate", "اليوم"))
                     val isNew = chObj.optBoolean("is_new", chObj.optBoolean("isNew", false))
-                    chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew))
+                    val isClosed = chObj.optBoolean("is_closed", chObj.optBoolean("isClosed", false))
+                    chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew, isClosed))
                 }
                 return SeriesInfoDto(status = "مستمر", rating = 4.9, views = "1.2M", chapters = chList)
             } else {
@@ -238,7 +239,8 @@ class MangaRepository(private val context: Context) {
                         val title = chObj.optString("title", "الفصل $num")
                         val releaseDate = chObj.optString("release_date", chObj.optString("releaseDate", "اليوم"))
                         val isNew = chObj.optBoolean("is_new", chObj.optBoolean("isNew", false))
-                        chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew))
+                        val isClosed = chObj.optBoolean("is_closed", chObj.optBoolean("isClosed", false))
+                        chList.add(com.example.data.model.ChapterSummaryDto(num, title, releaseDate, isNew, isClosed))
                     }
                 }
                 return SeriesInfoDto(
@@ -263,9 +265,14 @@ class MangaRepository(private val context: Context) {
         try {
             val adapter = GitHubNetworkModule.moshi.adapter(ChapterDetailDto::class.java)
             val dto = adapter.fromJson(cleanJson)
-            if (dto != null && (!dto.images.isNullOrEmpty() || !dto.pages.isNullOrEmpty())) {
-                val resolvedImages = (dto.images ?: dto.pages ?: emptyList()).mapNotNull { sanitizeImageUrl(it, mangaId) }
-                return dto.copy(images = resolvedImages, pages = resolvedImages)
+            if (dto != null) {
+                if (dto.isClosed == true) {
+                    return dto
+                }
+                if (!dto.images.isNullOrEmpty() || !dto.pages.isNullOrEmpty()) {
+                    val resolvedImages = (dto.images ?: dto.pages ?: emptyList()).mapNotNull { sanitizeImageUrl(it, mangaId) }
+                    return dto.copy(images = resolvedImages, pages = resolvedImages)
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Moshi chapter detail parsing error: ${e.message}")
@@ -291,6 +298,7 @@ class MangaRepository(private val context: Context) {
                 )
             } else {
                 val obj = org.json.JSONObject(cleanJson)
+                val isClosed = obj.optBoolean("is_closed", obj.optBoolean("isClosed", false))
                 val imgArr = obj.optJSONArray("images") ?: obj.optJSONArray("pages") ?: obj.optJSONArray("urls")
                 if (imgArr != null) {
                     for (i in 0 until imgArr.length()) {
@@ -303,9 +311,10 @@ class MangaRepository(private val context: Context) {
                     series = obj.optString("series", mangaId),
                     chapter = obj.optInt("chapter", chapterNumber),
                     title = obj.optString("title", "الفصل $chapterNumber"),
-                    totalImages = obj.optInt("total_images", imagesList.size),
-                    images = imagesList,
-                    pages = imagesList
+                    isClosed = isClosed,
+                    totalImages = if (isClosed) 0 else obj.optInt("total_images", imagesList.size),
+                    images = if (isClosed) emptyList() else imagesList,
+                    pages = if (isClosed) emptyList() else imagesList
                 )
             }
         } catch (e: Exception) {
@@ -874,15 +883,23 @@ class MangaRepository(private val context: Context) {
     ): MangaItem {
         val rawChapters = seriesInfo?.chapters ?: emptyList()
         val chaptersList = rawChapters.map { chSummary ->
+            val isClosed = chSummary.isClosed ?: false
             Chapter(
                 id = "${slug}_ch_${chSummary.number}",
                 mangaId = slug,
                 number = chSummary.number,
                 title = chSummary.title ?: "الفصل ${chSummary.number}",
-                releaseDate = chSummary.releaseDate ?: "اليوم",
+                releaseDate = if (isClosed) "تحت الصيانة" else (chSummary.releaseDate ?: "اليوم"),
                 isNew = chSummary.isNew ?: false,
-                pagesCount = 0,
-                pages = emptyList()
+                isClosed = isClosed,
+                pagesCount = if (isClosed) 1 else 0,
+                pages = if (isClosed) listOf(
+                    ChapterPage(
+                        pageNumber = 1,
+                        imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                        caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                    )
+                ) else emptyList()
             )
         }.sortedBy { it.number }
 
@@ -963,6 +980,27 @@ class MangaRepository(private val context: Context) {
                     if (!directResult.isNullOrBlank()) {
                         val decodedJson = decodeGitHubContent(directResult)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
+                        if (detail?.isClosed == true) {
+                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                            val chapter = Chapter(
+                                id = "${mangaId}_ch_$chapterNumber",
+                                mangaId = mangaId,
+                                number = chapterNumber,
+                                title = detail.title ?: "الفصل $chapterNumber",
+                                releaseDate = "تحت الصيانة",
+                                isClosed = true,
+                                pagesCount = 1,
+                                pages = listOf(
+                                    ChapterPage(
+                                        pageNumber = 1,
+                                        imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                                        caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                                    )
+                                )
+                            )
+                            loadedChaptersCache[cacheKey] = chapter
+                            return@withContext chapter
+                        }
                         val imageList = detail?.images ?: detail?.pages ?: emptyList()
                         if (imageList.isNotEmpty()) {
                             saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
@@ -975,6 +1013,7 @@ class MangaRepository(private val context: Context) {
                                 number = chapterNumber,
                                 title = detail?.title ?: "الفصل $chapterNumber",
                                 releaseDate = "اليوم",
+                                isClosed = false,
                                 pagesCount = pages.size,
                                 pages = pages
                             )
@@ -1004,6 +1043,28 @@ class MangaRepository(private val context: Context) {
                         val decodedJson = decodeGitHubContent(rawJson)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
 
+                        if (detail?.isClosed == true) {
+                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                            val chapter = Chapter(
+                                id = "${mangaId}_ch_$chapterNumber",
+                                mangaId = mangaId,
+                                number = chapterNumber,
+                                title = detail.title ?: "الفصل $chapterNumber",
+                                releaseDate = "تحت الصيانة",
+                                isClosed = true,
+                                pagesCount = 1,
+                                pages = listOf(
+                                    ChapterPage(
+                                        pageNumber = 1,
+                                        imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                                        caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                                    )
+                                )
+                            )
+                            loadedChaptersCache[cacheKey] = chapter
+                            return@withContext chapter
+                        }
+
                         val imageList = if (!detail?.images.isNullOrEmpty()) {
                             detail!!.images!!
                         } else if (!detail?.pages.isNullOrEmpty()) {
@@ -1027,6 +1088,7 @@ class MangaRepository(private val context: Context) {
                                 number = chapterNumber,
                                 title = detail?.title ?: "الفصل $chapterNumber",
                                 releaseDate = "اليوم",
+                                isClosed = false,
                                 pagesCount = pages.size,
                                 pages = pages
                             )
@@ -1041,6 +1103,27 @@ class MangaRepository(private val context: Context) {
 
             // Check if available in disk cache
             val cachedDetail = loadChapterDetailFromDiskCache(mangaId, chapterNumber)
+            if (cachedDetail?.isClosed == true) {
+                val chapter = Chapter(
+                    id = "${mangaId}_ch_$chapterNumber",
+                    mangaId = mangaId,
+                    number = chapterNumber,
+                    title = cachedDetail.title ?: "الفصل $chapterNumber",
+                    releaseDate = "تحت الصيانة",
+                    isClosed = true,
+                    pagesCount = 1,
+                    pages = listOf(
+                        ChapterPage(
+                            pageNumber = 1,
+                            imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                            caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                        )
+                    )
+                )
+                loadedChaptersCache[cacheKey] = chapter
+                return@withContext chapter
+            }
+
             val cachedImages = if (!cachedDetail?.images.isNullOrEmpty()) {
                 cachedDetail!!.images!!
             } else if (!cachedDetail?.pages.isNullOrEmpty()) {
@@ -1063,6 +1146,7 @@ class MangaRepository(private val context: Context) {
                     number = chapterNumber,
                     title = cachedDetail?.title ?: "الفصل $chapterNumber",
                     releaseDate = "اليوم",
+                    isClosed = false,
                     pagesCount = pages.size,
                     pages = pages
                 )
@@ -1073,9 +1157,21 @@ class MangaRepository(private val context: Context) {
             // Fallback to local chapter representation if cached
             val manga = getMangaById(mangaId)
             val fallbackChapter = manga?.chapters?.find { it.number == chapterNumber }
-            if (fallbackChapter != null && fallbackChapter.pages.isNotEmpty()) {
-                loadedChaptersCache[cacheKey] = fallbackChapter
-                return@withContext fallbackChapter
+            if (fallbackChapter != null && (fallbackChapter.pages.isNotEmpty() || fallbackChapter.isClosed)) {
+                val finalChapter = if (fallbackChapter.isClosed && fallbackChapter.pages.isEmpty()) {
+                    fallbackChapter.copy(
+                        pagesCount = 1,
+                        pages = listOf(
+                            ChapterPage(
+                                pageNumber = 1,
+                                imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                                caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                            )
+                        )
+                    )
+                } else fallbackChapter
+                loadedChaptersCache[cacheKey] = finalChapter
+                return@withContext finalChapter
             }
 
             null
