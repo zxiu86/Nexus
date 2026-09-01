@@ -116,13 +116,15 @@ fun HomeScreen(
 
     Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // App Header Brand (Nexus only)
+            // App Header Brand (Nexus only) with Live Refresh Button
             NexusHomeTopBar(
                 selectedTab = uiState.selectedTab,
                 favoritesCount = uiState.favorites.size,
                 hasUpdate = uiState.updateInfo.updateAvailable,
+                isRefreshing = uiState.isRefreshing,
                 onFavoritesClick = { onTabSelected(1) },
-                onUpdateBadgeClick = onTriggerUpdate
+                onUpdateBadgeClick = onTriggerUpdate,
+                onRefreshClick = onRefresh
             )
 
             // Dynamic Tab Content
@@ -282,9 +284,21 @@ fun NexusHomeTopBar(
     selectedTab: Int = 0,
     favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
+    isRefreshing: Boolean = false,
     onFavoritesClick: () -> Unit = {},
-    onUpdateBadgeClick: () -> Unit = {}
+    onUpdateBadgeClick: () -> Unit = {},
+    onRefreshClick: () -> Unit = {}
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "topbar_refresh_rotation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing)
+        ),
+        label = "refresh_angle"
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,11 +378,37 @@ fun NexusHomeTopBar(
             }
         }
 
-        // Left Section: Favorites Shortcut & Update Badge
+        // Left Section: Live Refresh Button, Favorites Shortcut & Update Badge
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Live Force Sync Button with Spinning Feedback
+            Surface(
+                shape = CircleShape,
+                color = SurfaceDark,
+                border = BorderStroke(1.dp, if (isRefreshing) NexusGold else NexusGold.copy(alpha = 0.25f)),
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .clickable(enabled = !isRefreshing) { onRefreshClick() }
+                    .testTag("topbar_force_refresh_button")
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "تحديث البيانات المباشر وتجاوز الكاش",
+                        tint = if (isRefreshing) NexusGold else TextSecondary,
+                        modifier = Modifier
+                            .size(17.dp)
+                            .rotate(if (isRefreshing) rotation else 0f)
+                    )
+                }
+            }
+
             // Favorites Quick Access Button
             if (favoritesCount > 0) {
                 Surface(

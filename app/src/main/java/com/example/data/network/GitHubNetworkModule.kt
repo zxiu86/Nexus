@@ -137,17 +137,39 @@ object GitHubNetworkModule {
         return if (!branch.isNullOrEmpty() && branch != "placeholder" && branch != "null") branch else DEFAULT_BRANCH
     }
 
-    /**
-     * Direct raw URL fetcher with automatic public fallback and multi-mirror support
-     */
-    fun fetchDirectRaw(url: String): String? {
-        return try {
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", "Nexus-Manga-App-Android/1.5")
-                .build()
+    fun clearHttpCache() {
+        try {
+            okHttpCache?.evictAll()
+            Log.d(TAG, "OkHttp cache successfully evicted.")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed evicting OkHttp cache: ${e.message}")
+        }
+    }
 
-            val response = okHttpClient.newCall(request).execute()
+    /**
+     * Direct raw URL fetcher with automatic cache-busting, public fallback and multi-mirror support
+     */
+    fun fetchDirectRaw(url: String, forceFresh: Boolean = true): String? {
+        return try {
+            val targetUrl = if (forceFresh) {
+                val separator = if (url.contains("?")) "&" else "?"
+                "$url${separator}_cb=${System.currentTimeMillis()}"
+            } else {
+                url
+            }
+
+            val requestBuilder = Request.Builder()
+                .url(targetUrl)
+                .header("User-Agent", "Nexus-Manga-App-Android/1.6.2")
+
+            if (forceFresh) {
+                requestBuilder
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+                    .header("Pragma", "no-cache")
+                    .header("Expires", "0")
+            }
+
+            val response = okHttpClient.newCall(requestBuilder.build()).execute()
             if (response.isSuccessful && response.body != null) {
                 val bodyStr = response.body?.string()
                 if (!bodyStr.isNullOrBlank() && !bodyStr.contains("404: Not Found") && !bodyStr.startsWith("<!DOCTYPE html>")) {

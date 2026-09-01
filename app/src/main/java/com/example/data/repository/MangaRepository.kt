@@ -713,32 +713,38 @@ class MangaRepository(private val context: Context) {
      * Refresh data from GitHub Data repository (zxiu86/Data):
      * 1. data/works.json
      * 2. data/[series-slug]/info.json (fetched in parallel)
+     * Utilizes aggressive cache-busting to bypass CDN delay immediately!
      */
-    suspend fun refreshMangaFromGitHub(): Result<List<MangaItem>> = withContext(Dispatchers.IO) {
+    suspend fun refreshMangaFromGitHub(forceFresh: Boolean = true): Result<List<MangaItem>> = withContext(Dispatchers.IO) {
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
             val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
-            Log.d(TAG, "Fetching works from GitHub Data repo: $owner/$repo (branch: $branch)")
+            if (forceFresh) {
+                GitHubNetworkModule.clearHttpCache()
+                loadedChaptersCache.clear()
+            }
+
+            Log.d(TAG, "Fetching works fresh from GitHub Data repo: $owner/$repo (branch: $branch, forceFresh: $forceFresh)")
 
             var worksJsonStr: String? = null
 
-            // Direct raw and CDN URLs for fastest & most reliable access
+            // Direct raw URLs with cache-busting for sub-second live updates
             val directUrls = listOf(
                 "https://raw.githubusercontent.com/$owner/$repo/$branch/data/works.json",
-                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/works.json",
                 "https://raw.githubusercontent.com/$owner/$repo/$branch/works.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/works.json",
                 "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/works.json"
             )
 
             for (url in directUrls) {
-                val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                val directResult = GitHubNetworkModule.fetchDirectRaw(url, forceFresh = forceFresh)
                 if (!directResult.isNullOrBlank()) {
                     val candidateMap = parseWorksJson(directResult)
                     if (candidateMap.isNotEmpty()) {
                         worksJsonStr = directResult
-                        Log.d(TAG, "Successfully retrieved works from mirror URL: $url")
+                        Log.d(TAG, "Successfully retrieved fresh works from: $url")
                         break
                     }
                 }
@@ -781,12 +787,12 @@ class MangaRepository(private val context: Context) {
                 return@withContext Result.success(_allMangaFlow.value)
             }
 
-            // Fetch info.json for each work in parallel
+            // Fetch info.json for each work in parallel with cache-busting
             val fullMangaList = coroutineScope {
                 worksMap.map { (key, workDto) ->
                     async {
                         val slug = workDto.slug ?: workDto.id ?: key
-                        val info = fetchSeriesInfoSafely(owner, repo, slug, branch)
+                        val info = fetchSeriesInfoSafely(owner, repo, slug, branch, forceFresh = forceFresh)
                         convertToMangaItem(slug, workDto, info)
                     }
                 }.awaitAll()
@@ -807,18 +813,19 @@ class MangaRepository(private val context: Context) {
         owner: String,
         repo: String,
         slug: String,
-        branch: String
+        branch: String,
+        forceFresh: Boolean = true
     ): SeriesInfoDto? = withContext(Dispatchers.IO) {
         val directUrls = listOf(
             "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$slug/info.json",
-            "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$slug/info.json",
             "https://raw.githubusercontent.com/$owner/$repo/$branch/$slug/info.json",
+            "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$slug/info.json",
             "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$slug/info.json"
         )
 
         for (url in directUrls) {
             try {
-                val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                val directResult = GitHubNetworkModule.fetchDirectRaw(url, forceFresh = forceFresh)
                 if (!directResult.isNullOrBlank()) {
                     val decodedJson = decodeGitHubContent(directResult)
                     val info = parseSeriesInfoDto(decodedJson)
@@ -944,15 +951,15 @@ class MangaRepository(private val context: Context) {
 
             val directUrls = listOf(
                 "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/$chapterNumber.json",
-                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$mangaId/$chapterNumber.json",
                 "https://raw.githubusercontent.com/$owner/$repo/$branch/$mangaId/$chapterNumber.json",
-                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$mangaId/$chapterNumber.json",
-                "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/chapters/$chapterNumber.json"
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/data/$mangaId/chapters/$chapterNumber.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/data/$mangaId/$chapterNumber.json",
+                "https://cdn.jsdelivr.net/gh/$owner/$repo@$branch/$mangaId/$chapterNumber.json"
             )
 
             for (url in directUrls) {
                 try {
-                    val directResult = GitHubNetworkModule.fetchDirectRaw(url)
+                    val directResult = GitHubNetworkModule.fetchDirectRaw(url, forceFresh = true)
                     if (!directResult.isNullOrBlank()) {
                         val decodedJson = decodeGitHubContent(directResult)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)

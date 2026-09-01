@@ -243,14 +243,14 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun startSilentAutoSyncLoop() {
         viewModelScope.launch {
-            // First immediate silent fetch
-            repository.refreshMangaFromGitHub()
+            // First immediate fresh fetch
+            repository.refreshMangaFromGitHub(forceFresh = true)
 
-            // Continuous silent background polling loop
+            // Continuous silent background polling loop (every 20s) with live cache-busting
             while (isActive) {
-                delay(30_000L) // poll every 30 seconds quietly in background
+                delay(20_000L)
                 try {
-                    repository.refreshMangaFromGitHub()
+                    repository.refreshMangaFromGitHub(forceFresh = true)
                 } catch (e: Exception) {
                     // Suppress any background blips to maintain uninterrupted user experience
                 }
@@ -265,7 +265,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshDataFromGitHub(showIndicator: Boolean = false) {
         viewModelScope.launch {
             if (showIndicator) _isRefreshing.value = true
-            repository.refreshMangaFromGitHub()
+            repository.refreshMangaFromGitHub(forceFresh = true)
             if (showIndicator) _isRefreshing.value = false
         }
     }
