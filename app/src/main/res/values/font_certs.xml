@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="com_google_android_gms_fonts_certs">
+        <item>@array/com_google_android_gms_fonts_certs_dev</item>
+        <item>@array/com_google_android_gms_fonts_certs_prod</item>
+    </array>
+    <string-array name="com_google_android_gms_fonts_certs_dev">
+        <item>
+            MIIEqDCCA5CgAwIBAgIJANWFuGx90071MA0GCSqGSIb3DQEBBAUAMIGUMQswCQYDVQQGEwJVUzETMBEG
+            A1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEQMA4GA1UEChMHR29vZ2xlMRAw
+            DgYDVQQLEwdBbmRyb2lkMRAwDgYDVQQDEwdBbmRyb2lkMCEwHAYJKoZIhvcNAQkBFg9hbmRyb2lkQGdv
+            b2dsZS5jb20wHhcNMDgxMDI5MTg0MzU1WhcNMDgxMDI5MTg0MzU1WjCBlDELMAkGA1UEBhMCVVMxEzAR
+            BgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxEDAOBgNVBAoTB0dvb2dsZTEQ
+            MA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDEhMB8GCSqGSIb3DQEJARYPYW5kcm9pZEBn
+            b29nbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyv+h2P6u7sS5q5xJmQdKkP7i
+            X0Fk7eL3y9GZ9M1O3i7s6h2x6k7l1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w
+            0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F
+            1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q
+            1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w
+            4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e
+            3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv
+            9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E
+            2w4w0eXv9q1n4j9e3F1Z8E2w4wIDAQAB
+        </item>
+    </string-array>
+    <string-array name="com_google_android_gms_fonts_certs_prod">
+        <item>
+            MIIEQzCCAyugAwIBAgIJAMLgh0ZydikFMA0GCSqGSIb3DQEBBQUAMHQxCzAJBgNVBAYTAlVTMRMwEQYD
+            VQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5j
+            LjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDAeFw0wODA4MjEyMzEzMzRaFw0zNTEy
+            MDcyMzEzMzRaMHQxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3Vu
+            dGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMH
+            QW5kcm9pZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKtWSPT2SXjvWi4rwQ/1N70n6l5d
+            Fk9P6dI/mE3q9aP1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3
+            F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9
+            q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2
+            w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9
+            e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4w0eXv9q1n4j9e3F1Z8E2w4wIDAQAB
+        </item>
+    </string-array>
+</resources>

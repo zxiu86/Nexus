@@ -1396,7 +1396,7 @@ fun UpdatesTabContent(
             }
         }
 
-        // What's New in v1.6 Header
+        // What's New in v1.6.2 Header
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1409,7 +1409,7 @@ fun UpdatesTabContent(
                         .background(NexusGold)
                 )
                 Text(
-                    text = "شرح مميزات وتحديثات الإصدار v1.6.1:",
+                    text = "شرح مميزات وتحديثات الإصدار v1.6.2:",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,
@@ -1419,13 +1419,13 @@ fun UpdatesTabContent(
             }
         }
 
-        // Feature 0: Package Signature & Conflict Resolution
+        // Feature 0: Amiri Arabic Font & Clean Header UI
         item {
             FeatureHighlightCard(
-                icon = Icons.Default.CheckCircle,
+                icon = Icons.Default.AutoAwesome,
                 iconTint = NexusGold,
-                title = "1. توحيد الحزمة والتوقيع (حل تعارض الحزم)",
-                description = "تم تحديث معرفات البناء والتوقيع لضمان التثبيت المباشر. (تنبيه: إذا ظهرت رسالة 'تعارض الحزمة' عند التثبيت لأول مرة، يرجى حذف النسخة التجريبية القديمة لمرة واحدة وتثبيت هذا الإصدار الموحد)."
+                title = "1. واجهة نقية بالخط الأميري (Amiri Font)",
+                description = "تم اعتماد الخط العربي الأميري الأصيل في كافة واجهات التطبيق والنصوص، مع تصميم هيدر نقي وبسيط يركز على شعار NEXUS والاعتماد الكامل على شريط التنقل السفلي."
             )
         }
 
@@ -1434,8 +1434,8 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.Lock,
                 iconTint = NexusGold,
-                title = "2. القراءة بدون اتصال مع الحماية الأمنية",
-                description = "يمكنك الآن تحميل أي فصل بضغطة زر وتخزينه محلياً لقراءته لاحقاً بدون إنترنت. يتم تشفير وحفظ صفحات الفصول في مجلدات التطبيق الخاصة المعزولة داخلياً لمنع استخراجها أو تسريبها خارج التطبيق."
+                title = "2. القراءة بدون اتصال مع التشفير والحماية",
+                description = "إمكانية تحميل أي فصل بضغطة زر وتخزينه محلياً للقراءة بدون إنترنت. يتم تشفير وحفظ صفحات الفصول في مجلدات التطبيق الخاصة المعزولة داخلياً لحماية المحتوى."
             )
         }
 
@@ -1445,7 +1445,7 @@ fun UpdatesTabContent(
                 icon = Icons.Default.Visibility,
                 iconTint = NexusOrange,
                 title = "3. وضع القراءة المغمور (Immersive Mode)",
-                description = "إخفاء تلقائي لشريط الحالة (Status Bar) وشريط التنقل السفلي أثناء القراءة لمنحك تجربة شاشة كاملة 100% بدون أي تشتيت، مع نقرة واحدة على الشاشة للتبديل بين إظهار وإخفاء القوائم والأزرار."
+                description = "إخفاء تلقائي لشريط الحالة وشريط التنقل أثناء القراءة لمنح تجربة شاشة كاملة 100% بدون أي تشتيت، مع نقرة واحدة على الشاشة للتبديل بين إظهار وإخفاء أدوات التحكم."
             )
         }
 
@@ -1455,7 +1455,7 @@ fun UpdatesTabContent(
                 icon = Icons.Default.ZoomIn,
                 iconTint = NexusGoldLight,
                 title = "4. التكبير والتصغير التفاعلي (Pinch-to-Zoom)",
-                description = "دعم كامل للتقريب بإصبعين والتحريك بسلاسة فائقة للتكبير على التفاصيل والنصوص الصغيرة داخل صفحات المانهوا والمانغا دون فقدان الدقة."
+                description = "دعم كامل للتقريب بإصبعين والتحريك بسلاسة فائقة للتكبير على أدق التفاصيل والنصوص داخل صفحات المانهوا والمانغا دون فقدان الجودة."
             )
         }
 
@@ -1464,8 +1464,8 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.Security,
                 iconTint = NexusOrangeLight,
-                title = "5. الحماية الأمنية لمنع التصوير (FLAG_SECURE)",
-                description = "حماية حقوق صانعي العمل والمترجمين من خلال منع لقطات الشاشة وتسجيل الفيديو أثناء قراءة الفصول لحماية المحتوى الحصري داخل التطبيق."
+                title = "5. الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE)",
+                description = "حماية حقوق صانعي العمل والمترجمين من خلال منع لقطات الشاشة وتسجيل الفيديو أثناء قراءة الفصول لحفظ المحتوى داخل التطبيق."
             )
         }
 
@@ -1474,8 +1474,8 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.History,
                 iconTint = NexusGold,
-                title = "6. سجل القراءة وتتبع التقدم الذكي",
-                description = "تحديد الفصول المقروءة تلقائياً، وتخزين آخر صفحة تم الوصول إليها مع التاريخ والوقت، وزر المتابعة السريعة لاستئناف القراءة فوراً."
+                title = "6. سجل القراءة وتتبع التقدم التلقائي",
+                description = "تحديد الفصول المقروءة تلقائياً وتخزين آخر صفحة تم الوصول إليها مع التاريخ والوقت، بالإضافة إلى زر المتابعة السريعة لاستئناف القراءة فوراً."
             )
         }
 
@@ -1485,7 +1485,7 @@ fun UpdatesTabContent(
                 icon = Icons.Default.Explore,
                 iconTint = NexusOrange,
                 title = "7. شريط التنقل السفلي الفاخر (Footer)",
-                description = "شريط تنقل أنيق وسلس في أسفل الشاشة يتيح لك التبديل السريع بين: الرئيسية، المفضلة، السجل، التحميلات، وقائمة التحديثات."
+                description = "شريط تنقل أنيق وسلس في أسفل الشاشة يتيح التبديل السريع بين: الرئيسية، المفضلة، السجل، التحميلات، وقائمة التحديثات."
             )
         }
     }

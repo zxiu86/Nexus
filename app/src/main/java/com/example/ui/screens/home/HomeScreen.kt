@@ -51,7 +51,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,7 +74,6 @@ import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
 import com.example.ui.components.AppUpdateDialog
 import com.example.ui.components.FavoritesPopupDialog
-import com.example.ui.components.NexusHamburgerMenuSheet
 import com.example.ui.components.NexusMangaImage
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
@@ -114,17 +112,15 @@ fun HomeScreen(
     onDismissUpdateDialog: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var showHamburgerMenu by remember { mutableStateOf(false) }
     var showFavoritesPopup by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // App Header Brand & Actions
+            // App Header Brand (Nexus only)
             NexusHomeTopBar(
                 selectedTab = uiState.selectedTab,
                 favoritesCount = uiState.favorites.size,
                 hasUpdate = uiState.updateInfo.updateAvailable,
-                onHamburgerClick = { showHamburgerMenu = true },
                 onFavoritesClick = { onTabSelected(1) },
                 onUpdateBadgeClick = onTriggerUpdate
             )
@@ -260,39 +256,6 @@ fun HomeScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Hamburger Menu Bottom Sheet
-        if (showHamburgerMenu) {
-            NexusHamburgerMenuSheet(
-                favoritesCount = uiState.favorites.size,
-                updateInfo = uiState.updateInfo,
-                onOpenFavorites = {
-                    showHamburgerMenu = false
-                    onTabSelected(1)
-                },
-                onOpenHistory = {
-                    showHamburgerMenu = false
-                    onTabSelected(2)
-                },
-                onOpenDownloads = {
-                    showHamburgerMenu = false
-                    onTabSelected(3)
-                },
-                onOpenUpdates = {
-                    showHamburgerMenu = false
-                    onTabSelected(4)
-                },
-                onCheckCloudUpdates = {
-                    showHamburgerMenu = false
-                    onCheckCloudUpdates()
-                },
-                onRefreshData = {
-                    showHamburgerMenu = false
-                    onRefresh()
-                },
-                onDismiss = { showHamburgerMenu = false }
-            )
-        }
-
         // Favorites Popup Dialog
         if (showFavoritesPopup) {
             FavoritesPopupDialog(
@@ -319,7 +282,6 @@ fun NexusHomeTopBar(
     selectedTab: Int = 0,
     favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
-    onHamburgerClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onUpdateBadgeClick: () -> Unit = {}
 ) {
@@ -330,29 +292,11 @@ fun NexusHomeTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Right Section: Hamburger Menu Icon + App Logo & Title
+        // App Brand & Name ONLY
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Hamburger Menu Button
-            IconButton(
-                onClick = onHamburgerClick,
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceVariantDark)
-                    .border(1.dp, NexusGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                    .testTag("hamburger_menu_button")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "القائمة الرئيسية",
-                    tint = NexusGoldLight,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
             // Brand Logo Box
             Box(
                 modifier = Modifier
@@ -384,7 +328,7 @@ fun NexusHomeTopBar(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.2.sp,
                             color = NexusGoldLight,
-                            fontSize = 17.sp
+                            fontSize = 18.sp
                         )
                     )
                     Surface(
@@ -393,7 +337,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.6.1",
+                            text = "v1.6.2",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
