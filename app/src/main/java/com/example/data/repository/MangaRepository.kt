@@ -1075,17 +1075,18 @@ class MangaRepository(private val context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.6)
+     * Checks GitHub Releases for In-App Updates against current version (1.6.1)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.6"
-        val v16Changelog = "✨ مميزات الإصدار الجديد v1.6:\n" +
-                "• 🔒 القراءة بدون اتصال والتنزيل المشفر: تحميل الفصول وحفظها بأمان داخل مساحة التطبيق المحمية لمنع استخراجها أو سرقتها خارج التطبيق.\n" +
+        val currentVersion = "1.6.1"
+        val v16Changelog = "✨ مميزات وتحديثات الإصدار v1.6.1:\n" +
+                "• 🔧 تحسينات التوافق وتحديث الحزم (Fix Package Conflict): توحيد معايير الحزمة والتوقيع لضمان التثبيت المباشر والسلس.\n" +
+                "• 🔒 القراءة بدون اتصال والتنزيل المشفر: تحميل الفصول وحفظها بأمان داخل مساحة التطبيق المحمية لمنع استخراجها أو تسريبها.\n" +
                 "• 🛡️ حماية المحتوى (Screen Protection): منع لقطات الشاشة وتسجيل الفيديو داخل قارئ الفصول للحفاظ على حقوق الأعمال.\n" +
                 "• 🔍 النمط المغمور والتكبير التفاعلي: إخفاء أشرطة النظام بالكامل أثناء القراءة مع دعم التقريب والتركيز باللمس (Pinch-to-zoom).\n" +
                 "• 📊 تتبع التقدم وسجل القراءة: حفظ رقم الصفحة تلقائياً مع سجل زمني دقيق وإمكانية استئناف القراءة بنقرة واحدة.\n" +
-                "• 🧭 شريط تنقل سفلي عصري: فوتر حديث وأنيق مع أيقونات احترافية للتبديل السريع بين (الرئيسية، المفضلة، السجل، التحميلات، التحديثات)."
+                "• 🧭 شريط تنقل سفلي عصري: فوتر حديث وأنيق مع أيقونات احترافية للتبديل السريع بين الأقسام."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()

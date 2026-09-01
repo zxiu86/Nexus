@@ -393,7 +393,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.6",
+                            text = "v1.6.1",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,

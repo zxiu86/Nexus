@@ -170,7 +170,7 @@ fun AppUpdateDialog(
 
                 // Release notes box
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.6):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.6.1):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight
@@ -199,7 +199,7 @@ fun AppUpdateDialog(
                         val notes = if (updateInfo.releaseNotes.isNotBlank()) {
                             updateInfo.releaseNotes
                         } else {
-                            "• القراءة بدون إنترنت: إمكانية تحميل الفصول مسبقاً وتخزينها محلياً مشفرة.\n• وضع القراءة المغمور (Immersive Mode): إخفاء شريط الحالة وشريط التنقل.\n• التكبير والتصغير التفاعلي (Pinch-to-zoom) مع التحريك.\n• الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE).\n• تتبع التقدم وسجل القراءة الذكي لآخر صفحة تم التوقف عندها.\n• شريط تنقل سفلي فاخر (Footer) للتنقل السريع بين الرئيسية، المفضلة، السجل، التحميلات، والتحديثات."
+                            "• حل مشكلة تعارض الحزمة: توافق تام ومعايير توقيع موحدة للتثبيت التلقائي.\n• القراءة بدون إنترنت: إمكانية تحميل الفصول مسبقاً وتخزينها محلياً مشفرة.\n• وضع القراءة المغمور (Immersive Mode): إخفاء شريط الحالة وشريط التنقل.\n• التكبير والتصغير التفاعلي (Pinch-to-zoom) مع التحريك.\n• الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE).\n• تتبع التقدم وسجل القراءة الذكي لآخر صفحة تم التوقف عندها.\n• شريط تنقل سفلي فاخر (Footer) للتنقل السريع بين الأقسام."
                         }
                         Text(
                             text = notes,

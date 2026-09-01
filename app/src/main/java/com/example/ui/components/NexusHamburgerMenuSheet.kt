@@ -226,9 +226,9 @@ fun NexusHamburgerMenuSheet(
                 icon = Icons.Default.AutoAwesome,
                 iconColor = NexusGold,
                 iconBgColor = NexusGold.copy(alpha = 0.15f),
-                title = "مركز التحديثات ومميزات v1.6",
+                title = "مركز التحديثات ومميزات v1.6.1",
                 subtitle = "شرح كل الميزات الجديدة وتنزيل الـ APK",
-                badgeText = if (updateInfo.updateAvailable) "تحديث متوفر! 🚀" else "v1.6 جديد",
+                badgeText = if (updateInfo.updateAvailable) "تحديث متوفر! 🚀" else "v1.6.1 جديد",
                 badgeColor = if (updateInfo.updateAvailable) NexusOrange else NexusGoldLight,
                 onClick = {
                     onDismiss()

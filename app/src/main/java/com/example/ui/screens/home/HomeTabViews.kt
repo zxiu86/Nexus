@@ -1409,7 +1409,7 @@ fun UpdatesTabContent(
                         .background(NexusGold)
                 )
                 Text(
-                    text = "شرح مميزات الإصدار الجديد v1.6:",
+                    text = "شرح مميزات وتحديثات الإصدار v1.6.1:",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,
@@ -1419,12 +1419,22 @@ fun UpdatesTabContent(
             }
         }
 
+        // Feature 0: Package Signature & Conflict Resolution
+        item {
+            FeatureHighlightCard(
+                icon = Icons.Default.CheckCircle,
+                iconTint = NexusGold,
+                title = "1. توحيد الحزمة والتوقيع (حل تعارض الحزم)",
+                description = "تم تحديث معرفات البناء والتوقيع لضمان التثبيت المباشر. (تنبيه: إذا ظهرت رسالة 'تعارض الحزمة' عند التثبيت لأول مرة، يرجى حذف النسخة التجريبية القديمة لمرة واحدة وتثبيت هذا الإصدار الموحد)."
+            )
+        }
+
         // Feature 1: Offline Reading with Content Protection
         item {
             FeatureHighlightCard(
                 icon = Icons.Default.Lock,
                 iconTint = NexusGold,
-                title = "1. القراءة بدون اتصال مع الحماية الأمنية",
+                title = "2. القراءة بدون اتصال مع الحماية الأمنية",
                 description = "يمكنك الآن تحميل أي فصل بضغطة زر وتخزينه محلياً لقراءته لاحقاً بدون إنترنت. يتم تشفير وحفظ صفحات الفصول في مجلدات التطبيق الخاصة المعزولة داخلياً لمنع استخراجها أو تسريبها خارج التطبيق."
             )
         }
@@ -1434,7 +1444,7 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.Visibility,
                 iconTint = NexusOrange,
-                title = "2. وضع القراءة المغمور (Immersive Mode)",
+                title = "3. وضع القراءة المغمور (Immersive Mode)",
                 description = "إخفاء تلقائي لشريط الحالة (Status Bar) وشريط التنقل السفلي أثناء القراءة لمنحك تجربة شاشة كاملة 100% بدون أي تشتيت، مع نقرة واحدة على الشاشة للتبديل بين إظهار وإخفاء القوائم والأزرار."
             )
         }
@@ -1444,7 +1454,7 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.ZoomIn,
                 iconTint = NexusGoldLight,
-                title = "3. التكبير والتصغير التفاعلي (Pinch-to-Zoom)",
+                title = "4. التكبير والتصغير التفاعلي (Pinch-to-Zoom)",
                 description = "دعم كامل للتقريب بإصبعين والتحريك بسلاسة فائقة للتكبير على التفاصيل والنصوص الصغيرة داخل صفحات المانهوا والمانغا دون فقدان الدقة."
             )
         }
@@ -1454,7 +1464,7 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.Security,
                 iconTint = NexusOrangeLight,
-                title = "4. الحماية الأمنية لمنع التصوير (FLAG_SECURE)",
+                title = "5. الحماية الأمنية لمنع التصوير (FLAG_SECURE)",
                 description = "حماية حقوق صانعي العمل والمترجمين من خلال منع لقطات الشاشة وتسجيل الفيديو أثناء قراءة الفصول لحماية المحتوى الحصري داخل التطبيق."
             )
         }
@@ -1464,7 +1474,7 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.History,
                 iconTint = NexusGold,
-                title = "5. سجل القراءة وتتبع التقدم الذكي",
+                title = "6. سجل القراءة وتتبع التقدم الذكي",
                 description = "تحديد الفصول المقروءة تلقائياً، وتخزين آخر صفحة تم الوصول إليها مع التاريخ والوقت، وزر المتابعة السريعة لاستئناف القراءة فوراً."
             )
         }
@@ -1474,7 +1484,7 @@ fun UpdatesTabContent(
             FeatureHighlightCard(
                 icon = Icons.Default.Explore,
                 iconTint = NexusOrange,
-                title = "6. شريط التنقل السفلي الفاخر (Footer)",
+                title = "7. شريط التنقل السفلي الفاخر (Footer)",
                 description = "شريط تنقل أنيق وسلس في أسفل الشاشة يتيح لك التبديل السريع بين: الرئيسية، المفضلة، السجل، التحميلات، وقائمة التحديثات."
             )
         }
