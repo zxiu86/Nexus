@@ -397,6 +397,26 @@ class MangaRepository(private val context: Context) {
         }
     }
 
+    private fun clearStaleClosedChapterCache(mangaId: String, chapterNumber: Int) {
+        val cacheKey = "${mangaId}_$chapterNumber"
+        val cached = loadedChaptersCache[cacheKey]
+        if (cached?.isClosed == true) {
+            loadedChaptersCache.remove(cacheKey)
+        }
+        try {
+            val cacheFile = java.io.File(cacheDir, "nexus_ch_${mangaId}_${chapterNumber}.json")
+            if (cacheFile.exists()) {
+                val json = cacheFile.readText()
+                if (json.contains("\"is_closed\":true") || json.contains("\"is_closed\": true") ||
+                    json.contains("\"isClosed\":true") || json.contains("\"isClosed\": true")) {
+                    cacheFile.delete()
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Error clearing closed chapter cache: ${e.message}")
+        }
+    }
+
     private fun loadPreferences() {
         val favs = prefs.getStringSet("favorites", emptySet()) ?: emptySet()
         _favoritesFlow.value = favs
@@ -884,6 +904,10 @@ class MangaRepository(private val context: Context) {
         val rawChapters = seriesInfo?.chapters ?: emptyList()
         val chaptersList = rawChapters.map { chSummary ->
             val isClosed = chSummary.isClosed ?: false
+            if (!isClosed) {
+                // If chapter is opened now in info.json, purge any stale closed caches
+                clearStaleClosedChapterCache(slug, chSummary.number)
+            }
             Chapter(
                 id = "${slug}_ch_${chSummary.number}",
                 mangaId = slug,
@@ -931,10 +955,10 @@ class MangaRepository(private val context: Context) {
     /**
      * Retrieves chapter pages.
      * 1. Checks if chapter is downloaded locally in private storage -> serves offline immediately!
-     * 2. Checks memory cache
+     * 2. Checks memory cache (never serves stale closed state without checking remote)
      * 3. Checks remote GitHub data/[series-slug]/[chapter].json
      */
-    suspend fun getChapterWithPages(mangaId: String, chapterNumber: Int): Chapter? =
+    suspend fun getChapterWithPages(mangaId: String, chapterNumber: Int, forceFresh: Boolean = false): Chapter? =
         withContext(Dispatchers.IO) {
             val cacheKey = "${mangaId}_$chapterNumber"
 
@@ -950,6 +974,7 @@ class MangaRepository(private val context: Context) {
                     number = chapterNumber,
                     title = downloaded.chapterTitle.ifBlank { "الفصل $chapterNumber" },
                     releaseDate = "محفوظ بالجهاز",
+                    isClosed = false,
                     pagesCount = pages.size,
                     pages = pages
                 )
@@ -957,9 +982,16 @@ class MangaRepository(private val context: Context) {
                 return@withContext localChapter
             }
 
-            // 2. Check memory cache
-            if (loadedChaptersCache.containsKey(cacheKey)) {
-                return@withContext loadedChaptersCache[cacheKey]
+            val currentManga = getMangaById(mangaId)
+            val currentSummaryChapter = currentManga?.chapters?.find { it.number == chapterNumber }
+            val isSummaryMarkedClosed = currentSummaryChapter?.isClosed == true
+
+            // 2. Check memory cache (NEVER return closed from memory cache, and obey forceFresh)
+            if (!forceFresh && loadedChaptersCache.containsKey(cacheKey)) {
+                val cached = loadedChaptersCache[cacheKey]
+                if (cached != null && !cached.isClosed && cached.pages.isNotEmpty()) {
+                    return@withContext cached
+                }
             }
 
             val owner = GitHubNetworkModule.getConfiguredOwner()
@@ -980,45 +1012,48 @@ class MangaRepository(private val context: Context) {
                     if (!directResult.isNullOrBlank()) {
                         val decodedJson = decodeGitHubContent(directResult)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
-                        if (detail?.isClosed == true) {
-                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                            val chapter = Chapter(
-                                id = "${mangaId}_ch_$chapterNumber",
-                                mangaId = mangaId,
-                                number = chapterNumber,
-                                title = detail.title ?: "الفصل $chapterNumber",
-                                releaseDate = "تحت الصيانة",
-                                isClosed = true,
-                                pagesCount = 1,
-                                pages = listOf(
-                                    ChapterPage(
-                                        pageNumber = 1,
-                                        imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
-                                        caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                        if (detail != null) {
+                            if (detail.isClosed == true) {
+                                saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                                val chapter = Chapter(
+                                    id = "${mangaId}_ch_$chapterNumber",
+                                    mangaId = mangaId,
+                                    number = chapterNumber,
+                                    title = detail.title ?: "الفصل $chapterNumber",
+                                    releaseDate = "تحت الصيانة",
+                                    isClosed = true,
+                                    pagesCount = 1,
+                                    pages = listOf(
+                                        ChapterPage(
+                                            pageNumber = 1,
+                                            imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                                            caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                                        )
                                     )
                                 )
-                            )
-                            loadedChaptersCache[cacheKey] = chapter
-                            return@withContext chapter
-                        }
-                        val imageList = detail?.images ?: detail?.pages ?: emptyList()
-                        if (imageList.isNotEmpty()) {
-                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                            val pages = imageList.mapIndexed { idx, imgUrl ->
-                                ChapterPage(pageNumber = idx + 1, imageUrl = imgUrl, caption = "صفحة ${idx + 1}")
+                                loadedChaptersCache[cacheKey] = chapter
+                                return@withContext chapter
+                            } else {
+                                val imageList = detail.images ?: detail.pages ?: emptyList()
+                                if (imageList.isNotEmpty()) {
+                                    saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                                    val pages = imageList.mapIndexed { idx, imgUrl ->
+                                        ChapterPage(pageNumber = idx + 1, imageUrl = imgUrl, caption = "صفحة ${idx + 1}")
+                                    }
+                                    val chapter = Chapter(
+                                        id = "${mangaId}_ch_$chapterNumber",
+                                        mangaId = mangaId,
+                                        number = chapterNumber,
+                                        title = detail.title ?: "الفصل $chapterNumber",
+                                        releaseDate = "اليوم",
+                                        isClosed = false,
+                                        pagesCount = pages.size,
+                                        pages = pages
+                                    )
+                                    loadedChaptersCache[cacheKey] = chapter
+                                    return@withContext chapter
+                                }
                             }
-                            val chapter = Chapter(
-                                id = "${mangaId}_ch_$chapterNumber",
-                                mangaId = mangaId,
-                                number = chapterNumber,
-                                title = detail?.title ?: "الفصل $chapterNumber",
-                                releaseDate = "اليوم",
-                                isClosed = false,
-                                pagesCount = pages.size,
-                                pages = pages
-                            )
-                            loadedChaptersCache[cacheKey] = chapter
-                            return@withContext chapter
                         }
                     }
                 } catch (e: Exception) {
@@ -1043,57 +1078,59 @@ class MangaRepository(private val context: Context) {
                         val decodedJson = decodeGitHubContent(rawJson)
                         val detail = parseChapterDetailDto(decodedJson, mangaId, chapterNumber)
 
-                        if (detail?.isClosed == true) {
-                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                            val chapter = Chapter(
-                                id = "${mangaId}_ch_$chapterNumber",
-                                mangaId = mangaId,
-                                number = chapterNumber,
-                                title = detail.title ?: "الفصل $chapterNumber",
-                                releaseDate = "تحت الصيانة",
-                                isClosed = true,
-                                pagesCount = 1,
-                                pages = listOf(
-                                    ChapterPage(
-                                        pageNumber = 1,
-                                        imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
-                                        caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                        if (detail != null) {
+                            if (detail.isClosed == true) {
+                                saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                                val chapter = Chapter(
+                                    id = "${mangaId}_ch_$chapterNumber",
+                                    mangaId = mangaId,
+                                    number = chapterNumber,
+                                    title = detail.title ?: "الفصل $chapterNumber",
+                                    releaseDate = "تحت الصيانة",
+                                    isClosed = true,
+                                    pagesCount = 1,
+                                    pages = listOf(
+                                        ChapterPage(
+                                            pageNumber = 1,
+                                            imageRes = com.example.R.drawable.chapter_closed_notice_1788280703973,
+                                            caption = "هذا الفصل تحت الصيانة وإعادة الترجمة"
+                                        )
                                     )
                                 )
-                            )
-                            loadedChaptersCache[cacheKey] = chapter
-                            return@withContext chapter
-                        }
+                                loadedChaptersCache[cacheKey] = chapter
+                                return@withContext chapter
+                            } else {
+                                val imageList = if (!detail.images.isNullOrEmpty()) {
+                                    detail.images!!
+                                } else if (!detail.pages.isNullOrEmpty()) {
+                                    detail.pages!!
+                                } else {
+                                    emptyList()
+                                }
 
-                        val imageList = if (!detail?.images.isNullOrEmpty()) {
-                            detail!!.images!!
-                        } else if (!detail?.pages.isNullOrEmpty()) {
-                            detail!!.pages!!
-                        } else {
-                            emptyList()
-                        }
-
-                        if (imageList.isNotEmpty()) {
-                            saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
-                            val pages = imageList.mapIndexed { idx, url ->
-                                ChapterPage(
-                                    pageNumber = idx + 1,
-                                    imageUrl = url,
-                                    caption = "صفحة ${idx + 1}"
-                                )
+                                if (imageList.isNotEmpty()) {
+                                    saveChapterDetailToDiskCache(mangaId, chapterNumber, decodedJson)
+                                    val pages = imageList.mapIndexed { idx, url ->
+                                        ChapterPage(
+                                            pageNumber = idx + 1,
+                                            imageUrl = url,
+                                            caption = "صفحة ${idx + 1}"
+                                        )
+                                    }
+                                    val chapter = Chapter(
+                                        id = "${mangaId}_ch_$chapterNumber",
+                                        mangaId = mangaId,
+                                        number = chapterNumber,
+                                        title = detail.title ?: "الفصل $chapterNumber",
+                                        releaseDate = "اليوم",
+                                        isClosed = false,
+                                        pagesCount = pages.size,
+                                        pages = pages
+                                    )
+                                    loadedChaptersCache[cacheKey] = chapter
+                                    return@withContext chapter
+                                }
                             }
-                            val chapter = Chapter(
-                                id = "${mangaId}_ch_$chapterNumber",
-                                mangaId = mangaId,
-                                number = chapterNumber,
-                                title = detail?.title ?: "الفصل $chapterNumber",
-                                releaseDate = "اليوم",
-                                isClosed = false,
-                                pagesCount = pages.size,
-                                pages = pages
-                            )
-                            loadedChaptersCache[cacheKey] = chapter
-                            return@withContext chapter
                         }
                     }
                 } catch (e: Exception) {
@@ -1103,7 +1140,7 @@ class MangaRepository(private val context: Context) {
 
             // Check if available in disk cache
             val cachedDetail = loadChapterDetailFromDiskCache(mangaId, chapterNumber)
-            if (cachedDetail?.isClosed == true) {
+            if (cachedDetail?.isClosed == true && isSummaryMarkedClosed) {
                 val chapter = Chapter(
                     id = "${mangaId}_ch_$chapterNumber",
                     mangaId = mangaId,
@@ -1157,9 +1194,9 @@ class MangaRepository(private val context: Context) {
             // Fallback to local chapter representation if cached
             val manga = getMangaById(mangaId)
             val fallbackChapter = manga?.chapters?.find { it.number == chapterNumber }
-            if (fallbackChapter != null && (fallbackChapter.pages.isNotEmpty() || fallbackChapter.isClosed)) {
-                val finalChapter = if (fallbackChapter.isClosed && fallbackChapter.pages.isEmpty()) {
-                    fallbackChapter.copy(
+            if (fallbackChapter != null) {
+                if (fallbackChapter.isClosed) {
+                    val finalChapter = fallbackChapter.copy(
                         pagesCount = 1,
                         pages = listOf(
                             ChapterPage(
@@ -1169,21 +1206,25 @@ class MangaRepository(private val context: Context) {
                             )
                         )
                     )
-                } else fallbackChapter
-                loadedChaptersCache[cacheKey] = finalChapter
-                return@withContext finalChapter
+                    loadedChaptersCache[cacheKey] = finalChapter
+                    return@withContext finalChapter
+                } else if (fallbackChapter.pages.isNotEmpty()) {
+                    loadedChaptersCache[cacheKey] = fallbackChapter
+                    return@withContext fallbackChapter
+                }
             }
 
             null
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.7.1)
+     * Checks GitHub Releases for In-App Updates against current version (1.7.2)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.7.1"
-        val v16Changelog = "✨ مميزات وتحديثات الإصدار v1.7.1:\n" +
+        val currentVersion = "1.7.2"
+        val v16Changelog = "✨ مميزات وتحديثات الإصدار v1.7.2:\n" +
+                "• 🔓 معالجة وتحديث حالة الفصول المغلقة فوراً: مزامنة وإلغاء شاشة الصيانة تلقائياً عند فتح ونشر الفصول على جيت هوب.\n" +
                 "• 🖋️ تشغيل وتضمين الخط العربي الأميري (Amiri Font): يعمل الآن بشكل فوري ومباشر أوفلاين على كافة واجهات ونصوص التطبيق.\n" +
                 "• 🚀 سلاسة تامة وإلغاء اللاج والتأخير: تحسين سرعة التنقل وتقليب الصفحات داخل القارئ وتجربة تصفح سريعة 60/120 إطاراً في الثانية.\n" +
                 "• ⚡ التحديث الفوري وتجاوز الكاش (Cache Busting): تحميل مباشر وتلقائي لأحدث الأعمال والفصول المرفوعة على جيت هوب بدون أي انتظار أو تأخير.\n" +
@@ -1191,8 +1232,7 @@ class MangaRepository(private val context: Context) {
                 "• 🔒 القراءة بدون اتصال والتنزيل المشفر: إمكانية تحميل الفصول وقراءتها بدون إنترنت مع حماية كاملة للمحتوى.\n" +
                 "• 🛡️ حماية المحتوى والخصوصية: منع لقطات الشاشة وتسجيل الفيديو داخل قارئ الفصول لحفظ حقوق الأعمال.\n" +
                 "• 🔍 وضع القراءة المغمور والتكبير التفاعلي: شاشة كاملة 100% مع دعم التقريب والتحريك باللمس.\n" +
-                "• 📊 سجل القراءة وتتبع التقدم التلقائي: حفظ موضع القراءة والصفحة بدقة مع إمكانية المتابعة الفورية.\n" +
-                "• 🧭 شريط تنقل سفلي فاخر: تبديل سريع بين الرئيسية، المفضلة، السجل، التحميلات، والتحديثات."
+                "• 📊 سجل القراءة وتتبع التقدم التلقائي: حفظ موضع القراءة والصفحة بدقة مع إمكانية المتابعة الفورية."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()

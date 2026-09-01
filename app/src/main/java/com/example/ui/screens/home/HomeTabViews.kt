@@ -1396,7 +1396,7 @@ fun UpdatesTabContent(
             }
         }
 
-        // What's New in v1.7.1 Header
+        // What's New in v1.7.2 Header
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1409,7 +1409,7 @@ fun UpdatesTabContent(
                         .background(NexusGold)
                 )
                 Text(
-                    text = "شرح مميزات وتحديثات الإصدار v1.7.1:",
+                    text = "شرح مميزات وتحديثات الإصدار v1.7.2:",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,

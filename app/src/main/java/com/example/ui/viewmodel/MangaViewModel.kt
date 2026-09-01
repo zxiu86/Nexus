@@ -420,7 +420,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --- Reader Screen Logic ---
-    fun loadChapter(mangaId: String, chapterNumber: Int) {
+    fun loadChapter(mangaId: String, chapterNumber: Int, forceFresh: Boolean = true) {
         val manga = repository.getMangaById(mangaId) ?: return
         val isDownloaded = repository.isChapterDownloaded(mangaId, chapterNumber)
         val lastSavedPage = repository.getLastReadPage(mangaId, chapterNumber)
@@ -438,14 +438,14 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         viewModelScope.launch {
-            val fullChapter = repository.getChapterWithPages(mangaId, chapterNumber)
+            val fullChapter = repository.getChapterWithPages(mangaId, chapterNumber, forceFresh = forceFresh)
             _readerUiState.value = _readerUiState.value.copy(
                 currentChapter = fullChapter,
                 isLoadingPages = false,
                 isDownloaded = repository.isChapterDownloaded(mangaId, chapterNumber)
             )
 
-            if (fullChapter != null) {
+            if (fullChapter != null && !fullChapter.isClosed) {
                 repository.recordReadingProgress(
                     mangaId = manga.id,
                     mangaTitle = manga.titleAr,
