@@ -1,5 +1,9 @@
 package com.example.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -39,7 +43,25 @@ fun NexusNavGraph(
         NavHost(
             navController = navController,
             startDestination = NexusDestinations.HOME,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize(),
+            enterTransition = {
+                fadeIn(animationSpec = tween(220)) + slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(220)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(180))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(220))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(180)) + slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(220)
+                )
+            }
         ) {
             // Screen 1: Home Screen (الصفحة الرئيسية)
             composable(NexusDestinations.HOME) {

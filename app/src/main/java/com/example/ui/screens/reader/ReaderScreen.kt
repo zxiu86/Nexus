@@ -11,7 +11,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -93,7 +92,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
@@ -216,7 +216,7 @@ fun ReaderScreen(
             .background(BackgroundDark)
             .testTag("reader_screen_container")
     ) {
-        // Continuous Webtoon Vertical Reader with Pinch-to-zoom
+        // Continuous Webtoon Vertical Reader with Native Smooth 120Hz Scrolling & Zoom
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -226,34 +226,29 @@ fun ReaderScreen(
                     translationX = offset.x
                     translationY = offset.y
                 }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(1f, 3.5f)
-                        if (scale > 1f) {
-                            val maxOffset = (scale - 1f) * 400f
-                            offset = Offset(
-                                x = (offset.x + pan.x).coerceIn(-maxOffset, maxOffset),
-                                y = (offset.y + pan.y).coerceIn(-maxOffset, maxOffset)
-                            )
-                        } else {
-                            offset = Offset.Zero
-                        }
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            if (scale > 1f) {
-                                scale = 1f
-                                offset = Offset.Zero
-                            } else {
-                                scale = 2f
+                .then(
+                    if (scale > 1f) {
+                        Modifier.pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1f, 3.5f)
+                                if (scale > 1f) {
+                                    val maxOffset = (scale - 1f) * 400f
+                                    offset = Offset(
+                                        x = (offset.x + pan.x).coerceIn(-maxOffset, maxOffset),
+                                        y = (offset.y + pan.y).coerceIn(-maxOffset, maxOffset)
+                                    )
+                                } else {
+                                    offset = Offset.Zero
+                                }
                             }
-                        },
-                        onTap = {
-                            showControls = !showControls
                         }
-                    )
+                    } else Modifier
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    showControls = !showControls
                 }
         ) {
             LazyColumn(
@@ -748,7 +743,7 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
 }
 
 /**
- * Single Comic Page item in continuous webtoon scroll
+ * Single Comic Page item in continuous webtoon scroll with instant memory-cached rendering
  */
 @Composable
 fun ComicPageItem(
@@ -763,75 +758,16 @@ fun ComicPageItem(
             .background(Color.Black)
     ) {
         if (!imageUrl.isNullOrBlank()) {
-            SubcomposeAsyncImage(
+            AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(imageUrl)
                     .crossfade(true)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 contentDescription = "صفحة $pageNumber من $totalPages",
                 contentScale = ContentScale.FillWidth,
-                modifier = Modifier.fillMaxWidth(),
-                loading = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(320.dp)
-                            .background(SurfaceCard.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(28.dp),
-                                color = NexusGold,
-                                strokeWidth = 2.5.dp
-                            )
-                            Text(
-                                text = "جاري تحميل صفحة $pageNumber...",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = TextTertiary,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-                },
-                error = {
-                    if (pageRes != null && pageRes != 0) {
-                        Image(
-                            painter = painterResource(id = pageRes),
-                            contentDescription = "صفحة $pageNumber من $totalPages",
-                            contentScale = ContentScale.FillWidth,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp)
-                                .background(SurfaceCard),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                                    contentDescription = null,
-                                    tint = TextTertiary,
-                                    modifier = Modifier.size(36.dp)
-                                )
-                                Text(
-                                    text = "تعذر تحميل الصفحة $pageNumber",
-                                    style = MaterialTheme.typography.labelMedium.copy(color = TextSecondary)
-                                )
-                            }
-                        }
-                    }
-                }
+                modifier = Modifier.fillMaxWidth()
             )
         } else if (pageRes != null && pageRes != 0) {
             Image(

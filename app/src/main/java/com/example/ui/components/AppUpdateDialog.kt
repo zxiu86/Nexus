@@ -170,7 +170,7 @@ fun AppUpdateDialog(
 
                 // Release notes box
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.7):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.7.1):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight
@@ -199,7 +199,7 @@ fun AppUpdateDialog(
                         val notes = if (updateInfo.releaseNotes.isNotBlank()) {
                             updateInfo.releaseNotes
                         } else {
-                            "• حل مشكلة تعارض الحزمة: ترقية التطبيق للإصدار v1.7 لضمان التثبيت المباشر.\n• التحديث اللحظي وتجاوز الكاش (Cache Busting): تحميل فوري للأعمال والفصول من جيت هوب.\n• زر المزامنة السريعة في الهيدر العلوي.\n• الخط العربي الأميري في كافة واجهات التطبيق.\n• القراءة بدون إنترنت: تحميل الفصول مشفرة وآمنة.\n• وضع القراءة المغمور والتكبير التفاعلي (Pinch-to-zoom).\n• الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE).\n• تتبع التقدم وسجل القراءة التلقائي.\n• شريط تنقل سفلي فاخر (Footer) للتنقل السريع بين الأقسام."
+                            "• الخط العربي الأميري المدمج: يعمل فورياً أوفلاين على جميع النصوص.\n• سلاسة فائقة في تقليب الصفحات وإلغاء اللاج نهائياً.\n• كسر الكاش والمزامنة اللحظية مع جيت هوب.\n• القراءة بدون إنترنت والتنزيل المشفر.\n• وضع القراءة المغمور بشاشة كاملة.\n• حماية المحتوى ومنع لقطات الشاشة."
                         }
                         Text(
                             text = notes,
