@@ -63,8 +63,20 @@ fun NexusNavGraph(
                     onCategorySelect = { cat ->
                         viewModel.onCategorySelected(cat)
                     },
+                    onTabSelected = { tabIdx ->
+                        viewModel.selectTab(tabIdx)
+                    },
+                    onDeleteHistoryItem = { mId ->
+                        viewModel.deleteHistoryItem(mId)
+                    },
+                    onClearAllHistory = {
+                        viewModel.clearAllHistory()
+                    },
+                    onDeleteDownloadedChapter = { mId, chNum ->
+                        viewModel.deleteDownloadedChapter(mId, chNum)
+                    },
                     onRefresh = {
-                        viewModel.refreshDataFromGitHub()
+                        viewModel.refreshDataFromGitHub(showIndicator = true)
                     },
                     onTriggerUpdate = {
                         viewModel.triggerAppUpdate(context)
@@ -117,6 +129,14 @@ fun NexusNavGraph(
                     },
                     onPreviousBatch = {
                         viewModel.previousBatch()
+                    },
+                    onDownloadChapter = { chapter ->
+                        detailsState.manga?.let { m ->
+                            viewModel.downloadChapter(m, chapter)
+                        }
+                    },
+                    onDeleteDownloadedChapter = { chNum ->
+                        viewModel.deleteDownloadedChapter(mangaId, chNum)
                     }
                 )
             }
@@ -161,6 +181,9 @@ fun NexusNavGraph(
                     },
                     onSetQuickJumpOpen = { open ->
                         viewModel.setQuickJumpSheetOpen(open)
+                    },
+                    onRecordPageProgress = { page, total ->
+                        viewModel.recordReadingProgress(mangaId, page, total)
                     }
                 )
             }

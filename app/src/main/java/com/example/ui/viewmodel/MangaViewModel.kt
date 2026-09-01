@@ -6,24 +6,33 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.model.AppUpdateState
 import com.example.data.model.Chapter
+import com.example.data.model.ChapterDownloadProgress
+import com.example.data.model.DownloadedChapter
 import com.example.data.model.MangaItem
+import com.example.data.model.ReadingHistoryEntry
 import com.example.data.repository.MangaRepository
 import com.example.util.InAppUpdateManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 
 data class HomeUiState(
+    val selectedTab: Int = 0, // 0: Home, 1: Favorites, 2: History, 3: Downloads, 4: Updates
     val heroMangaList: List<MangaItem> = emptyList(),
     val latestMangaGrid: List<MangaItem> = emptyList(),
     val allMangaList: List<MangaItem> = emptyList(),
     val favorites: Set<String> = emptySet(),
+    val downloadedChapters: List<DownloadedChapter> = emptyList(),
+    val downloadProgressMap: Map<String, ChapterDownloadProgress> = emptyMap(),
+    val readingHistory: List<ReadingHistoryEntry> = emptyList(),
     val searchQuery: String = "",
     val selectedCategory: String = "الكل",
     val isRefreshing: Boolean = false,
@@ -32,6 +41,19 @@ data class HomeUiState(
 ) {
     val favoriteMangaList: List<MangaItem>
         get() = allMangaList.filter { favorites.contains(it.id) }
+
+    val formattedTotalStorage: String
+        get() {
+            val totalBytes = downloadedChapters.sumOf { it.sizeBytes }
+            if (totalBytes <= 0) return "0 MB"
+            val mb = totalBytes.toDouble() / (1024 * 1024)
+            return if (mb >= 1000) {
+                val gb = mb / 1024
+                "${DecimalFormat("#.##").format(gb)} GB"
+            } else {
+                "${DecimalFormat("#.#").format(mb)} MB"
+            }
+        }
 }
 
 data class DetailsUiState(
@@ -39,7 +61,9 @@ data class DetailsUiState(
     val isFavorite: Boolean = false,
     val lastReadChapterNumber: Int = 1,
     val currentBatchIndex: Int = 0, // 0 for chapters 1-30, 1 for 31-60, etc.
-    val batchSize: Int = 30
+    val batchSize: Int = 30,
+    val downloadedChapterNumbers: Set<Int> = emptySet(),
+    val downloadProgressMap: Map<String, ChapterDownloadProgress> = emptyMap()
 ) {
     val totalBatches: Int
         get() {
@@ -71,7 +95,10 @@ data class ReaderUiState(
     val currentChapter: Chapter? = null,
     val isLoadingPages: Boolean = false,
     val isFavorite: Boolean = false,
+    val isDownloaded: Boolean = false,
     val isQuickJumpSheetOpen: Boolean = false,
+    val currentPageIndex: Int = 0,
+    val initialScrollPage: Int = 1,
     val readingProgressText: String = "",
     val hasPreviousChapter: Boolean = false,
     val hasNextChapter: Boolean = false
@@ -81,35 +108,62 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = MangaRepository(application.applicationContext)
 
+    private val _selectedTab = MutableStateFlow(0)
     private val _searchQuery = MutableStateFlow("")
     private val _selectedCategory = MutableStateFlow("الكل")
     private val _isRefreshing = MutableStateFlow(false)
     private val _showUpdateDialog = MutableStateFlow(false)
     private val _appUpdateState = MutableStateFlow(AppUpdateState())
 
-    private data class FilterAndDialogState(
-        val query: String,
-        val category: String,
+    private data class DialogState(
         val isRefreshing: Boolean,
         val showUpdate: Boolean,
         val updateInfo: AppUpdateState
     )
 
-    private val _filterAndDialogFlow = combine(
-        _searchQuery,
-        _selectedCategory,
+    private val _dialogStateFlow = combine(
         _isRefreshing,
         _showUpdateDialog,
         _appUpdateState
-    ) { query, category, isRefreshing, showUpdate, updateInfo ->
-        FilterAndDialogState(query, category, isRefreshing, showUpdate, updateInfo)
+    ) { isRefreshing, showUpdate, updateInfo ->
+        DialogState(isRefreshing, showUpdate, updateInfo)
+    }
+
+    private data class FilterState(
+        val selectedTab: Int,
+        val query: String,
+        val category: String
+    )
+
+    private val _filterStateFlow = combine(
+        _selectedTab,
+        _searchQuery,
+        _selectedCategory
+    ) { tab, query, category ->
+        FilterState(tab, query, category)
+    }
+
+    private data class OfflineDataState(
+        val downloaded: List<DownloadedChapter>,
+        val progressMap: Map<String, ChapterDownloadProgress>,
+        val history: List<ReadingHistoryEntry>
+    )
+
+    private val _offlineDataFlow = combine(
+        repository.downloadedChaptersFlow,
+        repository.downloadProgressFlow,
+        repository.readingHistoryFlow
+    ) { downloaded, progress, history ->
+        OfflineDataState(downloaded, progress, history)
     }
 
     val homeUiState: StateFlow<HomeUiState> = combine(
         repository.allMangaFlow,
         repository.favoritesFlow,
-        _filterAndDialogFlow
-    ) { allMangaList, favorites, filterState ->
+        _offlineDataFlow,
+        _filterStateFlow,
+        _dialogStateFlow
+    ) { allMangaList, favorites, offlineData, filterState, dialogState ->
         var filteredList = allMangaList
         if (filterState.query.isNotBlank()) {
             filteredList = filteredList.filter {
@@ -118,21 +172,26 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         if (filterState.category != "الكل") {
+            val cat = filterState.category
             filteredList = filteredList.filter {
-                it.genres.contains(filterState.category) || it.type.labelAr.contains(filterState.category)
+                it.genres.contains(cat) || it.type.labelAr.contains(cat)
             }
         }
 
         HomeUiState(
+            selectedTab = filterState.selectedTab,
             heroMangaList = allMangaList.take(5),
             latestMangaGrid = filteredList,
             allMangaList = allMangaList,
             favorites = favorites,
+            downloadedChapters = offlineData.downloaded,
+            downloadProgressMap = offlineData.progressMap,
+            readingHistory = offlineData.history,
             searchQuery = filterState.query,
             selectedCategory = filterState.category,
-            isRefreshing = filterState.isRefreshing,
-            showUpdateDialog = filterState.showUpdate,
-            updateInfo = filterState.updateInfo
+            isRefreshing = dialogState.isRefreshing,
+            showUpdateDialog = dialogState.showUpdate,
+            updateInfo = dialogState.updateInfo
         )
     }.stateIn(
         viewModelScope,
@@ -157,15 +216,22 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
         // Reactively observe repo changes to keep active details screen updated silently
         viewModelScope.launch {
-            repository.allMangaFlow.collect { mangaList ->
+            combine(
+                repository.allMangaFlow,
+                repository.downloadedChaptersFlow,
+                repository.downloadProgressFlow
+            ) { mangaList, downloaded, progressMap ->
                 val currentDetailsManga = _detailsUiState.value.manga
                 if (currentDetailsManga != null) {
-                    val updated = mangaList.find { it.id == currentDetailsManga.id }
-                    if (updated != null && (updated.totalChaptersCount != currentDetailsManga.totalChaptersCount || updated.chapters != currentDetailsManga.chapters)) {
-                        _detailsUiState.value = _detailsUiState.value.copy(manga = updated)
-                    }
+                    val updated = mangaList.find { it.id == currentDetailsManga.id } ?: currentDetailsManga
+                    val downloadedNums = downloaded.filter { it.mangaId == currentDetailsManga.id }.map { it.chapterNumber }.toSet()
+                    _detailsUiState.value = _detailsUiState.value.copy(
+                        manga = updated,
+                        downloadedChapterNumbers = downloadedNums,
+                        downloadProgressMap = progressMap
+                    )
                 }
-            }
+            }.collect {}
         }
     }
 
@@ -192,6 +258,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun selectTab(tabIndex: Int) {
+        _selectedTab.value = tabIndex
+    }
+
     fun refreshDataFromGitHub(showIndicator: Boolean = false) {
         viewModelScope.launch {
             if (showIndicator) _isRefreshing.value = true
@@ -212,7 +282,6 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun openUpdateDialog() {
         _showUpdateDialog.value = true
-        // trigger background check for latest releases simultaneously
         viewModelScope.launch {
             val update = repository.checkForAppUpdate()
             _appUpdateState.value = update
@@ -261,19 +330,70 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         _selectedCategory.value = category
     }
 
+    // --- Offline Download Logic ---
+    fun downloadChapter(manga: MangaItem, chapter: Chapter) {
+        viewModelScope.launch {
+            repository.downloadChapter(manga, chapter)
+        }
+    }
+
+    fun deleteDownloadedChapter(mangaId: String, chapterNumber: Int) {
+        viewModelScope.launch {
+            repository.deleteDownloadedChapter(mangaId, chapterNumber)
+        }
+    }
+
+    fun isChapterDownloaded(mangaId: String, chapterNumber: Int): Boolean {
+        return repository.isChapterDownloaded(mangaId, chapterNumber)
+    }
+
+    // --- Reading History & Progress Logic ---
+    fun recordReadingProgress(mangaId: String, pageNumber: Int, totalPages: Int) {
+        val manga = _readerUiState.value.manga ?: repository.getMangaById(mangaId) ?: return
+        val currentChapter = _readerUiState.value.currentChapter ?: return
+
+        repository.recordReadingProgress(
+            mangaId = manga.id,
+            mangaTitle = manga.titleAr,
+            mangaCover = manga.coverUrl,
+            chapterNumber = currentChapter.number,
+            chapterTitle = currentChapter.title,
+            pageNumber = pageNumber,
+            totalPages = totalPages
+        )
+    }
+
+    fun deleteHistoryItem(mangaId: String) {
+        viewModelScope.launch {
+            repository.deleteReadingHistoryItem(mangaId)
+        }
+    }
+
+    fun clearAllHistory() {
+        viewModelScope.launch {
+            repository.clearAllReadingHistory()
+        }
+    }
+
     // --- Details Screen Logic ---
     fun loadMangaDetails(mangaId: String) {
         val manga = repository.getMangaById(mangaId) ?: return
         val isFav = repository.isFavorite(mangaId)
         val lastRead = repository.getLastReadChapter(mangaId)
         val initialBatch = ((lastRead - 1) / 30).coerceAtLeast(0)
+        val downloadedNums = repository.downloadedChaptersFlow.value
+            .filter { it.mangaId == mangaId }
+            .map { it.chapterNumber }
+            .toSet()
 
         _detailsUiState.value = DetailsUiState(
             manga = manga,
             isFavorite = isFav,
             lastReadChapterNumber = lastRead,
             currentBatchIndex = initialBatch,
-            batchSize = 30
+            batchSize = 30,
+            downloadedChapterNumbers = downloadedNums,
+            downloadProgressMap = repository.downloadProgressFlow.value
         )
     }
 
@@ -302,14 +422,17 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     // --- Reader Screen Logic ---
     fun loadChapter(mangaId: String, chapterNumber: Int) {
         val manga = repository.getMangaById(mangaId) ?: return
-        repository.saveLastRead(mangaId, chapterNumber)
+        val isDownloaded = repository.isChapterDownloaded(mangaId, chapterNumber)
+        val lastSavedPage = repository.getLastReadPage(mangaId, chapterNumber)
 
         _readerUiState.value = ReaderUiState(
             manga = manga,
             currentChapter = null,
             isLoadingPages = true,
             isFavorite = repository.isFavorite(mangaId),
+            isDownloaded = isDownloaded,
             isQuickJumpSheetOpen = false,
+            initialScrollPage = lastSavedPage,
             hasPreviousChapter = chapterNumber > 1,
             hasNextChapter = chapterNumber < manga.totalChaptersCount
         )
@@ -318,8 +441,21 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             val fullChapter = repository.getChapterWithPages(mangaId, chapterNumber)
             _readerUiState.value = _readerUiState.value.copy(
                 currentChapter = fullChapter,
-                isLoadingPages = false
+                isLoadingPages = false,
+                isDownloaded = repository.isChapterDownloaded(mangaId, chapterNumber)
             )
+
+            if (fullChapter != null) {
+                repository.recordReadingProgress(
+                    mangaId = manga.id,
+                    mangaTitle = manga.titleAr,
+                    mangaCover = manga.coverUrl,
+                    chapterNumber = chapterNumber,
+                    chapterTitle = fullChapter.title,
+                    pageNumber = lastSavedPage,
+                    totalPages = fullChapter.pages.size.coerceAtLeast(1)
+                )
+            }
         }
     }
 

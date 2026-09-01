@@ -137,7 +137,7 @@ data class AppUpdateState(
     val isChecking: Boolean = false,
     val updateAvailable: Boolean = false,
     val latestVersion: String = "",
-    val currentVersion: String = "1.5",
+    val currentVersion: String = "1.6",
     val releaseNotes: String = "",
     val downloadUrl: String = "",
     val isDownloading: Boolean = false,
@@ -145,3 +145,74 @@ data class AppUpdateState(
     val downloadedApkPath: String? = null,
     val errorMessage: String? = null
 )
+
+// ----------------------------------------------------
+// Secure Offline Downloads Models
+// ----------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class DownloadedChapter(
+    val mangaId: String,
+    val mangaTitle: String,
+    val mangaCover: String? = null,
+    val chapterNumber: Int,
+    val chapterTitle: String,
+    val totalPages: Int,
+    val downloadedAt: Long = System.currentTimeMillis(),
+    val sizeBytes: Long = 0L,
+    val localImagePaths: List<String> = emptyList()
+) {
+    val formattedSize: String
+        get() {
+            if (sizeBytes <= 0) return "$totalPages صفحات"
+            val mb = sizeBytes.toDouble() / (1024 * 1024)
+            return if (mb >= 1.0) {
+                "${String.format("%.1f", mb)} MB"
+            } else {
+                val kb = sizeBytes.toDouble() / 1024
+                "${String.format("%.0f", kb)} KB"
+            }
+        }
+}
+
+data class ChapterDownloadProgress(
+    val mangaId: String,
+    val chapterNumber: Int,
+    val currentStep: Int = 0,
+    val totalSteps: Int = 0,
+    val progress: Float = 0f,
+    val isCompleted: Boolean = false,
+    val isFailed: Boolean = false,
+    val error: String? = null
+)
+
+// ----------------------------------------------------
+// Reading History & Progress Models
+// ----------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class ReadingHistoryEntry(
+    val mangaId: String,
+    val mangaTitle: String,
+    val mangaCover: String? = null,
+    val chapterNumber: Int,
+    val chapterTitle: String,
+    val pageNumber: Int = 1,
+    val totalPages: Int = 1,
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    val timestampFormatted: String
+        get() {
+            val diffMs = System.currentTimeMillis() - timestamp
+            val minutes = diffMs / (1000 * 60)
+            val hours = minutes / 60
+            val days = hours / 24
+            return when {
+                minutes < 1 -> "الآن"
+                minutes < 60 -> "منذ $minutes دقيقة"
+                hours < 24 -> "منذ $hours ساعة"
+                days == 1L -> "أمس"
+                else -> "منذ $days أيام"
+            }
+        }
+}

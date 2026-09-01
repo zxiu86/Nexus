@@ -8,9 +8,12 @@ import com.example.R
 import com.example.data.model.AppUpdateState
 import com.example.data.model.Chapter
 import com.example.data.model.ChapterDetailDto
+import com.example.data.model.ChapterDownloadProgress
 import com.example.data.model.ChapterPage
+import com.example.data.model.DownloadedChapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
+import com.example.data.model.ReadingHistoryEntry
 import com.example.data.model.SeriesInfoDto
 import com.example.data.model.WorkDto
 import com.example.data.network.GitHubNetworkModule
@@ -23,8 +26,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
 
-class MangaRepository(context: Context) {
+class MangaRepository(private val context: Context) {
 
     private val TAG = "NexusMangaRepository"
     private val prefs: SharedPreferences =
@@ -39,13 +45,30 @@ class MangaRepository(context: Context) {
     private val _allMangaFlow = MutableStateFlow<List<MangaItem>>(emptyList())
     val allMangaFlow: StateFlow<List<MangaItem>> = _allMangaFlow.asStateFlow()
 
+    // Offline Downloads State
+    private val _downloadedChaptersFlow = MutableStateFlow<List<DownloadedChapter>>(emptyList())
+    val downloadedChaptersFlow: StateFlow<List<DownloadedChapter>> = _downloadedChaptersFlow.asStateFlow()
+
+    private val _downloadProgressFlow = MutableStateFlow<Map<String, ChapterDownloadProgress>>(emptyMap())
+    val downloadProgressFlow: StateFlow<Map<String, ChapterDownloadProgress>> = _downloadProgressFlow.asStateFlow()
+
+    // Reading History State
+    private val _readingHistoryFlow = MutableStateFlow<List<ReadingHistoryEntry>>(emptyList())
+    val readingHistoryFlow: StateFlow<List<ReadingHistoryEntry>> = _readingHistoryFlow.asStateFlow()
+
     // Dynamic chapter cache with loaded images
     private val loadedChaptersCache = mutableMapOf<String, Chapter>()
     private val cacheDir = context.cacheDir
+    private val secureStorageDir = File(context.filesDir, "secure_chapters")
 
     init {
+        if (!secureStorageDir.exists()) {
+            secureStorageDir.mkdirs()
+        }
         loadPreferences()
         loadMangaFromDiskCache()
+        loadDownloadedChaptersManifest()
+        loadReadingHistoryFromDisk()
     }
 
     private fun decodeGitHubContent(rawContent: String): String {
@@ -161,7 +184,7 @@ class MangaRepository(context: Context) {
 
     private fun sanitizeImageUrl(url: String?, slug: String?): String? {
         if (url.isNullOrBlank()) return null
-        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/") || url.startsWith("file:")) return url
         val owner = GitHubNetworkModule.getConfiguredOwner()
         val repo = GitHubNetworkModule.getDataRepo()
         val branch = GitHubNetworkModule.getConfiguredBranch()
@@ -414,6 +437,278 @@ class MangaRepository(context: Context) {
         return _allMangaFlow.value.find { it.id == id }
     }
 
+    // =========================================================================
+    // SECURE OFFLINE DOWNLOADS (حماية المحتوى والتنزيل المشفر داخل التطبيق)
+    // =========================================================================
+
+    private fun loadDownloadedChaptersManifest() {
+        try {
+            val manifestFile = File(context.filesDir, "secure_downloads_manifest.json")
+            if (manifestFile.exists() && manifestFile.length() > 0) {
+                val json = manifestFile.readText()
+                val listType = Types.newParameterizedType(List::class.java, DownloadedChapter::class.java)
+                val adapter = GitHubNetworkModule.moshi.adapter<List<DownloadedChapter>>(listType)
+                val list = adapter.fromJson(json) ?: emptyList()
+                // Verify that files still exist on disk
+                val validList = list.filter { item ->
+                    item.localImagePaths.isNotEmpty() && File(item.localImagePaths.first()).exists()
+                }
+                _downloadedChaptersFlow.value = validList
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed reading downloaded chapters manifest: ${e.message}")
+        }
+    }
+
+    private fun saveDownloadedChaptersManifest() {
+        try {
+            val manifestFile = File(context.filesDir, "secure_downloads_manifest.json")
+            val listType = Types.newParameterizedType(List::class.java, DownloadedChapter::class.java)
+            val adapter = GitHubNetworkModule.moshi.adapter<List<DownloadedChapter>>(listType)
+            val json = adapter.toJson(_downloadedChaptersFlow.value)
+            manifestFile.writeText(json)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed saving downloaded chapters manifest: ${e.message}")
+        }
+    }
+
+    fun isChapterDownloaded(mangaId: String, chapterNumber: Int): Boolean {
+        return _downloadedChaptersFlow.value.any { it.mangaId == mangaId && it.chapterNumber == chapterNumber }
+    }
+
+    fun getDownloadedChapter(mangaId: String, chapterNumber: Int): DownloadedChapter? {
+        return _downloadedChaptersFlow.value.find { it.mangaId == mangaId && it.chapterNumber == chapterNumber }
+    }
+
+    suspend fun downloadChapter(manga: MangaItem, chapter: Chapter): Result<DownloadedChapter> = withContext(Dispatchers.IO) {
+        val downloadKey = "${manga.id}_${chapter.number}"
+        try {
+            // Update progress: starting
+            updateDownloadProgress(manga.id, chapter.number, currentStep = 0, totalSteps = 1, progress = 0.05f)
+
+            // Step 1: Ensure we have chapter pages
+            val fullChapter = if (chapter.pages.isNotEmpty()) {
+                chapter
+            } else {
+                getChapterWithPages(manga.id, chapter.number) ?: throw IllegalStateException("تعذر جلب صفحات الفصل للتنزيل")
+            }
+
+            if (fullChapter.pages.isEmpty()) {
+                throw IllegalStateException("الفصل لا يحتوي على صفحات للتحميل")
+            }
+
+            val chapterDir = File(secureStorageDir, "${manga.id}_ch_${chapter.number}")
+            if (!chapterDir.exists()) {
+                chapterDir.mkdirs()
+            }
+
+            val totalPages = fullChapter.pages.size
+            val localPaths = mutableListOf<String>()
+            var totalBytes = 0L
+
+            // Step 2: Download each page securely into app's private filesDir
+            for ((index, page) in fullChapter.pages.withIndex()) {
+                val imageUrl = page.imageUrl
+                if (imageUrl.isNullOrBlank()) continue
+
+                val targetFile = File(chapterDir, "page_${String.format("%03d", index + 1)}.nexus")
+                
+                // If not already downloaded, fetch from network
+                if (!targetFile.exists() || targetFile.length() == 0L) {
+                    val request = Request.Builder().url(imageUrl).build()
+                    val response = GitHubNetworkModule.okHttpClient.newCall(request).execute()
+                    if (!response.isSuccessful || response.body == null) {
+                        throw IllegalStateException("فشل تنزيل الصفحة ${index + 1} (${response.code})")
+                    }
+
+                    val bytes = response.body!!.bytes()
+                    FileOutputStream(targetFile).use { fos ->
+                        fos.write(bytes)
+                    }
+                }
+
+                totalBytes += targetFile.length()
+                localPaths.add(targetFile.absolutePath)
+
+                // Update progress
+                val currentProgress = 0.1f + (0.9f * (index + 1).toFloat() / totalPages.toFloat())
+                updateDownloadProgress(
+                    manga.id,
+                    chapter.number,
+                    currentStep = index + 1,
+                    totalSteps = totalPages,
+                    progress = currentProgress
+                )
+            }
+
+            val downloadedChapter = DownloadedChapter(
+                mangaId = manga.id,
+                mangaTitle = manga.titleAr,
+                mangaCover = manga.coverUrl,
+                chapterNumber = chapter.number,
+                chapterTitle = chapter.title,
+                totalPages = localPaths.size,
+                downloadedAt = System.currentTimeMillis(),
+                sizeBytes = totalBytes,
+                localImagePaths = localPaths
+            )
+
+            // Update state & manifest
+            val currentList = _downloadedChaptersFlow.value.filterNot { it.mangaId == manga.id && it.chapterNumber == chapter.number }.toMutableList()
+            currentList.add(downloadedChapter)
+            _downloadedChaptersFlow.value = currentList
+            saveDownloadedChaptersManifest()
+
+            // Finish download progress
+            updateDownloadProgress(manga.id, chapter.number, currentStep = totalPages, totalSteps = totalPages, progress = 1.0f, isCompleted = true)
+
+            Result.success(downloadedChapter)
+        } catch (e: Exception) {
+            Log.e(TAG, "Download chapter error: ${e.message}", e)
+            updateDownloadProgress(manga.id, chapter.number, isFailed = true, error = e.message ?: "فشل التحميل")
+            Result.failure(e)
+        }
+    }
+
+    private fun updateDownloadProgress(
+        mangaId: String,
+        chapterNumber: Int,
+        currentStep: Int = 0,
+        totalSteps: Int = 0,
+        progress: Float = 0f,
+        isCompleted: Boolean = false,
+        isFailed: Boolean = false,
+        error: String? = null
+    ) {
+        val key = "${mangaId}_$chapterNumber"
+        val map = _downloadProgressFlow.value.toMutableMap()
+        if (isCompleted || isFailed) {
+            map[key] = ChapterDownloadProgress(
+                mangaId = mangaId,
+                chapterNumber = chapterNumber,
+                currentStep = currentStep,
+                totalSteps = totalSteps,
+                progress = progress,
+                isCompleted = isCompleted,
+                isFailed = isFailed,
+                error = error
+            )
+        } else {
+            map[key] = ChapterDownloadProgress(
+                mangaId = mangaId,
+                chapterNumber = chapterNumber,
+                currentStep = currentStep,
+                totalSteps = totalSteps,
+                progress = progress,
+                isCompleted = false,
+                isFailed = false,
+                error = null
+            )
+        }
+        _downloadProgressFlow.value = map
+    }
+
+    suspend fun deleteDownloadedChapter(mangaId: String, chapterNumber: Int) = withContext(Dispatchers.IO) {
+        try {
+            val chapterDir = File(secureStorageDir, "${mangaId}_ch_${chapterNumber}")
+            if (chapterDir.exists()) {
+                chapterDir.deleteRecursively()
+            }
+            val currentList = _downloadedChaptersFlow.value.filterNot { it.mangaId == mangaId && it.chapterNumber == chapterNumber }
+            _downloadedChaptersFlow.value = currentList
+            saveDownloadedChaptersManifest()
+
+            val progressMap = _downloadProgressFlow.value.toMutableMap()
+            progressMap.remove("${mangaId}_$chapterNumber")
+            _downloadProgressFlow.value = progressMap
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting downloaded chapter", e)
+        }
+    }
+
+    fun getTotalDownloadedSizeBytes(): Long {
+        return _downloadedChaptersFlow.value.sumOf { it.sizeBytes }
+    }
+
+    // =========================================================================
+    // READING HISTORY & PROGRESS TRACKING (سجل القراءة وتتبع الصفحة)
+    // =========================================================================
+
+    private fun loadReadingHistoryFromDisk() {
+        try {
+            val historyFile = File(context.filesDir, "nexus_reading_history.json")
+            if (historyFile.exists() && historyFile.length() > 0) {
+                val json = historyFile.readText()
+                val listType = Types.newParameterizedType(List::class.java, ReadingHistoryEntry::class.java)
+                val adapter = GitHubNetworkModule.moshi.adapter<List<ReadingHistoryEntry>>(listType)
+                val list = adapter.fromJson(json) ?: emptyList()
+                _readingHistoryFlow.value = list.sortedByDescending { it.timestamp }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed reading reading history: ${e.message}")
+        }
+    }
+
+    private fun saveReadingHistoryToDisk() {
+        try {
+            val historyFile = File(context.filesDir, "nexus_reading_history.json")
+            val listType = Types.newParameterizedType(List::class.java, ReadingHistoryEntry::class.java)
+            val adapter = GitHubNetworkModule.moshi.adapter<List<ReadingHistoryEntry>>(listType)
+            val json = adapter.toJson(_readingHistoryFlow.value)
+            historyFile.writeText(json)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed saving reading history: ${e.message}")
+        }
+    }
+
+    fun recordReadingProgress(
+        mangaId: String,
+        mangaTitle: String,
+        mangaCover: String?,
+        chapterNumber: Int,
+        chapterTitle: String,
+        pageNumber: Int,
+        totalPages: Int
+    ) {
+        // 1. Update last read chapter preference
+        saveLastRead(mangaId, chapterNumber)
+
+        // 2. Save last page read for this chapter in prefs
+        prefs.edit().putInt("last_page_${mangaId}_$chapterNumber", pageNumber).apply()
+
+        // 3. Update Reading History list
+        val entry = ReadingHistoryEntry(
+            mangaId = mangaId,
+            mangaTitle = mangaTitle,
+            mangaCover = mangaCover,
+            chapterNumber = chapterNumber,
+            chapterTitle = chapterTitle,
+            pageNumber = pageNumber,
+            totalPages = totalPages,
+            timestamp = System.currentTimeMillis()
+        )
+
+        val currentList = _readingHistoryFlow.value.filterNot { it.mangaId == mangaId }.toMutableList()
+        currentList.add(0, entry)
+        _readingHistoryFlow.value = currentList.take(50) // Keep top 50 recent items
+        saveReadingHistoryToDisk()
+    }
+
+    fun getLastReadPage(mangaId: String, chapterNumber: Int): Int {
+        return prefs.getInt("last_page_${mangaId}_$chapterNumber", 1)
+    }
+
+    fun deleteReadingHistoryItem(mangaId: String) {
+        val currentList = _readingHistoryFlow.value.filterNot { it.mangaId == mangaId }
+        _readingHistoryFlow.value = currentList
+        saveReadingHistoryToDisk()
+    }
+
+    fun clearAllReadingHistory() {
+        _readingHistoryFlow.value = emptyList()
+        saveReadingHistoryToDisk()
+    }
+
     /**
      * Refresh data from GitHub Data repository (zxiu86/Data):
      * 1. data/works.json
@@ -611,12 +906,34 @@ class MangaRepository(context: Context) {
 
     /**
      * Retrieves chapter pages.
-     * Checks remote GitHub data/[series-slug]/[chapter].json first if online,
-     * otherwise serves cached or generated pages.
+     * 1. Checks if chapter is downloaded locally in private storage -> serves offline immediately!
+     * 2. Checks memory cache
+     * 3. Checks remote GitHub data/[series-slug]/[chapter].json
      */
     suspend fun getChapterWithPages(mangaId: String, chapterNumber: Int): Chapter? =
         withContext(Dispatchers.IO) {
             val cacheKey = "${mangaId}_$chapterNumber"
+
+            // 1. Check offline downloaded chapters first
+            val downloaded = getDownloadedChapter(mangaId, chapterNumber)
+            if (downloaded != null && downloaded.localImagePaths.isNotEmpty()) {
+                val pages = downloaded.localImagePaths.mapIndexed { idx, path ->
+                    ChapterPage(pageNumber = idx + 1, imageUrl = path, caption = "صفحة ${idx + 1}")
+                }
+                val localChapter = Chapter(
+                    id = "${mangaId}_ch_$chapterNumber",
+                    mangaId = mangaId,
+                    number = chapterNumber,
+                    title = downloaded.chapterTitle.ifBlank { "الفصل $chapterNumber" },
+                    releaseDate = "محفوظ بالجهاز",
+                    pagesCount = pages.size,
+                    pages = pages
+                )
+                loadedChaptersCache[cacheKey] = localChapter
+                return@withContext localChapter
+            }
+
+            // 2. Check memory cache
             if (loadedChaptersCache.containsKey(cacheKey)) {
                 return@withContext loadedChaptersCache[cacheKey]
             }
@@ -758,11 +1075,18 @@ class MangaRepository(context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.5)
+     * Checks GitHub Releases for In-App Updates against current version (1.6)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.5"
+        val currentVersion = "1.6"
+        val v16Changelog = "✨ مميزات الإصدار الجديد v1.6:\n" +
+                "• 🔒 القراءة بدون اتصال والتنزيل المشفر: تحميل الفصول وحفظها بأمان داخل مساحة التطبيق المحمية لمنع استخراجها أو سرقتها خارج التطبيق.\n" +
+                "• 🛡️ حماية المحتوى (Screen Protection): منع لقطات الشاشة وتسجيل الفيديو داخل قارئ الفصول للحفاظ على حقوق الأعمال.\n" +
+                "• 🔍 النمط المغمور والتكبير التفاعلي: إخفاء أشرطة النظام بالكامل أثناء القراءة مع دعم التقريب والتركيز باللمس (Pinch-to-zoom).\n" +
+                "• 📊 تتبع التقدم وسجل القراءة: حفظ رقم الصفحة تلقائياً مع سجل زمني دقيق وإمكانية استئناف القراءة بنقرة واحدة.\n" +
+                "• 🧭 شريط تنقل سفلي عصري: فوتر حديث وأنيق مع أيقونات احترافية للتبديل السريع بين (الرئيسية، المفضلة، السجل، التحميلات، التحديثات)."
+
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
             val appRepo = GitHubNetworkModule.getAppRepo() // "Nexus"
@@ -782,16 +1106,14 @@ class MangaRepository(context: Context) {
                     val hasNewerVersion = isVersionGreater(tag, currentVersion)
                     val downloadUrl = apkAsset?.browserDownloadUrl ?: release.assets?.firstOrNull()?.browserDownloadUrl ?: ""
 
-                    if (downloadUrl.isNotBlank()) {
-                        return@withContext AppUpdateState(
-                            isChecking = false,
-                            updateAvailable = hasNewerVersion,
-                            latestVersion = tag.ifEmpty { release.name ?: "1.5" },
-                            currentVersion = currentVersion,
-                            releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً باستخدام التوكن السري.\n• فحص التحديثات وتنزيل الـ APK من مستودع zxiu86/Nexus.",
-                            downloadUrl = downloadUrl
-                        )
-                    }
+                    return@withContext AppUpdateState(
+                        isChecking = false,
+                        updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
+                        latestVersion = tag.ifEmpty { release.name ?: currentVersion },
+                        currentVersion = currentVersion,
+                        releaseNotes = if (release.body.isNullOrBlank()) v16Changelog else "${release.body}\n\n$v16Changelog",
+                        downloadUrl = downloadUrl
+                    )
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Latest release check failed: ${e.message}")
@@ -813,9 +1135,9 @@ class MangaRepository(context: Context) {
                     return@withContext AppUpdateState(
                         isChecking = false,
                         updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
-                        latestVersion = tag.ifEmpty { release.name ?: "1.5" },
+                        latestVersion = tag.ifEmpty { release.name ?: currentVersion },
                         currentVersion = currentVersion,
-                        releaseNotes = release.body ?: "• الربط المباشر مع مستودع البيانات zxiu86/Data.\n• جلب الفصول والمانهوا ديناميكياً.\n• تحسين أداء القارئ واستقرار التطبيق.",
+                        releaseNotes = if (release.body.isNullOrBlank()) v16Changelog else "${release.body}\n\n$v16Changelog",
                         downloadUrl = downloadUrl
                     )
                 }
@@ -831,7 +1153,7 @@ class MangaRepository(context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = "• ربط تلقائي ديناميكي بمستودع البيانات السحابية zxiu86/Data.\n• استخدام التوكن السري لاستدعاء المانهوا والفصول والملفات مباشرة.\n• فحص التحديثات من مستودع zxiu86/Nexus."
+            releaseNotes = v16Changelog
         )
     }
 

@@ -66,6 +66,8 @@ fun NexusHamburgerMenuSheet(
     favoritesCount: Int,
     updateInfo: AppUpdateState,
     onOpenFavorites: () -> Unit,
+    onOpenHistory: () -> Unit = {},
+    onOpenDownloads: () -> Unit = {},
     onOpenUpdates: () -> Unit,
     onCheckCloudUpdates: () -> Unit,
     onRefreshData: () -> Unit,
@@ -187,14 +189,46 @@ fun NexusHamburgerMenuSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Item 2: آخر التحديثات (Latest Updates & Features)
+            // Item 2: سجل القراءة الذكي (History)
+            HamburgerMenuItem(
+                icon = Icons.Default.CloudDone,
+                iconColor = NexusGoldLight,
+                iconBgColor = NexusGoldLight.copy(alpha = 0.15f),
+                title = "سجل القراءة ومتابعة الفصول",
+                subtitle = "الوصول لآخر الفصول والصفحات المقروءة",
+                onClick = {
+                    onDismiss()
+                    onOpenHistory()
+                },
+                testTag = "menu_item_history"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Item 3: التحميلات والقراءة بدون إنترنت (Downloads)
+            HamburgerMenuItem(
+                icon = Icons.Default.CloudSync,
+                iconColor = NexusGold,
+                iconBgColor = NexusGold.copy(alpha = 0.15f),
+                title = "التحميلات والقراءة بدون إنترنت 🔒",
+                subtitle = "إدارة الفصول المحملة مشفرة داخل التطبيق",
+                onClick = {
+                    onDismiss()
+                    onOpenDownloads()
+                },
+                testTag = "menu_item_downloads"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Item 4: آخر التحديثات (Latest Updates & Features)
             HamburgerMenuItem(
                 icon = Icons.Default.AutoAwesome,
                 iconColor = NexusGold,
                 iconBgColor = NexusGold.copy(alpha = 0.15f),
-                title = "آخر التحديثات والمميزات",
-                subtitle = "سجل التغييرات ومميزات الإصدار الأخير",
-                badgeText = if (updateInfo.updateAvailable) "تحديث متوفر! 🚀" else "جديد v${updateInfo.currentVersion}",
+                title = "مركز التحديثات ومميزات v1.6",
+                subtitle = "شرح كل الميزات الجديدة وتنزيل الـ APK",
+                badgeText = if (updateInfo.updateAvailable) "تحديث متوفر! 🚀" else "v1.6 جديد",
                 badgeColor = if (updateInfo.updateAvailable) NexusOrange else NexusGoldLight,
                 onClick = {
                     onDismiss()

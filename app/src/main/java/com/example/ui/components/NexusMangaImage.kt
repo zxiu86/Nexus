@@ -32,7 +32,7 @@ fun NexusMangaImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop
 ) {
-    if (!imageUrl.isNullOrBlank() && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+    if (!imageUrl.isNullOrBlank()) {
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(imageUrl)

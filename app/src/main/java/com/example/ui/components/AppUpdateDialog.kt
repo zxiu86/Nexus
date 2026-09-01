@@ -170,7 +170,7 @@ fun AppUpdateDialog(
 
                 // Release notes box
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.3):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.6):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight
@@ -187,18 +187,19 @@ fun AppUpdateDialog(
                     border = BorderStroke(1.dp, SurfaceElevated),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(130.dp)
+                        .height(150.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(10.dp)
-                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         val notes = if (updateInfo.releaseNotes.isNotBlank()) {
                             updateInfo.releaseNotes
                         } else {
-                            "• قائمة الهامبرغر العلوية الجديدة للوصول السريع للمفضلة.\n• قائمة منبثقة تفاعلية للأعمال المفضلة بصور مصغرة.\n• فحص التحديثات الديناميكي عبر مستودع zxiu86/Nexus وتنزيل الـ APK.\n• تحسينات جمالية على التصميم وسرعة تحميل الفصول."
+                            "• القراءة بدون إنترنت: إمكانية تحميل الفصول مسبقاً وتخزينها محلياً مشفرة.\n• وضع القراءة المغمور (Immersive Mode): إخفاء شريط الحالة وشريط التنقل.\n• التكبير والتصغير التفاعلي (Pinch-to-zoom) مع التحريك.\n• الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE).\n• تتبع التقدم وسجل القراءة الذكي لآخر صفحة تم التوقف عندها.\n• شريط تنقل سفلي فاخر (Footer) للتنقل السريع بين الرئيسية، المفضلة، السجل، التحميلات، والتحديثات."
                         }
                         Text(
                             text = notes,

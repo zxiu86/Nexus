@@ -32,6 +32,9 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -48,6 +51,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -105,6 +109,8 @@ fun DetailsScreen(
     onBatchIndexChange: (Int) -> Unit,
     onNextBatch: () -> Unit,
     onPreviousBatch: () -> Unit,
+    onDownloadChapter: (com.example.data.model.Chapter) -> Unit = {},
+    onDeleteDownloadedChapter: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val manga = uiState.manga
@@ -221,10 +227,18 @@ fun DetailsScreen(
                 items = chapters,
                 key = { it.id }
             ) { chapter ->
+                val isDownloaded = uiState.downloadedChapterNumbers.contains(chapter.number)
+                val downloadKey = "${manga.id}_${chapter.number}"
+                val downloadProgress = uiState.downloadProgressMap[downloadKey]
+
                 ChapterListItem(
                     chapter = chapter,
                     isRead = chapter.number <= uiState.lastReadChapterNumber,
-                    onClick = { onChapterClick(chapter.number) }
+                    isDownloaded = isDownloaded,
+                    downloadProgress = downloadProgress,
+                    onClick = { onChapterClick(chapter.number) },
+                    onDownload = { onDownloadChapter(chapter) },
+                    onDeleteDownload = { onDeleteDownloadedChapter(chapter.number) }
                 )
             }
 
@@ -947,7 +961,11 @@ fun ChaptersHeaderSection(
 fun ChapterListItem(
     chapter: Chapter,
     isRead: Boolean,
-    onClick: () -> Unit
+    isDownloaded: Boolean = false,
+    downloadProgress: com.example.data.model.ChapterDownloadProgress? = null,
+    onClick: () -> Unit,
+    onDownload: () -> Unit = {},
+    onDeleteDownload: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -962,7 +980,9 @@ fun ChapterListItem(
         ),
         border = BorderStroke(
             0.8.dp,
-            if (isRead) SurfaceElevated.copy(alpha = 0.4f) else SurfaceElevated
+            if (isDownloaded) NexusGold.copy(alpha = 0.6f)
+            else if (isRead) SurfaceElevated.copy(alpha = 0.4f)
+            else SurfaceElevated
         )
     ) {
         Row(
@@ -983,11 +1003,15 @@ fun ChapterListItem(
                         .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(
-                            if (isRead) SurfaceElevated else NexusGoldDark
+                            if (isDownloaded) NexusGoldDark
+                            else if (isRead) SurfaceElevated
+                            else NexusGoldDark
                         )
                         .border(
                             0.5.dp,
-                            if (isRead) Color.Transparent else NexusGold.copy(alpha = 0.5f),
+                            if (isDownloaded) NexusGold
+                            else if (isRead) Color.Transparent
+                            else NexusGold.copy(alpha = 0.5f),
                             RoundedCornerShape(10.dp)
                         ),
                     contentAlignment = Alignment.Center
@@ -996,23 +1020,45 @@ fun ChapterListItem(
                         text = "${chapter.number}",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = if (isRead) TextSecondary else NexusGold,
+                            color = if (isDownloaded) NexusGold else if (isRead) TextSecondary else NexusGold,
                             fontSize = 13.sp
                         )
                     )
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = chapter.title,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = if (isRead) FontWeight.Medium else FontWeight.Bold,
-                            color = if (isRead) TextSecondary else TextPrimary,
-                            fontSize = 13.sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = chapter.title,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = if (isRead) FontWeight.Medium else FontWeight.Bold,
+                                color = if (isRead) TextSecondary else TextPrimary,
+                                fontSize = 13.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (isDownloaded) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = NexusGoldDark,
+                                border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.6f))
+                            ) {
+                                Text(
+                                    text = "محمّل 🔒",
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = NexusGold,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
+                        }
+                    }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -1036,7 +1082,7 @@ fun ChapterListItem(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (chapter.isNew) {
                     Surface(
@@ -1073,6 +1119,46 @@ fun ChapterListItem(
                         tint = BadgeSuccess,
                         modifier = Modifier.size(18.dp)
                     )
+                }
+
+                // Download Button / Status Icon
+                if (downloadProgress != null && !downloadProgress.isCompleted && !downloadProgress.isFailed) {
+                    Box(
+                        modifier = Modifier.size(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            progress = { downloadProgress.progress },
+                            modifier = Modifier.size(22.dp),
+                            color = NexusGold,
+                            strokeWidth = 2.5.dp,
+                            trackColor = SurfaceElevated
+                        )
+                    }
+                } else if (isDownloaded) {
+                    IconButton(
+                        onClick = onDeleteDownload,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "تم التحميل بأمان",
+                            tint = BadgeSuccess,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                } else {
+                    IconButton(
+                        onClick = onDownload,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = "تحميل الفصل بدون إنترنت",
+                            tint = NexusGoldLight,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }

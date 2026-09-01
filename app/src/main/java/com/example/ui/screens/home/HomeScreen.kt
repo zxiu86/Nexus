@@ -103,6 +103,10 @@ fun HomeScreen(
     onToggleFavorite: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onCategorySelect: (String) -> Unit,
+    onTabSelected: (Int) -> Unit = {},
+    onDeleteHistoryItem: (String) -> Unit = {},
+    onClearAllHistory: () -> Unit = {},
+    onDeleteDownloadedChapter: (String, Int) -> Unit = { _, _ -> },
     onRefresh: () -> Unit = {},
     onTriggerUpdate: () -> Unit = {},
     onOpenUpdatesDialog: () -> Unit = {},
@@ -113,86 +117,148 @@ fun HomeScreen(
     var showHamburgerMenu by remember { mutableStateOf(false) }
     var showFavoritesPopup by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("home_screen_lazy_column"),
-            contentPadding = PaddingValues(bottom = 32.dp)
-        ) {
+    Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // App Header Brand & Actions
-            item {
-                NexusHomeTopBar(
-                    favoritesCount = uiState.favorites.size,
-                    hasUpdate = uiState.updateInfo.updateAvailable,
-                    onHamburgerClick = { showHamburgerMenu = true },
-                    onFavoritesClick = { showFavoritesPopup = true },
-                    onUpdateBadgeClick = onTriggerUpdate
-                )
-            }
+            NexusHomeTopBar(
+                selectedTab = uiState.selectedTab,
+                favoritesCount = uiState.favorites.size,
+                hasUpdate = uiState.updateInfo.updateAvailable,
+                onHamburgerClick = { showHamburgerMenu = true },
+                onFavoritesClick = { onTabSelected(1) },
+                onUpdateBadgeClick = onTriggerUpdate
+            )
 
-            // Hero Carousel (Top 5 Featured Works)
-            if (uiState.heroMangaList.isNotEmpty()) {
-                item {
-                    HeroCarouselSection(
-                        heroList = uiState.heroMangaList,
-                        favorites = uiState.favorites,
-                        onMangaClick = onMangaClick,
-                        onChapterClick = onChapterClick,
-                        onToggleFavorite = onToggleFavorite
-                    )
-                }
-            }
+            // Dynamic Tab Content
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                when (uiState.selectedTab) {
+                    0 -> {
+                        // Home Tab Content
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag("home_screen_lazy_column"),
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        ) {
+                            // Hero Carousel (Top 5 Featured Works)
+                            if (uiState.heroMangaList.isNotEmpty()) {
+                                item {
+                                    HeroCarouselSection(
+                                        heroList = uiState.heroMangaList,
+                                        favorites = uiState.favorites,
+                                        onMangaClick = onMangaClick,
+                                        onChapterClick = onChapterClick,
+                                        onToggleFavorite = onToggleFavorite
+                                    )
+                                }
+                            }
 
-            // Search & Filter Categories
-            item {
-                SearchAndFilterSection(
-                    searchQuery = uiState.searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                    selectedCategory = uiState.selectedCategory,
-                    onCategorySelect = onCategorySelect
-                )
-            }
+                            // Search & Filter Categories
+                            item {
+                                SearchAndFilterSection(
+                                    searchQuery = uiState.searchQuery,
+                                    onSearchQueryChange = onSearchQueryChange,
+                                    selectedCategory = uiState.selectedCategory,
+                                    onCategorySelect = onCategorySelect
+                                )
+                            }
 
-            // Section Title: أحدث الفصول (Latest Chapters)
-            item {
-                SectionHeaderTitle(
-                    title = "أحدث الفصول المضافة",
-                    subtitle = "تحديثات مستمرة من مستودع البيانات السحابي"
-                )
-            }
+                            // Section Title: أحدث الفصول (Latest Chapters)
+                            item {
+                                SectionHeaderTitle(
+                                    title = "أحدث الفصول المضافة",
+                                    subtitle = "تحديثات مستمرة من مستودع البيانات السحابي"
+                                )
+                            }
 
-            // 2-Column Grid of Latest Works
-            val items = uiState.latestMangaGrid
-            val chunkedPairs = items.chunked(2)
+                            // 2-Column Grid of Latest Works
+                            val items = uiState.latestMangaGrid
+                            val chunkedPairs = items.chunked(2)
 
-            items(
-                items = chunkedPairs,
-                key = { pair -> pair.joinToString("-") { it.id } }
-            ) { pair ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    for (manga in pair) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            LatestMangaGridCard(
-                                manga = manga,
-                                isFavorite = uiState.favorites.contains(manga.id),
-                                onMangaClick = { onMangaClick(manga.id) },
-                                onChapterClick = { chNum -> onChapterClick(manga.id, chNum) },
-                                onToggleFavorite = { onToggleFavorite(manga.id) }
-                            )
+                            items(
+                                items = chunkedPairs,
+                                key = { pair -> pair.joinToString("-") { it.id } }
+                            ) { pair ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    for (manga in pair) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            LatestMangaGridCard(
+                                                manga = manga,
+                                                isFavorite = uiState.favorites.contains(manga.id),
+                                                onMangaClick = { onMangaClick(manga.id) },
+                                                onChapterClick = { chNum -> onChapterClick(manga.id, chNum) },
+                                                onToggleFavorite = { onToggleFavorite(manga.id) }
+                                            )
+                                        }
+                                    }
+                                    if (pair.size == 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
                         }
                     }
-                    if (pair.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
+                    1 -> {
+                        // Favorites Tab Content
+                        FavoritesTabContent(
+                            favoriteList = uiState.favoriteMangaList,
+                            onMangaClick = onMangaClick,
+                            onChapterClick = onChapterClick,
+                            onToggleFavorite = onToggleFavorite,
+                            onExploreHome = { onTabSelected(0) }
+                        )
+                    }
+                    2 -> {
+                        // History Tab Content
+                        HistoryTabContent(
+                            historyList = uiState.readingHistory,
+                            onContinueReading = { mangaId, chNum -> onChapterClick(mangaId, chNum) },
+                            onDeleteHistoryItem = onDeleteHistoryItem,
+                            onClearAllHistory = onClearAllHistory,
+                            onExploreHome = { onTabSelected(0) }
+                        )
+                    }
+                    3 -> {
+                        // Downloads Tab Content (Encrypted Offline Reading)
+                        DownloadsTabContent(
+                            downloadedList = uiState.downloadedChapters,
+                            totalStorageFormatted = uiState.formattedTotalStorage,
+                            onReadChapter = { mangaId, chNum -> onChapterClick(mangaId, chNum) },
+                            onDeleteDownload = onDeleteDownloadedChapter,
+                            onExploreHome = { onTabSelected(0) }
+                        )
+                    }
+                    4 -> {
+                        // Updates & Changelog Tab Content
+                        UpdatesTabContent(
+                            uiState = uiState,
+                            onTriggerUpdate = onTriggerUpdate,
+                            onCheckCloudUpdates = onCheckCloudUpdates,
+                            onRefreshData = onRefresh
+                        )
                     }
                 }
             }
         }
+
+        // Modern Bottom Navigation Footer Bar
+        NexusBottomFooterBar(
+            selectedTab = uiState.selectedTab,
+            favoritesCount = uiState.favorites.size,
+            downloadedCount = uiState.downloadedChapters.size,
+            hasUpdate = uiState.updateInfo.updateAvailable,
+            onTabSelected = onTabSelected,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
 
         // Hamburger Menu Bottom Sheet
         if (showHamburgerMenu) {
@@ -201,11 +267,19 @@ fun HomeScreen(
                 updateInfo = uiState.updateInfo,
                 onOpenFavorites = {
                     showHamburgerMenu = false
-                    showFavoritesPopup = true
+                    onTabSelected(1)
+                },
+                onOpenHistory = {
+                    showHamburgerMenu = false
+                    onTabSelected(2)
+                },
+                onOpenDownloads = {
+                    showHamburgerMenu = false
+                    onTabSelected(3)
                 },
                 onOpenUpdates = {
                     showHamburgerMenu = false
-                    onOpenUpdatesDialog()
+                    onTabSelected(4)
                 },
                 onCheckCloudUpdates = {
                     showHamburgerMenu = false
@@ -219,7 +293,7 @@ fun HomeScreen(
             )
         }
 
-        // Favorites Popup Dialog (Stacked vertically with thumbnail on right & title beside it)
+        // Favorites Popup Dialog
         if (showFavoritesPopup) {
             FavoritesPopupDialog(
                 favoriteMangaList = uiState.favoriteMangaList,
@@ -242,6 +316,7 @@ fun HomeScreen(
 
 @Composable
 fun NexusHomeTopBar(
+    selectedTab: Int = 0,
     favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
     onHamburgerClick: () -> Unit = {},
@@ -304,7 +379,7 @@ fun NexusHomeTopBar(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "NEXUS v1.5",
+                        text = "NEXUS",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.2.sp,
@@ -312,11 +387,33 @@ fun NexusHomeTopBar(
                             fontSize = 17.sp
                         )
                     )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = NexusGoldDark,
+                        border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
+                    ) {
+                        Text(
+                            text = "v1.6",
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = NexusGold,
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
                 }
                 Text(
-                    text = "بوابة المانهوا والمانها السحابية",
+                    text = when (selectedTab) {
+                        1 -> "الأعمال المفضلة"
+                        2 -> "سجل القراءة الذكي"
+                        3 -> "التحميلات المشفرة"
+                        4 -> "مركز التحديثات والمميزات"
+                        else -> "بوابة المانهوا والمانغا السحابية"
+                    },
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = TextSecondary,
+                        color = if (selectedTab == 0) TextSecondary else NexusGoldLight,
+                        fontWeight = if (selectedTab == 0) FontWeight.Normal else FontWeight.Bold,
                         fontSize = 11.sp
                     )
                 )
