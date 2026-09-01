@@ -112,6 +112,24 @@ fun NexusNavGraph(
                     },
                     onDismissUpdateDialog = {
                         viewModel.dismissUpdateDialog()
+                    },
+                    onPageChange = { page ->
+                        viewModel.setHomePage(page)
+                    },
+                    onNextPage = {
+                        viewModel.setHomePage(homeState.currentPage + 1)
+                    },
+                    onPrevPage = {
+                        viewModel.setHomePage(homeState.currentPage - 1)
+                    },
+                    onRefreshRandomDiscovery = {
+                        viewModel.refreshRandomDiscovery()
+                    },
+                    onFavSubTabSelected = { tab ->
+                        viewModel.setFavoriteSubTab(tab)
+                    },
+                    onToggleReadLater = { mangaId ->
+                        viewModel.toggleReadLater(mangaId)
                     }
                 )
             }
@@ -143,6 +161,9 @@ fun NexusNavGraph(
                     onToggleFavorite = {
                         viewModel.toggleFavorite(mangaId)
                     },
+                    onToggleReadLater = {
+                        viewModel.toggleReadLater(mangaId)
+                    },
                     onBatchIndexChange = { idx ->
                         viewModel.setBatchIndex(idx)
                     },
@@ -155,6 +176,11 @@ fun NexusNavGraph(
                     onDownloadChapter = { chapter ->
                         detailsState.manga?.let { m ->
                             viewModel.downloadChapter(m, chapter)
+                        }
+                    },
+                    onDownloadBatch = {
+                        detailsState.manga?.let { m ->
+                            viewModel.downloadBatchChapters(m, detailsState.currentBatchChapters)
                         }
                     },
                     onDeleteDownloadedChapter = { chNum ->

@@ -2,10 +2,13 @@ package com.example.ui.screens.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,21 +34,30 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -66,6 +78,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,6 +123,12 @@ fun HomeScreen(
     onOpenUpdatesDialog: () -> Unit = {},
     onCheckCloudUpdates: () -> Unit = {},
     onDismissUpdateDialog: () -> Unit = {},
+    onPageChange: (Int) -> Unit = {},
+    onNextPage: () -> Unit = {},
+    onPrevPage: () -> Unit = {},
+    onRefreshRandomDiscovery: () -> Unit = {},
+    onFavSubTabSelected: (Int) -> Unit = {},
+    onToggleReadLater: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
@@ -140,9 +159,9 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag("home_screen_lazy_column"),
-                            contentPadding = PaddingValues(bottom = 80.dp)
+                            contentPadding = PaddingValues(bottom = 90.dp)
                         ) {
-                            // Hero Carousel (Top 5 Featured Works)
+                            // Hero Carousel (Top 5 Featured Works - Height 290.dp)
                             if (uiState.heroMangaList.isNotEmpty()) {
                                 item {
                                     HeroCarouselSection(
@@ -151,6 +170,17 @@ fun HomeScreen(
                                         onMangaClick = onMangaClick,
                                         onChapterClick = onChapterClick,
                                         onToggleFavorite = onToggleFavorite
+                                    )
+                                }
+                            }
+
+                            // Discover Random Works Section (Rotates every 30 mins)
+                            if (uiState.randomDiscoveryList.isNotEmpty()) {
+                                item {
+                                    DiscoverRandomSection(
+                                        randomList = uiState.randomDiscoveryList,
+                                        onMangaClick = onMangaClick,
+                                        onRefreshRandom = onRefreshRandomDiscovery
                                     )
                                 }
                             }
@@ -168,13 +198,13 @@ fun HomeScreen(
                             // Section Title: أحدث الفصول (Latest Chapters)
                             item {
                                 SectionHeaderTitle(
-                                    title = "أحدث الفصول المضافة",
-                                    subtitle = "تحديثات مستمرة من مستودع البيانات السحابي"
+                                    title = if (uiState.searchQuery.isBlank() && uiState.selectedCategory == "الكل") "أحدث الفصول المضافة" else "نتائج البحث والتصفية",
+                                    subtitle = "صفحة ${uiState.currentPage} من ${uiState.totalPages} (عرض 14 عملاً)"
                                 )
                             }
 
-                            // 2-Column Grid of Latest Works
-                            val items = uiState.latestMangaGrid
+                            // 2-Column Grid of Paginated Works (14 items per page)
+                            val items = uiState.paginatedMangaList
                             val chunkedPairs = items.chunked(2)
 
                             items(
@@ -203,15 +233,32 @@ fun HomeScreen(
                                     }
                                 }
                             }
+
+                            // Pagination Controls (14 Items per page)
+                            if (uiState.totalPages > 1) {
+                                item {
+                                    PaginationControlsSection(
+                                        currentPage = uiState.currentPage,
+                                        totalPages = uiState.totalPages,
+                                        onPageChange = onPageChange,
+                                        onNextPage = onNextPage,
+                                        onPrevPage = onPrevPage
+                                    )
+                                }
+                            }
                         }
                     }
                     1 -> {
-                        // Favorites Tab Content
+                        // Favorites & Read Later Tab Content
                         FavoritesTabContent(
                             favoriteList = uiState.favoriteMangaList,
+                            readLaterList = uiState.readLaterMangaList,
+                            selectedSubTab = uiState.favoriteSubTab,
+                            onSubTabSelected = onFavSubTabSelected,
                             onMangaClick = onMangaClick,
                             onChapterClick = onChapterClick,
                             onToggleFavorite = onToggleFavorite,
+                            onToggleReadLater = onToggleReadLater,
                             onExploreHome = { onTabSelected(0) }
                         )
                     }
@@ -257,6 +304,15 @@ fun HomeScreen(
             onTabSelected = onTabSelected,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        // Preload / Splash Loading Screen Overlay
+        AnimatedVisibility(
+            visible = !uiState.isAppReady,
+            enter = fadeIn(animationSpec = tween(250)),
+            exit = fadeOut(animationSpec = tween(400))
+        ) {
+            NexusPreloadSplashScreen()
+        }
 
         // Favorites Popup Dialog
         if (showFavoritesPopup) {
@@ -510,7 +566,7 @@ fun HeroCarouselSection(
             pageSpacing = 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(230.dp)
+                .height(290.dp)
                 .testTag("hero_carousel_pager")
         ) { page ->
             val manga = heroList[page]
@@ -1051,6 +1107,408 @@ fun LatestChapterItemRow(
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.White
+                    )
+                )
+            }
+        }
+    }
+}
+
+/**
+ * =========================================================================
+ * DISCOVER RANDOM SECTION (اكتشاف عشوائي بالكامل - يتجدد كل 30 دقيقة)
+ * =========================================================================
+ * User Request: "أريد شيء عشوائي بالكامل بحيث اجرب اشياء ليس من اختياري بس يفضل تكون بقسم خاص تحت الهيرو
+ * و صورهم تكون صغيرة لايظهر فقط صورة العمل عند الضغط يفتح التفاصيل و لازم يتغير كل فترة 30 دقيقه."
+ */
+@Composable
+fun DiscoverRandomSection(
+    randomList: List<MangaItem>,
+    onMangaClick: (String) -> Unit,
+    onRefreshRandom: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 6.dp)
+            .testTag("discover_random_section")
+    ) {
+        // Section Header with Shuffle Action
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = NexusOrangeDark,
+                    border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f)),
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Casino,
+                            contentDescription = null,
+                            tint = NexusOrangeLight,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        text = "اكتشف أعمالاً عشوائية",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            color = TextPrimary,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Text(
+                        text = "تتجدد تلقائياً كل 30 دقيقة • اضغط للتفاصيل",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = TextSecondary,
+                            fontSize = 10.sp
+                        )
+                    )
+                }
+            }
+
+            // Quick Shuffle Button
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = SurfaceVariantDark,
+                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onRefreshRandom() }
+                    .testTag("shuffle_random_button")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shuffle,
+                        contentDescription = "خلط",
+                        tint = NexusGold,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "عشوائي",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = NexusGold,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp
+                        )
+                    )
+                }
+            }
+        }
+
+        // Horizontal Row of Compact Thumbnails (Image only)
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(randomList, key = { it.id }) { manga ->
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.35f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                    modifier = Modifier
+                        .size(width = 82.dp, height = 118.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onMangaClick(manga.id) }
+                        .testTag("random_discovery_item_${manga.id}")
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NexusMangaImage(
+                            imageUrl = manga.coverUrl,
+                            fallbackRes = manga.coverRes,
+                            contentDescription = manga.titleAr,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        // Subtle bottom gradient
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                                    )
+                                )
+                        )
+
+                        // Type dot badge
+                        Surface(
+                            shape = CircleShape,
+                            color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange,
+                            modifier = Modifier
+                                .size(8.dp)
+                                .align(Alignment.TopEnd)
+                                .padding(2.dp)
+                        ) {}
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * =========================================================================
+ * PAGINATION CONTROLS SECTION (14 Items Per Page)
+ * =========================================================================
+ */
+@Composable
+fun PaginationControlsSection(
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit,
+    onNextPage: () -> Unit,
+    onPrevPage: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.dp, SurfaceElevated),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .testTag("pagination_controls")
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Previous Page Button
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (currentPage > 1) SurfaceVariantDark else SurfaceDark.copy(alpha = 0.4f),
+                border = BorderStroke(
+                    1.dp,
+                    if (currentPage > 1) NexusGold.copy(alpha = 0.4f) else Color.Transparent
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = currentPage > 1) { onPrevPage() }
+                    .testTag("prev_page_button")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "السابق",
+                        tint = if (currentPage > 1) NexusGold else TextTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "السابق",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (currentPage > 1) TextPrimary else TextTertiary,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+            }
+
+            // Page Number Indicators
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                for (p in 1..totalPages) {
+                    val isSelected = p == currentPage
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSelected) NexusGold else SurfaceVariantDark,
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) NexusGoldLight else SurfaceElevated
+                        ),
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onPageChange(p) }
+                            .testTag("page_chip_$p")
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "$p",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                                    color = if (isSelected) BackgroundDark else TextSecondary,
+                                    fontSize = 13.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Next Page Button
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (currentPage < totalPages) SurfaceVariantDark else SurfaceDark.copy(alpha = 0.4f),
+                border = BorderStroke(
+                    1.dp,
+                    if (currentPage < totalPages) NexusGold.copy(alpha = 0.4f) else Color.Transparent
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = currentPage < totalPages) { onNextPage() }
+                    .testTag("next_page_button")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "التالي",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (currentPage < totalPages) TextPrimary else TextTertiary,
+                            fontSize = 12.sp
+                        )
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "التالي",
+                        tint = if (currentPage < totalPages) NexusGold else TextTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * =========================================================================
+ * PRELOAD / SPLASH LOADING SCREEN (شاشة تهيئة وتحميل البداية لمنع التقطيع)
+ * =========================================================================
+ * User Request: "في مشكلة أن في تقطيع يصير ببداية دخول التطبيق أضف شيء مثل جاري التحميل لكي يحمل الصور بعدها يدخلني"
+ */
+@Composable
+fun NexusPreloadSplashScreen(
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "preload_pulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .testTag("preload_splash_screen"),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            // Nexus Logo Emblem with Gold Aura
+            Surface(
+                shape = CircleShape,
+                color = SurfaceCard,
+                border = BorderStroke(2.dp, NexusGold),
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .size(90.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "N",
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            fontWeight = FontWeight.Black,
+                            color = NexusGoldLight,
+                            fontSize = 44.sp
+                        )
+                    )
+                }
+            }
+
+            // Title & Subtitle
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "NEXUS MANGA",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Black,
+                        color = TextPrimary,
+                        letterSpacing = 3.sp
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "الإصدار 1.8.0 • تهيئة الصور والمستودع",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = NexusOrangeLight,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Progress Indicator
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.width(220.dp)
+            ) {
+                LinearProgressIndicator(
+                    color = NexusGold,
+                    trackColor = SurfaceVariantDark,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                )
+
+                Text(
+                    text = "جاري تحميل وتهيئة الأعمال...",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
                     )
                 )
             }

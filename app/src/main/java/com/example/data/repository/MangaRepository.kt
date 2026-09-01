@@ -39,6 +39,9 @@ class MangaRepository(private val context: Context) {
     private val _favoritesFlow = MutableStateFlow<Set<String>>(emptySet())
     val favoritesFlow: StateFlow<Set<String>> = _favoritesFlow.asStateFlow()
 
+    private val _readLaterFlow = MutableStateFlow<Set<String>>(emptySet())
+    val readLaterFlow: StateFlow<Set<String>> = _readLaterFlow.asStateFlow()
+
     private val _lastReadFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     val lastReadFlow: StateFlow<Map<String, Int>> = _lastReadFlow.asStateFlow()
 
@@ -421,6 +424,9 @@ class MangaRepository(private val context: Context) {
         val favs = prefs.getStringSet("favorites", emptySet()) ?: emptySet()
         _favoritesFlow.value = favs
 
+        val readLater = prefs.getStringSet("read_later", emptySet()) ?: emptySet()
+        _readLaterFlow.value = readLater
+
         val allKeys = prefs.all
         val readMap = mutableMapOf<String, Int>()
         for ((k, v) in allKeys) {
@@ -445,6 +451,21 @@ class MangaRepository(private val context: Context) {
 
     fun isFavorite(mangaId: String): Boolean {
         return _favoritesFlow.value.contains(mangaId)
+    }
+
+    fun toggleReadLater(mangaId: String) {
+        val current = _readLaterFlow.value.toMutableSet()
+        if (current.contains(mangaId)) {
+            current.remove(mangaId)
+        } else {
+            current.add(mangaId)
+        }
+        _readLaterFlow.value = current
+        prefs.edit().putStringSet("read_later", current).apply()
+    }
+
+    fun isReadLater(mangaId: String): Boolean {
+        return _readLaterFlow.value.contains(mangaId)
     }
 
     fun saveLastRead(mangaId: String, chapterNumber: Int) {
@@ -596,6 +617,14 @@ class MangaRepository(private val context: Context) {
             Log.e(TAG, "Download chapter error: ${e.message}", e)
             updateDownloadProgress(manga.id, chapter.number, isFailed = true, error = e.message ?: "فشل التحميل")
             Result.failure(e)
+        }
+    }
+
+    suspend fun downloadChaptersBatch(manga: MangaItem, chapters: List<Chapter>) = withContext(Dispatchers.IO) {
+        for (ch in chapters) {
+            if (!isChapterDownloaded(manga.id, ch.number) && !ch.isClosed) {
+                downloadChapter(manga, ch)
+            }
         }
     }
 
@@ -1218,21 +1247,21 @@ class MangaRepository(private val context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.7.2)
+     * Checks GitHub Releases for In-App Updates against current version (1.8.0)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.7.2"
-        val v16Changelog = "✨ مميزات وتحديثات الإصدار v1.7.2:\n" +
-                "• 🔓 معالجة وتحديث حالة الفصول المغلقة فوراً: مزامنة وإلغاء شاشة الصيانة تلقائياً عند فتح ونشر الفصول على جيت هوب.\n" +
-                "• 🖋️ تشغيل وتضمين الخط العربي الأميري (Amiri Font): يعمل الآن بشكل فوري ومباشر أوفلاين على كافة واجهات ونصوص التطبيق.\n" +
-                "• 🚀 سلاسة تامة وإلغاء اللاج والتأخير: تحسين سرعة التنقل وتقليب الصفحات داخل القارئ وتجربة تصفح سريعة 60/120 إطاراً في الثانية.\n" +
-                "• ⚡ التحديث الفوري وتجاوز الكاش (Cache Busting): تحميل مباشر وتلقائي لأحدث الأعمال والفصول المرفوعة على جيت هوب بدون أي انتظار أو تأخير.\n" +
-                "• 🔄 زر التحديث السريع بالهيدر: إمكانية إجبار التطبيق على مزامنة البيانات السحابية فوراً بنقرة واحدة.\n" +
-                "• 🔒 القراءة بدون اتصال والتنزيل المشفر: إمكانية تحميل الفصول وقراءتها بدون إنترنت مع حماية كاملة للمحتوى.\n" +
-                "• 🛡️ حماية المحتوى والخصوصية: منع لقطات الشاشة وتسجيل الفيديو داخل قارئ الفصول لحفظ حقوق الأعمال.\n" +
-                "• 🔍 وضع القراءة المغمور والتكبير التفاعلي: شاشة كاملة 100% مع دعم التقريب والتحريك باللمس.\n" +
-                "• 📊 سجل القراءة وتتبع التقدم التلقائي: حفظ موضع القراءة والصفحة بدقة مع إمكانية المتابعة الفورية."
+        val currentVersion = "1.8.0"
+        val v18Changelog = "✨ مميزات وتحديثات الإصدار v1.8.0:\n" +
+                "• ⚡ التحميل المتعدد للفصول دفعة واحدة: تنزيل الفصول بنقرة واحدة للقراءة أوفلاين.\n" +
+                "• 🎲 قسم 'اكتشف عشوائياً': شريط بوسترات مميز تحت الهيرو يتجدد تلقائياً كل 30 دقيقة لاكتشاف مانهوا جديدة.\n" +
+                "• 📖 قائمة المشاهدة والقراءة لاحقاً (Read Later): حفظ الأعمال للرجوع إليها سريعاً لاحقاً.\n" +
+                "• 🌟 شارات الفصول الجديدة للمفضلة: تنبيه فوري ورمز مميز عند صدور فصول جديدة للأعمال المحفوظة.\n" +
+                "• 📄 نظام تقسيم الصفحات المطور (Pagination): تصفح 14 عملاً لكل صفحة لسرعة فائقة وإلغاء أي لاج.\n" +
+                "• 🖼️ زيادة وتوسيع طول الهيرو بانر: واجهة رأسية أوسع وأكثر راحة لاستعراض الأعمال المميزة.\n" +
+                "• 🚀 شاشة تمهيد سريعة وأنيميشن ناعم: تحميل مسبق للبيانات مع مؤثرات حركية خفيفة وسلسة.\n" +
+                "• 🔓 معالجة وتحديث حالة الفصول المغلقة فوراً: مزامنة وإلغاء شاشة الصيانة تلقائياً عند النشر.\n" +
+                "• 🖋️ الخط العربي الأميري المدمج، الحماية من لقطات الشاشة، والقراءة المشفرة أوفلاين."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
@@ -1258,7 +1287,7 @@ class MangaRepository(private val context: Context) {
                         updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
                         latestVersion = tag.ifEmpty { release.name ?: currentVersion },
                         currentVersion = currentVersion,
-                        releaseNotes = if (release.body.isNullOrBlank()) v16Changelog else "${release.body}\n\n$v16Changelog",
+                        releaseNotes = if (release.body.isNullOrBlank()) v18Changelog else "${release.body}\n\n$v18Changelog",
                         downloadUrl = downloadUrl
                     )
                 }
@@ -1284,7 +1313,7 @@ class MangaRepository(private val context: Context) {
                         updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
                         latestVersion = tag.ifEmpty { release.name ?: currentVersion },
                         currentVersion = currentVersion,
-                        releaseNotes = if (release.body.isNullOrBlank()) v16Changelog else "${release.body}\n\n$v16Changelog",
+                        releaseNotes = if (release.body.isNullOrBlank()) v18Changelog else "${release.body}\n\n$v18Changelog",
                         downloadUrl = downloadUrl
                     )
                 }
@@ -1300,7 +1329,7 @@ class MangaRepository(private val context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = v16Changelog
+            releaseNotes = v18Changelog
         )
     }
 

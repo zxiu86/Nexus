@@ -30,11 +30,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -106,10 +109,12 @@ fun DetailsScreen(
     onNavigateHome: () -> Unit,
     onChapterClick: (Int) -> Unit,
     onToggleFavorite: () -> Unit,
+    onToggleReadLater: () -> Unit = {},
     onBatchIndexChange: (Int) -> Unit,
     onNextBatch: () -> Unit,
     onPreviousBatch: () -> Unit,
     onDownloadChapter: (com.example.data.model.Chapter) -> Unit = {},
+    onDownloadBatch: () -> Unit = {},
     onDeleteDownloadedChapter: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -173,12 +178,14 @@ fun DetailsScreen(
                 .testTag("details_screen_lazy_column"),
             contentPadding = PaddingValues(bottom = 40.dp)
         ) {
-            // Top Navigation Bar (With Return to Home Button)
+            // Top Navigation Bar (With Return to Home Button, Read Later, and Favorite)
             item {
                 DetailsTopAppBar(
                     onNavigateHome = onNavigateHome,
                     isFavorite = uiState.isFavorite,
-                    onToggleFavorite = onToggleFavorite
+                    isReadLater = uiState.isReadLater,
+                    onToggleFavorite = onToggleFavorite,
+                    onToggleReadLater = onToggleReadLater
                 )
             }
 
@@ -211,13 +218,15 @@ fun DetailsScreen(
                 StaffCreditsSection(manga = manga)
             }
 
-            // Section Title: Chapters List Header with Batch Range Info
+            // Section Title: Chapters List Header with Batch Range Info & Batch Download button
             item {
                 ChaptersHeaderSection(
                     totalChapters = manga.totalChaptersCount,
                     rangeText = uiState.currentBatchRangeText,
                     currentBatch = uiState.currentBatchIndex + 1,
-                    totalBatches = uiState.totalBatches
+                    totalBatches = uiState.totalBatches,
+                    isBatchDownloading = uiState.isBatchDownloading,
+                    onDownloadBatch = onDownloadBatch
                 )
             }
 
@@ -263,7 +272,9 @@ fun DetailsScreen(
 fun DetailsTopAppBar(
     onNavigateHome: () -> Unit,
     isFavorite: Boolean,
-    onToggleFavorite: () -> Unit
+    isReadLater: Boolean = false,
+    onToggleFavorite: () -> Unit,
+    onToggleReadLater: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -320,28 +331,58 @@ fun DetailsTopAppBar(
             )
         }
 
-        // Favorite Toggle Button with Glowing Pill
-        IconButton(
-            onClick = onToggleFavorite,
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape)
-                .background(if (isFavorite) NexusOrangeDark else SurfaceCard)
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        if (isFavorite) NexusOrange else SurfaceElevated
-                    ),
-                    CircleShape
-                )
-                .testTag("details_fav_button")
+        // Action Buttons: Read Later Bookmark & Favorite
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = "المفضلة",
-                tint = if (isFavorite) NexusOrangeLight else TextSecondary,
-                modifier = Modifier.size(22.dp)
-            )
+            // Read Later Bookmark Button (المشاهدة لاحقاً)
+            IconButton(
+                onClick = onToggleReadLater,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(if (isReadLater) NexusGoldDark else SurfaceCard)
+                    .border(
+                        BorderStroke(
+                            1.dp,
+                            if (isReadLater) NexusGold else SurfaceElevated
+                        ),
+                        CircleShape
+                    )
+                    .testTag("details_read_later_button")
+            ) {
+                Icon(
+                    imageVector = if (isReadLater) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                    contentDescription = "المشاهدة لاحقاً",
+                    tint = if (isReadLater) NexusGold else TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Favorite Toggle Button with Glowing Pill
+            IconButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(if (isFavorite) NexusOrangeDark else SurfaceCard)
+                    .border(
+                        BorderStroke(
+                            1.dp,
+                            if (isFavorite) NexusOrange else SurfaceElevated
+                        ),
+                        CircleShape
+                    )
+                    .testTag("details_fav_button")
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "المفضلة",
+                    tint = if (isFavorite) NexusOrangeLight else TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -891,14 +932,16 @@ fun StaffInfoRow(
 }
 
 /**
- * Chapters List Header with batch indicator
+ * Chapters List Header with batch indicator and batch download action
  */
 @Composable
 fun ChaptersHeaderSection(
     totalChapters: Int,
     rangeText: String,
     currentBatch: Int,
-    totalBatches: Int
+    totalBatches: Int,
+    isBatchDownloading: Boolean = false,
+    onDownloadBatch: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -936,20 +979,76 @@ fun ChaptersHeaderSection(
             }
         }
 
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = NexusGoldDark,
-            border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "دفعة $currentBatch من $totalBatches",
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = NexusGold,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+            // Batch Download Button (تنزيل الدفعة المتعدد)
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (isBatchDownloading) NexusOrangeDark else SurfaceCard,
+                border = BorderStroke(
+                    1.dp,
+                    if (isBatchDownloading) NexusOrange else NexusGold.copy(alpha = 0.4f)
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = !isBatchDownloading) { onDownloadBatch() }
+                    .testTag("batch_download_button")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isBatchDownloading) {
+                        CircularProgressIndicator(
+                            color = NexusOrangeLight,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = "جاري التنزيل...",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = NexusOrangeLight,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = "تنزيل الدفعة كاملة",
+                            tint = NexusGold,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "تنزيل الدفعة",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = NexusGold,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = NexusGoldDark,
+                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f))
+            ) {
+                Text(
+                    text = "دفعة $currentBatch من $totalBatches",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = NexusGold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
                 )
-            )
+            }
         }
     }
 }

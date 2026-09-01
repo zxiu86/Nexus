@@ -30,6 +30,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudDownload
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
@@ -268,309 +271,431 @@ private fun FooterNavItem(
 
 /**
  * =========================================================================
- * TAB 1: FAVORITES VIEW (قسم المفضلة المطور)
+ * TAB 1: FAVORITES & READ LATER VIEW (المفضلة والمشاهدة لاحقاً)
  * =========================================================================
  */
 @Composable
 fun FavoritesTabContent(
     favoriteList: List<MangaItem>,
+    readLaterList: List<MangaItem> = emptyList(),
+    selectedSubTab: Int = 0,
+    onSubTabSelected: (Int) -> Unit = {},
     onMangaClick: (String) -> Unit,
     onChapterClick: (String, Int) -> Unit,
     onToggleFavorite: (String) -> Unit,
+    onToggleReadLater: (String) -> Unit = {},
     onExploreHome: () -> Unit
 ) {
-    if (favoriteList.isEmpty()) {
-        Box(
+    val currentList = if (selectedSubTab == 0) favoriteList else readLaterList
+    val isFavoritesTab = selectedSubTab == 0
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("favorites_tab_container")
+    ) {
+        // Sub-Tab Switcher: المفضلة / المشاهدة لاحقاً
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .background(SurfaceCard, RoundedCornerShape(14.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, SurfaceElevated),
-                modifier = Modifier.fillMaxWidth()
+            // Favorites Sub-tab
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (selectedSubTab == 0) NexusOrangeDark else Color.Transparent,
+                border = if (selectedSubTab == 0) BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f)) else null,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onSubTabSelected(0) }
+                    .testTag("subtab_favorites")
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                Row(
+                    modifier = Modifier.padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = SurfaceVariantDark,
-                        border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.4f)),
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                tint = NexusOrange,
-                                modifier = Modifier.size(36.dp)
-                            )
-                        }
-                    }
-
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = if (selectedSubTab == 0) NexusOrangeLight else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "قائمة المفضلة فارغة",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            color = TextPrimary,
-                            fontSize = 18.sp
+                        text = "المفضلة (${favoriteList.size})",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = if (selectedSubTab == 0) FontWeight.Bold else FontWeight.Medium,
+                            color = if (selectedSubTab == 0) TextPrimary else TextSecondary,
+                            fontSize = 13.sp
                         )
                     )
+                }
+            }
 
+            // Read Later Sub-tab
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (selectedSubTab == 1) NexusGoldDark else Color.Transparent,
+                border = if (selectedSubTab == 1) BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)) else null,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onSubTabSelected(1) }
+                    .testTag("subtab_read_later")
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmark,
+                        contentDescription = null,
+                        tint = if (selectedSubTab == 1) NexusGoldLight else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "لم تقم بإضافة أي مانهوا أو مانغا إلى المفضلة بعد. انقر على أيقونة القلب في أي عمل للوصول إليه بسرعة هنا.",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextSecondary,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 20.sp
+                        text = "المشاهدة لاحقاً (${readLaterList.size})",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = if (selectedSubTab == 1) FontWeight.Bold else FontWeight.Medium,
+                            color = if (selectedSubTab == 1) TextPrimary else TextSecondary,
+                            fontSize = 13.sp
                         )
                     )
-
-                    Button(
-                        onClick = onExploreHome,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark
-                        ),
-                        modifier = Modifier.height(44.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Explore,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text("استكشف الأعمال الآن", fontWeight = FontWeight.Bold)
-                        }
-                    }
                 }
             }
         }
-    } else {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("favorites_tab_list"),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 90.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+
+        if (currentList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                    border = BorderStroke(1.dp, SurfaceElevated),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = SurfaceVariantDark,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isFavoritesTab) NexusOrange.copy(alpha = 0.4f) else NexusGold.copy(alpha = 0.4f)
+                            ),
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (isFavoritesTab) Icons.Default.FavoriteBorder else Icons.Default.BookmarkBorder,
+                                    contentDescription = null,
+                                    tint = if (isFavoritesTab) NexusOrange else NexusGold,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+
                         Text(
-                            text = "الأعمال المفضلة (${favoriteList.size})",
+                            text = if (isFavoritesTab) "قائمة المفضلة فارغة" else "قائمة المشاهدة لاحقاً فارغة",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
                                 color = TextPrimary,
                                 fontSize = 18.sp
                             )
                         )
+
                         Text(
-                            text = "تم حفظها محلياً للوصول الفوري",
-                            style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary)
+                            text = if (isFavoritesTab)
+                                "لم تقم بإضافة أي مانهوا أو مانغا إلى المفضلة بعد. انقر على أيقونة القلب في أي عمل للوصول إليه بسرعة هنا."
+                            else
+                                "لم تقم بحفظ أي عمل للمشاهدة لاحقاً. انقر على أيقونة الإشارة المرجعية في تفاصيل العمل لحفظه هنا.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = TextSecondary,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
+                            )
                         )
-                    }
 
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = NexusOrangeDark,
-                        border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = null,
-                                tint = NexusOrangeLight,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = "${favoriteList.size} عمل",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = NexusOrangeLight
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-
-            items(favoriteList, key = { it.id }) { manga ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, SurfaceElevated),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { onMangaClick(manga.id) }
-                        .testTag("favorite_card_${manga.id}")
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Thumbnail
-                        Box(
-                            modifier = Modifier
-                                .size(width = 68.dp, height = 92.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .border(1.dp, NexusGold.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                        ) {
-                            NexusMangaImage(
-                                imageUrl = manga.coverUrl,
-                                fallbackRes = manga.coverRes,
-                                contentDescription = manga.titleAr,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-
-                        // Details
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Button(
+                            onClick = onExploreHome,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NexusGold,
+                                contentColor = BackgroundDark
+                            ),
+                            modifier = Modifier.height(44.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange
-                                ) {
-                                    Text(
-                                        text = manga.type.labelAr,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = BackgroundDark,
-                                            fontSize = 9.sp
-                                        )
-                                    )
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = null,
-                                        tint = NexusGold,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = "${manga.rating}",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = NexusGold,
-                                            fontSize = 11.sp
-                                        )
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Explore,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text("استكشف الأعمال الآن", fontWeight = FontWeight.Bold)
                             }
-
+                        }
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("favorites_tab_list"),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 90.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
                             Text(
-                                text = manga.titleAr,
-                                style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = FontWeight.Bold,
+                                text = if (isFavoritesTab) "الأعمال المفضلة (${currentList.size})" else "قائمة المشاهدة لاحقاً (${currentList.size})",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Black,
                                     color = TextPrimary,
-                                    fontSize = 15.sp
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                    fontSize = 18.sp
+                                )
                             )
-
                             Text(
-                                text = manga.genres.take(3).joinToString(" • "),
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = TextSecondary,
-                                    fontSize = 11.sp
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                text = if (isFavoritesTab) "تنبيهات وتحديثات الفصول فور نزولها" else "أعمال تم حفظها لقراءتها لاحقاً",
+                                style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary)
                             )
+                        }
 
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isFavoritesTab) NexusOrangeDark else NexusGoldDark,
+                            border = BorderStroke(1.dp, if (isFavoritesTab) NexusOrange.copy(alpha = 0.5f) else NexusGold.copy(alpha = 0.5f))
+                        ) {
                             Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                Icon(
+                                    imageVector = if (isFavoritesTab) Icons.Default.Favorite else Icons.Default.Bookmark,
+                                    contentDescription = null,
+                                    tint = if (isFavoritesTab) NexusOrangeLight else NexusGoldLight,
+                                    modifier = Modifier.size(14.dp)
+                                )
                                 Text(
-                                    text = "${manga.chapters.size} فصول متوفرة",
+                                    text = "${currentList.size} عمل",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = NexusGoldLight,
-                                        fontSize = 11.sp
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isFavoritesTab) NexusOrangeLight else NexusGoldLight
                                     )
                                 )
+                            }
+                        }
+                    }
+                }
 
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = SurfaceVariantDark,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .clickable { onChapterClick(manga.id, 1) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                items(currentList, key = { it.id }) { manga ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                        border = BorderStroke(1.dp, SurfaceElevated),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { onMangaClick(manga.id) }
+                            .testTag("favorite_card_${manga.id}")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Thumbnail with Badge
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 68.dp, height = 92.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .border(1.dp, NexusGold.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                            ) {
+                                NexusMangaImage(
+                                    imageUrl = manga.coverUrl,
+                                    fallbackRes = manga.coverRes,
+                                    contentDescription = manga.titleAr,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                // New Chapter Notification Badge on Favorites
+                                if (isFavoritesTab) {
+                                    Surface(
+                                        shape = RoundedCornerShape(bottomStart = 8.dp),
+                                        color = BadgeNew,
+                                        modifier = Modifier.align(Alignment.TopEnd)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = null,
-                                            tint = NexusGold,
-                                            modifier = Modifier.size(12.dp)
-                                        )
                                         Text(
-                                            text = "اقرأ الفصل 1",
+                                            text = "محدث",
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                color = NexusGold,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 10.sp
+                                                fontWeight = FontWeight.Black,
+                                                color = Color.White,
+                                                fontSize = 8.sp
                                             )
                                         )
                                     }
                                 }
                             }
-                        }
 
-                        // Remove Favorite Button
-                        IconButton(
-                            onClick = { onToggleFavorite(manga.id) },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(SurfaceVariantDark)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = "إزالة",
-                                tint = NexusOrange,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            // Details
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange
+                                    ) {
+                                        Text(
+                                            text = manga.type.labelAr,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = BackgroundDark,
+                                                fontSize = 9.sp
+                                            )
+                                        )
+                                    }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Star,
+                                            contentDescription = null,
+                                            tint = NexusGold,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "${manga.rating}",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = NexusGold,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = manga.titleAr,
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        fontSize = 15.sp
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Text(
+                                    text = manga.genres.take(3).joinToString(" • "),
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = TextSecondary,
+                                        fontSize = 11.sp
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "${manga.chapters.size} فصول متوفرة",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = NexusGoldLight,
+                                            fontSize = 11.sp
+                                        )
+                                    )
+
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = SurfaceVariantDark,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { onChapterClick(manga.id, 1) }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = null,
+                                                tint = NexusGold,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Text(
+                                                text = "اقرأ الفصل 1",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = NexusGold,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Toggle / Remove Button
+                            IconButton(
+                                onClick = {
+                                    if (isFavoritesTab) {
+                                        onToggleFavorite(manga.id)
+                                    } else {
+                                        onToggleReadLater(manga.id)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(SurfaceVariantDark)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavoritesTab) Icons.Default.Favorite else Icons.Default.Bookmark,
+                                    contentDescription = "إزالة",
+                                    tint = if (isFavoritesTab) NexusOrange else NexusGold,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
