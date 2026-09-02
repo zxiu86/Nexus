@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -622,6 +623,7 @@ class MangaRepository(private val context: Context) {
 
     suspend fun downloadChaptersBatch(manga: MangaItem, chapters: List<Chapter>) = withContext(Dispatchers.IO) {
         for (ch in chapters) {
+            coroutineContext.ensureActive()
             if (!isChapterDownloaded(manga.id, ch.number) && !ch.isClosed) {
                 downloadChapter(manga, ch)
             }

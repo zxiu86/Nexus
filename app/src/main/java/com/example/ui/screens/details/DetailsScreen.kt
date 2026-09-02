@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
@@ -115,6 +116,7 @@ fun DetailsScreen(
     onPreviousBatch: () -> Unit,
     onDownloadChapter: (com.example.data.model.Chapter) -> Unit = {},
     onDownloadBatch: () -> Unit = {},
+    onStopBatchDownload: () -> Unit = {},
     onDeleteDownloadedChapter: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -226,7 +228,8 @@ fun DetailsScreen(
                     currentBatch = uiState.currentBatchIndex + 1,
                     totalBatches = uiState.totalBatches,
                     isBatchDownloading = uiState.isBatchDownloading,
-                    onDownloadBatch = onDownloadBatch
+                    onDownloadBatch = onDownloadBatch,
+                    onStopBatchDownload = onStopBatchDownload
                 )
             }
 
@@ -941,7 +944,8 @@ fun ChaptersHeaderSection(
     currentBatch: Int,
     totalBatches: Int,
     isBatchDownloading: Boolean = false,
-    onDownloadBatch: () -> Unit = {}
+    onDownloadBatch: () -> Unit = {},
+    onStopBatchDownload: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -981,41 +985,84 @@ fun ChaptersHeaderSection(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Batch Download Button (تنزيل الدفعة المتعدد)
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = if (isBatchDownloading) NexusOrangeDark else SurfaceCard,
-                border = BorderStroke(
-                    1.dp,
-                    if (isBatchDownloading) NexusOrange else NexusGold.copy(alpha = 0.4f)
-                ),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(enabled = !isBatchDownloading) { onDownloadBatch() }
-                    .testTag("batch_download_button")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+            // Batch Download or Stop Button (تنزيل الدفعة المتعدد مع زر التوقيف)
+            if (isBatchDownloading) {
+                // Downloading Status Pill
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = NexusOrangeDark,
+                    border = BorderStroke(1.dp, NexusOrange),
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
                 ) {
-                    if (isBatchDownloading) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         CircularProgressIndicator(
                             color = NexusOrangeLight,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            text = "جاري التنزيل...",
+                            text = "جاري التنزيل",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = NexusOrangeLight,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp
                             )
                         )
-                    } else {
+                    }
+                }
+
+                // Stop Batch Download Button (زر إيقاف التنزيل المتعدد)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFF3B1515),
+                    border = BorderStroke(1.dp, Color(0xFFEF5350)),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { onStopBatchDownload() }
+                        .testTag("stop_batch_download_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.StopCircle,
+                            contentDescription = "إيقاف تنزيل الدفعة",
+                            tint = Color(0xFFFF8A80),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "إيقاف",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFFFF8A80),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = SurfaceCard,
+                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { onDownloadBatch() }
+                        .testTag("batch_download_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.CloudDownload,
                             contentDescription = "تنزيل الدفعة كاملة",
@@ -1041,7 +1088,7 @@ fun ChaptersHeaderSection(
             ) {
                 Text(
                     text = "دفعة $currentBatch من $totalBatches",
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = NexusGold,
                         fontWeight = FontWeight.Bold,

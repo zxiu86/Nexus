@@ -13,6 +13,7 @@ import com.example.data.model.ReadingHistoryEntry
 import com.example.data.repository.MangaRepository
 import com.example.util.InAppUpdateManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -425,6 +426,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --- Offline Download Logic ---
+    private var batchDownloadJob: Job? = null
+
     fun downloadChapter(manga: MangaItem, chapter: Chapter) {
         viewModelScope.launch {
             repository.downloadChapter(manga, chapter)
@@ -432,11 +435,21 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun downloadBatchChapters(manga: MangaItem, chapters: List<Chapter>) {
-        viewModelScope.launch {
+        batchDownloadJob?.cancel()
+        batchDownloadJob = viewModelScope.launch {
             _detailsUiState.value = _detailsUiState.value.copy(isBatchDownloading = true)
-            repository.downloadChaptersBatch(manga, chapters)
-            _detailsUiState.value = _detailsUiState.value.copy(isBatchDownloading = false)
+            try {
+                repository.downloadChaptersBatch(manga, chapters)
+            } finally {
+                _detailsUiState.value = _detailsUiState.value.copy(isBatchDownloading = false)
+            }
         }
+    }
+
+    fun stopBatchDownload() {
+        batchDownloadJob?.cancel()
+        batchDownloadJob = null
+        _detailsUiState.value = _detailsUiState.value.copy(isBatchDownloading = false)
     }
 
     fun deleteDownloadedChapter(mangaId: String, chapterNumber: Int) {

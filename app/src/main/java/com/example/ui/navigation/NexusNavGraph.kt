@@ -183,6 +183,9 @@ fun NexusNavGraph(
                             viewModel.downloadBatchChapters(m, detailsState.currentBatchChapters)
                         }
                     },
+                    onStopBatchDownload = {
+                        viewModel.stopBatchDownload()
+                    },
                     onDeleteDownloadedChapter = { chNum ->
                         viewModel.deleteDownloadedChapter(mangaId, chNum)
                     }

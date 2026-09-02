@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -97,6 +98,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
+import com.example.ui.components.StartIoBannerAd
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
 import com.example.ui.theme.NexusGold
@@ -263,17 +265,27 @@ fun ReaderScreen(
                     ChapterStartBanner(manga = manga, chapter = chapter, isDownloaded = uiState.isDownloaded)
                 }
 
-                // Webtoon Continuous Comic Pages
-                items(
+                // Webtoon Continuous Comic Pages with Start.io Fixed Banner Ads Between Images
+                itemsIndexed(
                     items = chapter.pages,
-                    key = { "${chapter.number}-${it.pageNumber}" }
-                ) { page ->
+                    key = { index, page -> "${chapter.number}-${page.pageNumber}-$index" }
+                ) { index, page ->
                     ComicPageItem(
                         imageUrl = page.imageUrl,
                         pageRes = page.imageRes,
                         pageNumber = page.pageNumber,
                         totalPages = totalPages
                     )
+
+                    // Fixed Start.io Banner Ad between each comic page and the next
+                    if (index < chapter.pages.size - 1) {
+                        StartIoBannerAd(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            adTag = "reader_page_${index + 1}"
+                        )
+                    }
                 }
 
                 // End of Chapter Action Card

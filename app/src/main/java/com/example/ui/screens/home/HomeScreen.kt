@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,11 +78,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
@@ -362,28 +365,26 @@ fun NexusHomeTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // App Brand & Name ONLY
+        // App Brand & Name with Custom App Icon
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Brand Logo Box
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(NexusGold, NexusOrange)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+            // App Icon Box in Header
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = SurfaceCard,
+                border = BorderStroke(1.5.dp, NexusGold),
+                shadowElevation = 4.dp,
+                modifier = Modifier.size(42.dp)
             ) {
-                Text(
-                    text = "N",
-                    fontWeight = FontWeight.Black,
-                    color = BackgroundDark,
-                    fontSize = 20.sp
+                Image(
+                    painter = painterResource(id = R.drawable.nexus_fox_cosmic_icon_1788280684840),
+                    contentDescription = "Nexus App Icon",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(12.dp))
                 )
             }
 
@@ -407,7 +408,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.7.2",
+                            text = "v1.8.0",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
@@ -419,7 +420,7 @@ fun NexusHomeTopBar(
                 }
                 Text(
                     text = when (selectedTab) {
-                        1 -> "الأعمال المفضلة"
+                        1 -> "الأعمال المفضلة والمشاهدة لاحقاً"
                         2 -> "سجل القراءة الذكي"
                         3 -> "التحميلات المشفرة"
                         4 -> "مركز التحديثات والمميزات"
