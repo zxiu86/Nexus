@@ -99,6 +99,7 @@ import coil.request.ImageRequest
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.ui.components.StartIoBannerAd
+import com.example.util.StartIoAdManager
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
 import com.example.ui.theme.NexusGold
@@ -194,15 +195,24 @@ fun ReaderScreen(
         }
     }
 
-    // Restore saved page position if needed
+    // Restore saved page position & Show Interstitial Ad (إعلان بياني عند الدخول للفصل)
     LaunchedEffect(chapter.number) {
         scale = 1f
         offset = Offset.Zero
+        // Trigger Interstitial Ad upon opening chapter
+        StartIoAdManager.showInterstitial(context)
+
         if (uiState.initialScrollPage > 1 && uiState.initialScrollPage <= totalPages) {
             listState.scrollToItem(uiState.initialScrollPage - 1)
         } else {
             listState.scrollToItem(0)
         }
+    }
+
+    // Handler for Next Chapter with Interstitial Ad (إعلان بياني بعد كل ضغط على الفصل التالي)
+    val handleNextChapter: () -> Unit = {
+        StartIoAdManager.showInterstitial(context)
+        onNextChapter()
     }
 
     // Automatically record reading progress as user scrolls
@@ -277,13 +287,12 @@ fun ReaderScreen(
                         totalPages = totalPages
                     )
 
-                    // Fixed Start.io Banner Ad between each comic page and the next
+                    // Fixed Start.io Banner Ad between each comic page and the next (توسيط كامل بمساحة 15px مريحة ومنع خروج الحدود)
                     if (index < chapter.pages.size - 1) {
                         StartIoBannerAd(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            adTag = "reader_page_${index + 1}"
+                            modifier = Modifier.fillMaxWidth(),
+                            adTag = "reader_page_${index + 1}",
+                            isInlineReader = true
                         )
                     }
                 }
@@ -295,7 +304,7 @@ fun ReaderScreen(
                         currentChapter = chapter,
                         hasNextChapter = uiState.hasNextChapter,
                         hasPreviousChapter = uiState.hasPreviousChapter,
-                        onNextChapter = onNextChapter,
+                        onNextChapter = handleNextChapter,
                         onPreviousChapter = onPreviousChapter,
                         onOpenQuickJump = { onSetQuickJumpOpen(true) },
                         onNavigateHome = onNavigateHome
@@ -369,7 +378,7 @@ fun ReaderScreen(
                 hasPrevious = uiState.hasPreviousChapter,
                 hasNext = uiState.hasNextChapter,
                 onPreviousChapter = onPreviousChapter,
-                onNextChapter = onNextChapter,
+                onNextChapter = handleNextChapter,
                 onOpenQuickJump = { onSetQuickJumpOpen(true) },
                 currentPage = currentVisiblePage,
                 totalPages = totalPages

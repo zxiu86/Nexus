@@ -91,6 +91,7 @@ import com.example.data.model.MangaType
 import com.example.ui.components.AppUpdateDialog
 import com.example.ui.components.FavoritesPopupDialog
 import com.example.ui.components.NexusMangaImage
+import com.example.ui.components.StartIoBannerAd
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
 import com.example.ui.theme.NexusGold
@@ -147,6 +148,15 @@ fun HomeScreen(
                 onFavoritesClick = { onTabSelected(1) },
                 onUpdateBadgeClick = onTriggerUpdate,
                 onRefreshClick = onRefresh
+            )
+
+            // Sticky Header Ad Banner (ملصق بالهيدر في الصفحة الرئيسية)
+            StartIoBannerAd(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                adTag = "home_sticky_header_banner",
+                isHeaderSticky = true
             )
 
             // Dynamic Tab Content
@@ -408,7 +418,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.8.0",
+                            text = "v1.8.1",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
