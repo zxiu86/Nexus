@@ -170,7 +170,7 @@ fun AppUpdateDialog(
 
                 // Release notes box
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.8.1):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في هذا الإصدار:" else "مميزات الإصدار الأخير (v1.8.2):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight
@@ -208,6 +208,27 @@ fun AppUpdateDialog(
                                 fontSize = 12.sp,
                                 lineHeight = 18.sp
                             )
+                        )
+                    }
+                }
+
+                // Package Conflict Advisory Note
+                if (updateInfo.updateAvailable) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = NexusGoldDark.copy(alpha = 0.4f),
+                        border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "💡 نصيحة: إذا ظهرت لك رسالة 'تعارض الحزم' عند التثبيت، يرجى حذف النسخة القديمة مرة واحدة وتثبيت التحديث لمطابقة شهادة التوقيع الرسمية الموحدة.",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = NexusGoldLight,
+                                fontSize = 10.sp,
+                                lineHeight = 14.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                         )
                     }
                 }

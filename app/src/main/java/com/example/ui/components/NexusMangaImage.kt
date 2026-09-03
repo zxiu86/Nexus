@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.R
 import com.example.ui.theme.NexusGold
@@ -33,11 +35,21 @@ fun NexusMangaImage(
     contentScale: ContentScale = ContentScale.Crop
 ) {
     if (!imageUrl.isNullOrBlank()) {
-        SubcomposeAsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
+        val context = LocalContext.current
+        val imageRequest = remember(imageUrl) {
+            ImageRequest.Builder(context)
                 .data(imageUrl)
-                .crossfade(true)
-                .build(),
+                .memoryCacheKey(imageUrl)
+                .diskCacheKey(imageUrl)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .networkCachePolicy(CachePolicy.ENABLED)
+                .crossfade(150)
+                .build()
+        }
+
+        SubcomposeAsyncImage(
+            model = imageRequest,
             contentDescription = contentDescription,
             contentScale = contentScale,
             modifier = modifier,
@@ -49,7 +61,7 @@ fun NexusMangaImage(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         color = NexusGold,
                         strokeWidth = 2.dp
                     )

@@ -1249,17 +1249,17 @@ class MangaRepository(private val context: Context) {
         }
 
     /**
-     * Checks GitHub Releases for In-App Updates against current version (1.8.1)
+     * Checks GitHub Releases for In-App Updates against current version (1.8.2)
      * Queries repository: zxiu86/Nexus
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.8.1"
-        val v18Changelog = "✨ مميزات وتحديثات الإصدار v1.8.1:\n" +
-                "• 🎬 الإعلانات البيانية (Interstitial Ads): ظهور تلقائي سلس عند فتح الفصول والانتقال للفصل التالي.\n" +
-                "• 📌 بانر إعلاني مثبت بالهيدر في الصفحة الرئيسية يتحرك ويتزامن مع تصفح المستخدم.\n" +
-                "• 🎯 توسيط وتحسين بنرات القراءة: ضبط أبعاد ومحاذاة إعلانات البانر بين الصفحات مع منع خروج الحدود.\n" +
-                "• 🛑 زر إيقاف فوري للتحميل المتعدد للفصول وإلغاء الدفعة في أي لحظة.\n" +
-                "• ⚡ أداء فائق وسرعة استجابة عالية مع خط الأميري المدمج."
+        val currentVersion = "1.8.2"
+        val v18Changelog = "✨ مميزات وتحديثات الإصدار v1.8.2:\n" +
+                "• ⚡ تحميل كاش ذكي وفوري (Lazy Loading & Smart Cache): حفظ صور الأغلفة والصفحات بالذاكرة لضمان عدم إعادة التحميل عند التمرير أو التنقل.\n" +
+                "• 🛠️ معالجة شاملة لتعارض الحزم (Package Conflict Fix): توحيد شهادات التوقيع وتحديث أذونات التثبيت التلقائي.\n" +
+                "• 🎯 محاذاة دقيقة لإعلانات Start.io: إزاحة الإعلان 10px لليمين مع توسيط متقن وتنسيق مريح داخل الإطار.\n" +
+                "• 🎬 إعلانات بيانية تلقائية عند فتح الفصول والتنقل للفصل التالي.\n" +
+                "• 📌 بانر إعلاني ملاصق للهيدر بالصفحة الرئيسية."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()

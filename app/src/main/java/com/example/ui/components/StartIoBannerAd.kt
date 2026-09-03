@@ -156,6 +156,9 @@ fun StartIoBannerAd(
                                 gravity = Gravity.CENTER
                             }
 
+                            // Shift the ad view itself 10px to the right as requested
+                            startAppBanner.translationX = 10f * ctx.resources.displayMetrics.density
+
                             frameLayout.addView(startAppBanner, layoutParams)
                         } catch (e: Exception) {
                             // Non-blocking graceful fallback
