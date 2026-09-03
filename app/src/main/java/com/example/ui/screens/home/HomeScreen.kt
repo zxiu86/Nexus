@@ -1,6 +1,8 @@
 package com.example.ui.screens.home
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -9,6 +11,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -160,14 +165,21 @@ fun HomeScreen(
                 isHeaderSticky = true
             )
 
-            // Dynamic Tab Content
+            // Dynamic Tab Content with Smooth Transitions
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                when (uiState.selectedTab) {
-                    0 -> {
+                AnimatedContent(
+                    targetState = uiState.selectedTab,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(280)) togetherWith fadeOut(animationSpec = tween(180))
+                    },
+                    label = "tab_content_transition"
+                ) { currentTab ->
+                    when (currentTab) {
+                        0 -> {
                         // Home Tab Content
                         LazyColumn(
                             modifier = Modifier
@@ -291,33 +303,57 @@ fun HomeScreen(
                                 )
                             }
 
-                            // 2-Column Grid of Paginated Works (14 items per page)
-                            val items = uiState.paginatedMangaList
-                            val chunkedPairs = items.chunked(2)
-
-                            items(
-                                items = chunkedPairs,
-                                key = { pair -> pair.joinToString("-") { it.id } }
-                            ) { pair ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                ) {
-                                    for (manga in pair) {
-                                        Box(modifier = Modifier.weight(1f)) {
-                                            LatestMangaGridCard(
-                                                manga = manga,
-                                                isFavorite = uiState.favorites.contains(manga.id),
-                                                onMangaClick = { onMangaClick(manga.id) },
-                                                onChapterClick = { chNum -> onChapterClick(manga.id, chNum) },
-                                                onToggleFavorite = { onToggleFavorite(manga.id) }
-                                            )
+                            // 2-Column Grid of Paginated Works (14 items per page) with Smooth Transition
+                            item(key = "paginated_manga_grid_container") {
+                                AnimatedContent(
+                                    targetState = uiState.currentPage to uiState.paginatedMangaList,
+                                    transitionSpec = {
+                                        if (targetState.first > initialState.first) {
+                                            (slideInHorizontally(animationSpec = tween(320, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 3 } +
+                                                fadeIn(animationSpec = tween(320)))
+                                                .togetherWith(
+                                                    slideOutHorizontally(animationSpec = tween(280, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 3 } +
+                                                        fadeOut(animationSpec = tween(200))
+                                                )
+                                        } else {
+                                            (slideInHorizontally(animationSpec = tween(320, easing = FastOutSlowInEasing)) { fullWidth -> -fullWidth / 3 } +
+                                                fadeIn(animationSpec = tween(320)))
+                                                .togetherWith(
+                                                    slideOutHorizontally(animationSpec = tween(280, easing = FastOutSlowInEasing)) { fullWidth -> fullWidth / 3 } +
+                                                        fadeOut(animationSpec = tween(200))
+                                                )
                                         }
-                                    }
-                                    if (pair.size == 1) {
-                                        Spacer(modifier = Modifier.weight(1f))
+                                    },
+                                    label = "page_transition_animation"
+                                ) { (_, paginatedList) ->
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        val chunkedPairs = paginatedList.chunked(2)
+                                        for (pair in chunkedPairs) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                            ) {
+                                                for (manga in pair) {
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        LatestMangaGridCard(
+                                                            manga = manga,
+                                                            isFavorite = uiState.favorites.contains(manga.id),
+                                                            onMangaClick = { onMangaClick(manga.id) },
+                                                            onChapterClick = { chNum -> onChapterClick(manga.id, chNum) },
+                                                            onToggleFavorite = { onToggleFavorite(manga.id) }
+                                                        )
+                                                    }
+                                                }
+                                                if (pair.size == 1) {
+                                                    Spacer(modifier = Modifier.weight(1f))
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -382,6 +418,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
 
         // Modern Bottom Navigation Footer Bar
         NexusBottomFooterBar(
@@ -1367,6 +1404,11 @@ fun DiscoverRandomSection(
     }
 }
 
+sealed interface PageIndicatorItem {
+    data class Page(val number: Int) : PageIndicatorItem
+    data class Ellipsis(val targetPage: Int, val id: String) : PageIndicatorItem
+}
+
 /**
  * =========================================================================
  * PAGINATION CONTROLS SECTION (14 Items Per Page)
@@ -1381,19 +1423,56 @@ fun PaginationControlsSection(
     onPrevPage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val pageItems = remember(currentPage, totalPages) {
+        if (totalPages <= 5) {
+            (1..totalPages).map { PageIndicatorItem.Page(it) }
+        } else {
+            val list = mutableListOf<PageIndicatorItem>()
+            when {
+                // Beginning pages: 1, 2, 3 ... totalPages
+                currentPage <= 2 -> {
+                    for (p in 1..3) list.add(PageIndicatorItem.Page(p))
+                    list.add(PageIndicatorItem.Ellipsis(targetPage = 4, id = "trailing"))
+                    list.add(PageIndicatorItem.Page(totalPages))
+                }
+                // Page 3: 2, [3], 4 ... totalPages (User specification: 2-[3]-4...7)
+                currentPage == 3 -> {
+                    for (p in 2..4) list.add(PageIndicatorItem.Page(p))
+                    if (totalPages > 5) {
+                        list.add(PageIndicatorItem.Ellipsis(targetPage = 5.coerceAtMost(totalPages), id = "trailing"))
+                    }
+                    list.add(PageIndicatorItem.Page(totalPages))
+                }
+                // Middle pages
+                currentPage < totalPages - 2 -> {
+                    list.add(PageIndicatorItem.Ellipsis(targetPage = (currentPage - 2).coerceAtLeast(1), id = "leading"))
+                    for (p in (currentPage - 1)..(currentPage + 1)) list.add(PageIndicatorItem.Page(p))
+                    list.add(PageIndicatorItem.Ellipsis(targetPage = (currentPage + 2).coerceAtMost(totalPages), id = "trailing"))
+                    list.add(PageIndicatorItem.Page(totalPages))
+                }
+                // Ending pages: ... [totalPages-2], [totalPages-1], [totalPages]
+                else -> {
+                    list.add(PageIndicatorItem.Ellipsis(targetPage = (totalPages - 3).coerceAtLeast(1), id = "leading"))
+                    for (p in (totalPages - 2)..totalPages) list.add(PageIndicatorItem.Page(p))
+                }
+            }
+            list
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceCard),
         border = BorderStroke(1.dp, SurfaceElevated),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .testTag("pagination_controls")
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1411,7 +1490,7 @@ fun PaginationControlsSection(
                     .testTag("prev_page_button")
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -1419,48 +1498,75 @@ fun PaginationControlsSection(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "السابق",
                         tint = if (currentPage > 1) NexusGold else TextTertiary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "السابق",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = if (currentPage > 1) TextPrimary else TextTertiary,
-                            fontSize = 12.sp
+                            fontSize = 11.sp
                         )
                     )
                 }
             }
 
-            // Page Number Indicators
+            // Compact Smart Page Number Indicators (Fits perfectly without overflow)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                for (p in 1..totalPages) {
-                    val isSelected = p == currentPage
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) NexusGold else SurfaceVariantDark,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) NexusGoldLight else SurfaceElevated
-                        ),
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onPageChange(p) }
-                            .testTag("page_chip_$p")
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "$p",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                    color = if (isSelected) BackgroundDark else TextSecondary,
-                                    fontSize = 13.sp
-                                )
-                            )
+                for (item in pageItems) {
+                    when (item) {
+                        is PageIndicatorItem.Page -> {
+                            val isSelected = item.number == currentPage
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) NexusGold else SurfaceVariantDark,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) NexusGoldLight else SurfaceElevated
+                                ),
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onPageChange(item.number) }
+                                    .testTag("page_chip_${item.number}")
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "${item.number}",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                                            color = if (isSelected) BackgroundDark else TextSecondary,
+                                            fontSize = 12.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        is PageIndicatorItem.Ellipsis -> {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = SurfaceDark.copy(alpha = 0.6f),
+                                border = BorderStroke(0.8.dp, SurfaceElevated),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onPageChange(item.targetPage) }
+                                    .testTag("page_chip_ellipsis_${item.id}")
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "...",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = NexusGold.copy(alpha = 0.8f),
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1480,7 +1586,7 @@ fun PaginationControlsSection(
                     .testTag("next_page_button")
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -1489,14 +1595,14 @@ fun PaginationControlsSection(
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = if (currentPage < totalPages) TextPrimary else TextTertiary,
-                            fontSize = 12.sp
+                            fontSize = 11.sp
                         )
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "التالي",
                         tint = if (currentPage < totalPages) NexusGold else TextTertiary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                 }
             }

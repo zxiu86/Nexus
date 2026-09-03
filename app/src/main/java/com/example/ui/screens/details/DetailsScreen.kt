@@ -1,9 +1,16 @@
 package com.example.ui.screens.details
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,9 +32,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.R
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
@@ -399,6 +422,172 @@ fun DetailsTopAppBar(
     }
 }
 
+/**
+ * 3D Rotating Manga Cover with Boxcover Aura on back
+ * Rotates around itself every 3 seconds
+ * Front face: Manga cover image with type badge
+ * Back face: Boxcover halo aura (R.drawable.img_boxcover_bg) with cosmic emblem
+ */
+@Composable
+fun Rotating3DCoverCard(
+    manga: MangaItem,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "manga_cover_flip_infinite")
+    val rotationY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation_y_anim"
+    )
+
+    // Back face is visible between 90 and 270 degrees of Y rotation
+    val isBackFace = rotationY in 90f..270f
+
+    Box(
+        modifier = modifier
+            .width(120.dp)
+            .aspectRatio(0.70f)
+            .graphicsLayer {
+                this.rotationY = rotationY
+                cameraDistance = 14f * density
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .border(
+                BorderStroke(
+                    1.6.dp,
+                    Brush.verticalGradient(
+                        colors = listOf(NexusGold, NexusOrange, NexusGoldLight)
+                    )
+                ),
+                RoundedCornerShape(16.dp)
+            )
+            .shadow(14.dp, RoundedCornerShape(16.dp))
+            .background(BackgroundDark),
+        contentAlignment = Alignment.Center
+    ) {
+        if (!isBackFace) {
+            // FRONT FACE: Manga Cover
+            Box(modifier = Modifier.fillMaxSize()) {
+                NexusMangaImage(
+                    imageUrl = manga.coverUrl,
+                    fallbackRes = manga.coverRes,
+                    contentDescription = manga.titleAr,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Bottom gradient shading
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Transparent,
+                                    BackgroundDark.copy(alpha = 0.5f)
+                                )
+                            )
+                        )
+                )
+
+                // Type Badge overlay (مانهوا / مانها / مانجا)
+                Surface(
+                    shape = RoundedCornerShape(bottomEnd = 10.dp),
+                    color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange,
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    Text(
+                        text = manga.type.labelAr,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = BackgroundDark
+                        )
+                    )
+                }
+            }
+        } else {
+            // BACK FACE: Boxcover Halo (R.drawable.img_boxcover_bg)
+            // Compensate with 180° rotation so content isn't mirrored horizontally
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { this.rotationY = 180f }
+                    .background(BackgroundDark),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.img_boxcover_bg),
+                    contentDescription = "هالة العمل boxcover",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Atmospheric radial aura glow overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    NexusGold.copy(alpha = 0.25f),
+                                    NexusOrangeDark.copy(alpha = 0.45f),
+                                    BackgroundDark.copy(alpha = 0.65f)
+                                )
+                            )
+                        )
+                )
+
+                // Golden crest insignia in the center of the halo
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = BackgroundDark.copy(alpha = 0.85f),
+                        border = BorderStroke(1.2.dp, NexusGold),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = NexusGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = "NEXUS",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            color = NexusGold,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.sp
+                        )
+                    )
+                    Text(
+                        text = "هالة العمل",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = NexusGoldLight,
+                            fontSize = 9.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun MangaHeaderCard(manga: MangaItem) {
     Card(
@@ -424,48 +613,8 @@ fun MangaHeaderCard(manga: MangaItem) {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Work Cover Image with glowing border and tag
-            Box(
-                modifier = Modifier
-                    .width(120.dp)
-                    .aspectRatio(0.70f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .border(
-                        BorderStroke(
-                            1.5.dp,
-                            Brush.verticalGradient(
-                                colors = listOf(NexusGold, NexusOrange)
-                            )
-                        ),
-                        RoundedCornerShape(14.dp)
-                    )
-                    .shadow(12.dp, RoundedCornerShape(14.dp))
-            ) {
-                NexusMangaImage(
-                    imageUrl = manga.coverUrl,
-                    fallbackRes = manga.coverRes,
-                    contentDescription = manga.titleAr,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // Type Badge overlay (مانهوا / مانها / مانجا)
-                Surface(
-                    shape = RoundedCornerShape(bottomEnd = 10.dp),
-                    color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange,
-                    modifier = Modifier.align(Alignment.TopStart)
-                ) {
-                    Text(
-                        text = manga.type.labelAr,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                            color = BackgroundDark
-                        )
-                    )
-                }
-            }
+            // 3D Rotating Work Cover with Boxcover Aura on back
+            Rotating3DCoverCard(manga = manga)
 
             // Manga Metadata Details
             Column(
@@ -1360,10 +1509,12 @@ fun ChapterListItem(
 }
 
 /**
- * Pagination Controls at the bottom:
- * - Switcher buttons for previous/next 30 chapters
- * - Direct batch chips for jumping between batches
- * - Return to Home button
+ * Modern, Flexible & Practical Chapter Batch Pagination Switcher
+ * - Elegant batch carousel with auto-centering
+ * - Quick jump dialog with batch matrix
+ * - Direct chapter number search & jump
+ * - Rich previous/next buttons showing actual chapter ranges
+ * - Batch progress tracking indicator
  */
 @Composable
 fun BatchPaginationControl(
@@ -1376,13 +1527,40 @@ fun BatchPaginationControl(
     onNextBatch: () -> Unit,
     onNavigateHome: () -> Unit
 ) {
+    var showQuickJumpDialog by remember { mutableStateOf(false) }
+    var chapterInputText by remember { mutableStateOf("") }
+    val carouselListState = rememberLazyListState()
+
+    // Smoothly scroll the active batch card into view whenever batch changes
+    LaunchedEffect(currentBatchIndex) {
+        if (totalBatches > 0) {
+            carouselListState.animateScrollToItem((currentBatchIndex - 1).coerceAtLeast(0))
+        }
+    }
+
+    // Calculations for Previous and Next range labels
+    val prevBatchStart = if (currentBatchIndex > 0) (currentBatchIndex - 1) * batchSize + 1 else 1
+    val prevBatchEnd = if (currentBatchIndex > 0) (currentBatchIndex * batchSize).coerceAtMost(totalChapters) else 1
+
+    val nextBatchStart = if (currentBatchIndex + 1 < totalBatches) (currentBatchIndex + 1) * batchSize + 1 else 1
+    val nextBatchEnd = if (currentBatchIndex + 1 < totalBatches) ((currentBatchIndex + 2) * batchSize).coerceAtMost(totalChapters) else totalChapters
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceElevated)
+        border = BorderStroke(
+            1.2.dp,
+            Brush.linearGradient(
+                colors = listOf(
+                    NexusGold.copy(alpha = 0.45f),
+                    SurfaceElevated,
+                    NexusOrange.copy(alpha = 0.25f)
+                )
+            )
+        )
     ) {
         Column(
             modifier = Modifier
@@ -1391,55 +1569,75 @@ fun BatchPaginationControl(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // Header: Title, Batch Counter Badge & Quick Jump Button
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                    contentDescription = null,
-                    tint = NexusGold,
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = "التبديل بين مجموعات الفصول (30 فصل)",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        fontSize = 13.sp
-                    )
-                )
-            }
-
-            // Direct Batch Selection Chips: [1-30], [31-60], [61-90]
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp)
-            ) {
-                items(totalBatches) { batchIdx ->
-                    val isSelected = batchIdx == currentBatchIndex
-                    val startNum = batchIdx * batchSize + 1
-                    val endNum = ((batchIdx + 1) * batchSize).coerceAtMost(totalChapters)
-                    val label = "$startNum - $endNum"
-
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) NexusGold else SurfaceVariantDark,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) NexusOrange else SurfaceElevated
-                        ),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSelectBatch(batchIdx) }
-                            .testTag("batch_chip_$batchIdx")
+                        shape = CircleShape,
+                        color = NexusGoldDark,
+                        modifier = Modifier.size(30.dp)
                     ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Layers,
+                                contentDescription = null,
+                                tint = NexusGold,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    Column {
                         Text(
-                            text = label,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            text = "مجموعات الفصول",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Black,
+                                color = TextPrimary,
+                                fontSize = 14.sp
+                            )
+                        )
+                        Text(
+                            text = "الدفعة ${currentBatchIndex + 1} من $totalBatches (30 فصلاً لكل دفعة)",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = TextTertiary,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
+
+                // Quick Jump Trigger Button (الانتقال السريع)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = SurfaceVariantDark,
+                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { showQuickJumpDialog = true }
+                        .testTag("batch_quick_jump_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GridView,
+                            contentDescription = "عرض كل الدفعات",
+                            tint = NexusGold,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "تصفح الدفعات",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                color = if (isSelected) BackgroundDark else TextSecondary,
+                                fontWeight = FontWeight.Bold,
+                                color = NexusGoldLight,
                                 fontSize = 11.sp
                             )
                         )
@@ -1447,18 +1645,200 @@ fun BatchPaginationControl(
                 }
             }
 
-            // Prev 30 & Next 30 Buttons Row
+            // Modern Carousel of Rich Batch Cards
+            LazyRow(
+                state = carouselListState,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
+            ) {
+                items(totalBatches) { batchIdx ->
+                    val isSelected = batchIdx == currentBatchIndex
+                    val startNum = batchIdx * batchSize + 1
+                    val endNum = ((batchIdx + 1) * batchSize).coerceAtMost(totalChapters)
+                    val chaptersCount = (endNum - startNum + 1).coerceAtLeast(1)
+
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isSelected) NexusGold else SurfaceVariantDark,
+                        border = BorderStroke(
+                            if (isSelected) 1.5.dp else 1.dp,
+                            if (isSelected) NexusOrange else SurfaceElevated
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { onSelectBatch(batchIdx) }
+                            .testTag("batch_card_$batchIdx")
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = "مجموعة ${batchIdx + 1}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                    color = if (isSelected) BackgroundDark.copy(alpha = 0.8f) else NexusGold,
+                                    fontSize = 10.sp
+                                )
+                            )
+                            Text(
+                                text = "$startNum - $endNum",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isSelected) BackgroundDark else TextPrimary,
+                                    fontSize = 13.sp
+                                )
+                            )
+                            Text(
+                                text = "$chaptersCount فصلاً",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) BackgroundDark.copy(alpha = 0.7f) else TextTertiary,
+                                    fontSize = 9.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Direct Chapter Search & Instant Jump Row (انتقل لأي فصل برقم الفصل)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = SurfaceVariantDark.copy(alpha = 0.6f),
+                border = BorderStroke(1.dp, SurfaceElevated),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = NexusGold,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "انتقال لفصل محدد:",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = TextSecondary,
+                            fontSize = 11.sp
+                        )
+                    )
+                    OutlinedTextField(
+                        value = chapterInputText,
+                        onValueChange = { input ->
+                            if (input.all { it.isDigit() } && input.length <= 4) {
+                                chapterInputText = input
+                            }
+                        },
+                        placeholder = {
+                            Text(
+                                text = "مثال: 45",
+                                color = TextTertiary,
+                                fontSize = 11.sp
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                val chNum = chapterInputText.toIntOrNull()
+                                if (chNum != null && chNum > 0) {
+                                    val targetBatch = ((chNum - 1) / batchSize).coerceIn(0, totalBatches - 1)
+                                    onSelectBatch(targetBatch)
+                                    chapterInputText = ""
+                                }
+                            }
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .testTag("direct_chapter_input"),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NexusGold,
+                            unfocusedBorderColor = SurfaceElevated,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = NexusGold,
+                            focusedContainerColor = SurfaceDark,
+                            unfocusedContainerColor = SurfaceDark
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            val chNum = chapterInputText.toIntOrNull()
+                            if (chNum != null && chNum > 0) {
+                                val targetBatch = ((chNum - 1) / batchSize).coerceIn(0, totalBatches - 1)
+                                onSelectBatch(targetBatch)
+                                chapterInputText = ""
+                            }
+                        },
+                        enabled = chapterInputText.isNotBlank(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NexusGold,
+                            contentColor = BackgroundDark,
+                            disabledContainerColor = SurfaceElevated,
+                            disabledContentColor = TextTertiary
+                        ),
+                        modifier = Modifier
+                            .height(38.dp)
+                            .testTag("direct_chapter_go_button"),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            text = "انتقال",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+
+            // Batch Progress Indicator Bar
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val progress = if (totalBatches > 1) {
+                    (currentBatchIndex.toFloat()) / (totalBatches - 1).toFloat()
+                } else 1f
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = NexusGold,
+                    trackColor = SurfaceElevated
+                )
+            }
+
+            // Prev Batch & Next Batch Ergonomic Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // "الـ 30 فصل السابقة"
+                // "◄ السابقة" with range label
                 Button(
                     onClick = onPreviousBatch,
                     enabled = currentBatchIndex > 0,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp)
+                        .height(46.dp)
                         .testTag("prev_batch_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -1467,22 +1847,31 @@ fun BatchPaginationControl(
                         disabledContainerColor = SurfaceDark,
                         disabledContentColor = TextTertiary
                     ),
-                    border = BorderStroke(1.dp, SurfaceElevated)
+                    border = BorderStroke(1.dp, if (currentBatchIndex > 0) NexusGold.copy(alpha = 0.4f) else SurfaceElevated)
                 ) {
-                    Text(
-                        text = "◄ 30 فصل السابقة",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "◄ السابقة",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (currentBatchIndex > 0) {
+                            Text(
+                                text = "($prevBatchStart - $prevBatchEnd)",
+                                fontSize = 9.sp,
+                                color = NexusGoldLight
+                            )
+                        }
+                    }
                 }
 
-                // "الـ 30 فصل التالية"
+                // "التالية ►" with range label
                 Button(
                     onClick = onNextBatch,
                     enabled = currentBatchIndex + 1 < totalBatches,
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp)
+                        .height(46.dp)
                         .testTag("next_batch_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -1492,11 +1881,20 @@ fun BatchPaginationControl(
                         disabledContentColor = TextTertiary
                     )
                 ) {
-                    Text(
-                        text = "30 فصل التالية ►",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "التالية ►",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        if (currentBatchIndex + 1 < totalBatches) {
+                            Text(
+                                text = "($nextBatchStart - $nextBatchEnd)",
+                                fontSize = 9.sp,
+                                color = BackgroundDark.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1536,5 +1934,147 @@ fun BatchPaginationControl(
                 }
             }
         }
+    }
+
+    // Quick Jump Dialog Matrix Modal
+    if (showQuickJumpDialog) {
+        AlertDialog(
+            onDismissRequest = { showQuickJumpDialog = false },
+            containerColor = SurfaceCard,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GridView,
+                            contentDescription = null,
+                            tint = NexusGold,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "الانتقال السريع لمجموعة فصول",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Black,
+                                color = TextPrimary,
+                                fontSize = 15.sp
+                            )
+                        )
+                    }
+                    IconButton(
+                        onClick = { showQuickJumpDialog = false },
+                        modifier = Modifier.size(30.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "إغلاق",
+                            tint = TextTertiary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "اختر الدفعة المطلوبة للقفز إليها مباشرة:",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    )
+
+                    // Scrollable Grid of batches
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(280.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(totalBatches) { idx ->
+                            val isSelected = idx == currentBatchIndex
+                            val startNum = idx * batchSize + 1
+                            val endNum = ((idx + 1) * batchSize).coerceAtMost(totalChapters)
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) NexusGoldDark else SurfaceVariantDark,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) NexusGold else SurfaceElevated
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        onSelectBatch(idx)
+                                        showQuickJumpDialog = false
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "مجموعة ${idx + 1}",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isSelected) NexusGold else TextPrimary,
+                                                fontSize = 13.sp
+                                            )
+                                        )
+                                        Text(
+                                            text = "الفصول من $startNum إلى $endNum",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+
+                                    if (isSelected) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = NexusGold
+                                        ) {
+                                            Text(
+                                                text = "النشطة حالياً",
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Black,
+                                                    color = BackgroundDark,
+                                                    fontSize = 10.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showQuickJumpDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated)
+                ) {
+                    Text("إغلاق", color = TextPrimary)
+                }
+            }
+        )
     }
 }
