@@ -195,7 +195,12 @@ fun ReaderScreen(
         }
     }
 
-    // Restore saved page position & Show Interstitial Ad (إعلان بياني عند الدخول للفصل)
+    // Trigger Interstitial Ad immediately whenever entering any chapter
+    LaunchedEffect(Unit) {
+        StartIoAdManager.showInterstitial(context)
+    }
+
+    // Restore saved page position & Show Interstitial Ad upon chapter transition
     LaunchedEffect(chapter.number) {
         scale = 1f
         offset = Offset.Zero

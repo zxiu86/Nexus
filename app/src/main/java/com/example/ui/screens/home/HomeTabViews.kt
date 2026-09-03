@@ -1452,7 +1452,7 @@ fun UpdatesTabContent(
                     }
 
                     Text(
-                        text = "مستودع السحابة: github.com/zxiu86/Nexus (متصل ونشط)",
+                        text = "الخادم السحابي: خوادم نكسوس المشفرة (متصل ونشط)",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = TextSecondary,
                             fontSize = 11.sp

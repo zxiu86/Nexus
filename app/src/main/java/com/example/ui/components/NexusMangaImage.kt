@@ -34,82 +34,97 @@ fun NexusMangaImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop
 ) {
-    if (!imageUrl.isNullOrBlank()) {
-        val context = LocalContext.current
-        val imageRequest = remember(imageUrl) {
-            ImageRequest.Builder(context)
-                .data(imageUrl)
-                .memoryCacheKey(imageUrl)
-                .diskCacheKey(imageUrl)
-                .memoryCachePolicy(CachePolicy.ENABLED)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .networkCachePolicy(CachePolicy.ENABLED)
-                .crossfade(150)
-                .build()
-        }
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        // Mystical dual-flame aura background for the work cover box
+        Image(
+            painter = painterResource(id = R.drawable.img_boxcover_bg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
-        SubcomposeAsyncImage(
-            model = imageRequest,
-            contentDescription = contentDescription,
-            contentScale = contentScale,
-            modifier = modifier,
-            loading = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(SurfaceCard),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = NexusGold,
-                        strokeWidth = 2.dp
-                    )
-                }
-            },
-            error = {
-                if (fallbackRes != null && fallbackRes != 0) {
-                    Image(
-                        painter = painterResource(id = fallbackRes),
-                        contentDescription = contentDescription,
-                        contentScale = contentScale,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
+        if (!imageUrl.isNullOrBlank()) {
+            val context = LocalContext.current
+            val imageRequest = remember(imageUrl) {
+                ImageRequest.Builder(context)
+                    .data(imageUrl)
+                    .memoryCacheKey(imageUrl)
+                    .diskCacheKey(imageUrl)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .crossfade(150)
+                    .build()
+            }
+
+            SubcomposeAsyncImage(
+                model = imageRequest,
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier.fillMaxSize(),
+                loading = {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(SurfaceCard),
+                            .background(Color.Black.copy(alpha = 0.45f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                            contentDescription = null,
-                            tint = TextTertiary,
-                            modifier = Modifier.size(32.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = NexusGold,
+                            strokeWidth = 2.dp
                         )
                     }
+                },
+                error = {
+                    if (fallbackRes != null && fallbackRes != 0) {
+                        Image(
+                            painter = painterResource(id = fallbackRes),
+                            contentDescription = contentDescription,
+                            contentScale = contentScale,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                contentDescription = null,
+                                tint = NexusGold.copy(alpha = 0.8f),
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+                    }
                 }
-            }
-        )
-    } else if (fallbackRes != null && fallbackRes != 0) {
-        Image(
-            painter = painterResource(id = fallbackRes),
-            contentDescription = contentDescription,
-            contentScale = contentScale,
-            modifier = modifier
-        )
-    } else {
-        Box(
-            modifier = modifier.background(SurfaceCard),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                contentDescription = null,
-                tint = TextTertiary,
-                modifier = Modifier.size(32.dp)
             )
+        } else if (fallbackRes != null && fallbackRes != 0) {
+            Image(
+                painter = painterResource(id = fallbackRes),
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                    contentDescription = null,
+                    tint = NexusGold.copy(alpha = 0.8f),
+                    modifier = Modifier.size(30.dp)
+                )
+            }
         }
     }
 }

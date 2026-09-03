@@ -64,6 +64,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,12 +76,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.util.StartIoAdManager
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
@@ -121,6 +124,12 @@ fun DetailsScreen(
     modifier: Modifier = Modifier
 ) {
     val manga = uiState.manga
+    val context = LocalContext.current
+
+    // Show Interstitial ad once every time DetailsScreen is opened
+    LaunchedEffect(Unit) {
+        StartIoAdManager.showInterstitial(context)
+    }
 
     if (manga == null) {
         Box(

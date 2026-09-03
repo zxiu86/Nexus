@@ -22,7 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,16 +48,17 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextTertiary
 import com.startapp.sdk.ads.banner.Banner
 import com.startapp.sdk.ads.banner.BannerListener
+import kotlinx.coroutines.delay
 
 /**
  * Start.io Fixed Banner Ad Component for Jetpack Compose.
  * Displays a fixed banner ad (App ID: 208548380).
  *
  * Guarantees:
- * 1. Perfectly centered horizontally & vertically.
- * 2. Strict boundary clipping (`clipToBounds()`) to prevent any ad pixels leaking outside.
- * 3. Compact 15dp-friendly vertical profile for Reader continuous scrolling.
- * 4. Header-friendly styling for sticky Home top banner.
+ * 1. Perfectly centered horizontally & vertically without overflowing screen bounds.
+ * 2. Automatic refresh every 30 seconds across all screens.
+ * 3. Discreet "إعلان" label placed directly under the ad in the center.
+ * 4. Strict boundary clipping (`clipToBounds()`) to prevent any ad pixels leaking outside.
  */
 @Composable
 fun StartIoBannerAd(
@@ -65,8 +68,17 @@ fun StartIoBannerAd(
     isHeaderSticky: Boolean = false
 ) {
     var isAdLoaded by remember { mutableStateOf(false) }
+    var refreshKey by remember { mutableStateOf(0) }
 
-    val verticalPadding = if (isInlineReader) 8.dp else if (isHeaderSticky) 2.dp else 6.dp
+    // Auto-refresh banner ad every 30 seconds across all screens
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000L)
+            refreshKey++
+        }
+    }
+
+    val verticalPadding = if (isInlineReader) 6.dp else if (isHeaderSticky) 2.dp else 5.dp
     val horizontalPadding = if (isInlineReader) 4.dp else 8.dp
     val cornerRadius = if (isInlineReader) 8.dp else 10.dp
 
@@ -87,32 +99,10 @@ fun StartIoBannerAd(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = if (isInlineReader) 3.dp else 4.dp),
+                .padding(vertical = if (isInlineReader) 2.dp else 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Sleek ad disclaimer pill
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 2.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = SurfaceVariantDark,
-                    border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.3f))
-                ) {
-                    Text(
-                        text = "إعلان • Start.io",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = TextTertiary,
-                            fontSize = 8.5.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                    )
-                }
-            }
-
-            // Fixed Banner View embedded via AndroidView with strictly centered layout
+            // Fixed Banner View embedded via AndroidView with strictly centered layout and bounds containment
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,54 +110,87 @@ fun StartIoBannerAd(
                     .clipToBounds(),
                 contentAlignment = Alignment.Center
             ) {
-                AndroidView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .clipToBounds(),
-                    factory = { ctx ->
-                        val frameLayout = FrameLayout(ctx).apply {
-                            clipChildren = true
-                            clipToPadding = true
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.WRAP_CONTENT
-                            )
-                        }
-
-                        try {
-                            val startAppBanner = Banner(ctx, object : BannerListener {
-                                override fun onReceiveAd(bannerView: View?) {
-                                    isAdLoaded = true
-                                }
-
-                                override fun onFailedToReceiveAd(bannerView: View?) {
-                                    isAdLoaded = false
-                                }
-
-                                override fun onClick(bannerView: View?) {}
-                                override fun onImpression(bannerView: View?) {}
-                            })
-
-                            val layoutParams = FrameLayout.LayoutParams(
-                                FrameLayout.LayoutParams.WRAP_CONTENT,
-                                FrameLayout.LayoutParams.WRAP_CONTENT
-                            ).apply {
-                                gravity = Gravity.CENTER
+                key(refreshKey) {
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .clipToBounds(),
+                        factory = { ctx ->
+                            val frameLayout = FrameLayout(ctx).apply {
+                                clipChildren = true
+                                clipToPadding = true
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT
+                                )
                             }
 
-                            // Shift the ad view itself 10px to the right as requested
-                            startAppBanner.translationX = 10f * ctx.resources.displayMetrics.density
+                            try {
+                                val startAppBanner = Banner(ctx, object : BannerListener {
+                                    override fun onReceiveAd(bannerView: View?) {
+                                        isAdLoaded = true
+                                    }
 
-                            frameLayout.addView(startAppBanner, layoutParams)
-                        } catch (e: Exception) {
-                            // Non-blocking graceful fallback
+                                    override fun onFailedToReceiveAd(bannerView: View?) {
+                                        isAdLoaded = false
+                                    }
+
+                                    override fun onClick(bannerView: View?) {}
+                                    override fun onImpression(bannerView: View?) {}
+                                })
+
+                                val layoutParams = FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                                    FrameLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    gravity = Gravity.CENTER
+                                }
+
+                                // Prevent ads from overflowing screen bounds on any device:
+                                // Scale down if banner width exceeds container width, and safely clamp the 10px right shift
+                                startAppBanner.addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
+                                    val parent = v.parent as? View ?: return@addOnLayoutChangeListener
+                                    val parentWidth = parent.width
+                                    val adWidth = right - left
+                                    if (parentWidth > 0 && adWidth > 0) {
+                                        if (adWidth > parentWidth) {
+                                            val scale = (parentWidth.toFloat() / adWidth.toFloat()) * 0.98f
+                                            v.scaleX = scale
+                                            v.scaleY = scale
+                                            v.pivotX = adWidth / 2f
+                                            v.pivotY = (bottom - top) / 2f
+                                            v.translationX = 0f
+                                        } else {
+                                            val maxAllowedShift = ((parentWidth - adWidth) / 2f).coerceAtLeast(0f)
+                                            val desiredShift = 10f * ctx.resources.displayMetrics.density
+                                            v.translationX = desiredShift.coerceAtMost(maxAllowedShift)
+                                        }
+                                    }
+                                }
+
+                                frameLayout.addView(startAppBanner, layoutParams)
+                            } catch (e: Exception) {
+                                // Non-blocking graceful fallback
+                            }
+
+                            frameLayout
                         }
-
-                        frameLayout
-                    }
-                )
+                    )
+                }
             }
+
+            // Discreet ad label placed UNDER the ad in the center so as not to disturb the user
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "إعلان",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = TextTertiary.copy(alpha = 0.6f),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Normal
+                ),
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
         }
     }
 }

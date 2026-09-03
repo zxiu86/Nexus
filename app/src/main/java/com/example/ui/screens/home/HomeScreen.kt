@@ -418,7 +418,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.8.2",
+                            text = "v1.8.3",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
@@ -987,9 +987,18 @@ fun LatestMangaGridCard(
                     .fillMaxWidth()
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(10.dp))
+                    .background(SurfaceDark)
                     .clickable { onMangaClick() }
                     .testTag("cover_image_${manga.id}")
             ) {
+                // Mystical flame aura background for the work cover box
+                Image(
+                    painter = painterResource(id = R.drawable.img_boxcover_bg),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
                 NexusMangaImage(
                     imageUrl = manga.coverUrl,
                     fallbackRes = manga.coverRes,
