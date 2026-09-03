@@ -1521,7 +1521,7 @@ fun UpdatesTabContent(
             }
         }
 
-        // What's New in v1.7.2 Header
+        // What's New in v1.8.4 Header
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1534,7 +1534,7 @@ fun UpdatesTabContent(
                         .background(NexusGold)
                 )
                 Text(
-                    text = "شرح مميزات وتحديثات الإصدار v1.7.2:",
+                    text = "شرح مميزات وتحديثات الإصدار v${com.example.BuildConfig.VERSION_NAME}:",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,
@@ -1544,13 +1544,33 @@ fun UpdatesTabContent(
             }
         }
 
-        // Feature 0: Amiri Arabic Font & Clean Header UI
+        // Feature 1.8.4 - Key Fix
         item {
             FeatureHighlightCard(
-                icon = Icons.Default.AutoAwesome,
+                icon = Icons.Default.Security,
                 iconTint = NexusGold,
-                title = "1. واجهة نقية بالخط الأميري (Amiri Font)",
-                description = "تم اعتماد الخط العربي الأميري الأصيل في كافة واجهات التطبيق والنصوص، مع تصميم هيدر نقي وبسيط يركز على شعار NEXUS والاعتماد الكامل على شريط التنقل السفلي."
+                title = "1. حل تعارض حزم التطبيق (مفتاح توقيع دائم release.keystore)",
+                description = "تم تحويل مفتاح توقيع التطبيق إلى release.keystore دائم وثابت لا يتغير مع التحديثات، مما يتيح التثبيت والتحديث المباشر بسلاسة تامة دون أي تعارض مع الحزم السابقة."
+            )
+        }
+
+        // Feature 1.8.4 - nexus.apk naming
+        item {
+            FeatureHighlightCard(
+                icon = Icons.Default.CloudDownload,
+                iconTint = NexusOrange,
+                title = "2. حزمة التحديث المباشرة الرسمية (nexus.apk)",
+                description = "يتم الآن بناء وتسمية ملف التحديث في GitHub مباشرة باسم nexus.apk بدلاً من app-debug.apk، لتثبيت فوري مباشر بنقرة واحدة."
+            )
+        }
+
+        // Feature 1.8.4 - In-App Notification
+        item {
+            FeatureHighlightCard(
+                icon = Icons.Default.SystemUpdate,
+                iconTint = NexusGoldLight,
+                title = "3. التنبيه والإشعار الفوري بالتحديثات داخل التطبيق",
+                description = "نظام ذكي يقوم بفحص مستودع Nexus دورياً وإشعار المستخدم بوجود إصدار جديد عبر نافذة منبثقة تفاعلية وبانر علوي بارز وزر تحميل مباشر."
             )
         }
 

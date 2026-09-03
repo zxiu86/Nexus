@@ -1249,17 +1249,16 @@ class MangaRepository(private val context: Context) {
         }
 
     /**
-     * Checks for In-App Updates against current version (1.8.3)
+     * Checks for In-App Updates against current BuildConfig version
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
-        val currentVersion = "1.8.3"
-        val v18Changelog = "✨ مميزات وتحديثات الإصدار v1.8.3:\n" +
-                "• 🎨 خلفية كافر الأعمال الأسطورية: دمج خلفية هالة اللهب الكونية المميزة لمربعات الأعمال في الصفحة الرئيسية.\n" +
-                "• 🔄 تحديث تلقائي للإعلانات (Auto-Refresh): تجديد سلس للبانرات الإعلانية كل 30 ثانية في جميع الصفحات بدون أي تأثير على القراءة.\n" +
-                "• 🎬 إعلانات بيانية تلقائية: ظهور فوري عند فتح أي فصل وعند دخول صفحة التفاصيل لمرة واحدة.\n" +
-                "• 🛡️ معالجة شاملة لحدود الإعلانات: ضبط أبعاد ومحاذاة الإعلانات ومنع خروجها نهائياً عن حدود الشاشة على جميع الهواتف.\n" +
-                "• 🏷️ مؤشر إعلاني متقن: عبارة 'إعلان' مبسطة موضوعة في المنتصف أسفل الإعلان مباشرة لمنع تشتيت المستخدم.\n" +
-                "• ⚡ كاش ذكي فائق السرعة وتصفح انسيابي بدون لاج."
+        val currentVersion = com.example.BuildConfig.VERSION_NAME
+        val v184Changelog = "✨ مميزات وتحديثات الإصدار v$currentVersion:\n" +
+                "• 🛡️ حل تعارض الحزم نهائياً: اعتماد مفتاح التوقيع الثابت (release.keystore) لضمان التثبيت والتحديث المباشر بسلاسة تامة.\n" +
+                "• 📦 حزمة رسمية مباشرة (nexus.apk): بناء وتسمية ملف التحديث الرسمي باسم nexus.apk مباشرة.\n" +
+                "• 🔔 تنبيهات التحديث الفورية داخل التطبيق: إشعار تلقائي وبانر فوري عند توفر أي إصدار جديد جاهز للتحميل.\n" +
+                "• ⚡ سرعة استجابة فائقة: تحسين جلب البيانات والتحديثات السحابية وإزالة أي تأخير.\n" +
+                "• 🎨 تحسينات لواجهات القراءة والتصفح بدون لاج."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
@@ -1272,22 +1271,27 @@ class MangaRepository(private val context: Context) {
                     val release = response.body()!!
                     val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
                     val apkAsset = release.assets?.find {
+                        it.name?.equals("nexus.apk", ignoreCase = true) == true
+                    } ?: release.assets?.find {
                         it.name?.endsWith(".apk", ignoreCase = true) == true ||
                                 it.contentType?.contains("android.package-archive") == true ||
                                 it.contentType?.contains("octet-stream") == true
                     }
 
                     val hasNewerVersion = isVersionGreater(tag, currentVersion)
-                    val downloadUrl = apkAsset?.browserDownloadUrl ?: release.assets?.firstOrNull()?.browserDownloadUrl ?: ""
+                    val downloadUrl = apkAsset?.browserDownloadUrl 
+                        ?: "https://github.com/$owner/$appRepo/releases/latest/download/nexus.apk"
 
-                    return@withContext AppUpdateState(
-                        isChecking = false,
-                        updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
-                        latestVersion = tag.ifEmpty { release.name ?: currentVersion },
-                        currentVersion = currentVersion,
-                        releaseNotes = if (release.body.isNullOrBlank()) v18Changelog else "${release.body}\n\n$v18Changelog",
-                        downloadUrl = downloadUrl
-                    )
+                    if (hasNewerVersion && downloadUrl.isNotBlank()) {
+                        return@withContext AppUpdateState(
+                            isChecking = false,
+                            updateAvailable = true,
+                            latestVersion = tag.ifEmpty { release.name ?: currentVersion },
+                            currentVersion = currentVersion,
+                            releaseNotes = if (release.body.isNullOrBlank()) v184Changelog else "${release.body}\n\n$v184Changelog",
+                            downloadUrl = downloadUrl
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Latest release check failed: ${e.message}")
@@ -1300,23 +1304,50 @@ class MangaRepository(private val context: Context) {
                     val release = allResponse.body()!!.first()
                     val tag = release.tagName?.removePrefix("v")?.trim() ?: ""
                     val apkAsset = release.assets?.find {
+                        it.name?.equals("nexus.apk", ignoreCase = true) == true
+                    } ?: release.assets?.find {
                         it.name?.endsWith(".apk", ignoreCase = true) == true ||
                                 it.contentType?.contains("android.package-archive") == true
                     }
                     val hasNewerVersion = isVersionGreater(tag, currentVersion)
-                    val downloadUrl = apkAsset?.browserDownloadUrl ?: ""
+                    val downloadUrl = apkAsset?.browserDownloadUrl 
+                        ?: "https://github.com/$owner/$appRepo/releases/latest/download/nexus.apk"
 
-                    return@withContext AppUpdateState(
-                        isChecking = false,
-                        updateAvailable = hasNewerVersion && downloadUrl.isNotBlank(),
-                        latestVersion = tag.ifEmpty { release.name ?: currentVersion },
-                        currentVersion = currentVersion,
-                        releaseNotes = if (release.body.isNullOrBlank()) v18Changelog else "${release.body}\n\n$v18Changelog",
-                        downloadUrl = downloadUrl
-                    )
+                    if (hasNewerVersion && downloadUrl.isNotBlank()) {
+                        return@withContext AppUpdateState(
+                            isChecking = false,
+                            updateAvailable = true,
+                            latestVersion = tag.ifEmpty { release.name ?: currentVersion },
+                            currentVersion = currentVersion,
+                            releaseNotes = if (release.body.isNullOrBlank()) v184Changelog else "${release.body}\n\n$v184Changelog",
+                            downloadUrl = downloadUrl
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "All releases check failed: ${e.message}")
+            }
+
+            // 3. Fallback: Fast raw build.gradle.kts check (bypasses all GitHub API limits)
+            try {
+                val rawGradleUrl = "https://raw.githubusercontent.com/$owner/$appRepo/main/app/build.gradle.kts"
+                val rawContent = GitHubNetworkModule.fetchDirectRaw(rawGradleUrl, forceFresh = true)
+                if (!rawContent.isNullOrBlank()) {
+                    val match = Regex("""versionName\s*=\s*"([^"]+)"""").find(rawContent)
+                    val remoteVersion = match?.groupValues?.get(1)?.trim() ?: ""
+                    if (isVersionGreater(remoteVersion, currentVersion)) {
+                        return@withContext AppUpdateState(
+                            isChecking = false,
+                            updateAvailable = true,
+                            latestVersion = remoteVersion,
+                            currentVersion = currentVersion,
+                            releaseNotes = v184Changelog,
+                            downloadUrl = "https://github.com/$owner/$appRepo/releases/latest/download/nexus.apk"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Raw build.gradle check failed: ${e.message}")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed: ${e.message}")
@@ -1327,7 +1358,7 @@ class MangaRepository(private val context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = v18Changelog
+            releaseNotes = v184Changelog
         )
     }
 

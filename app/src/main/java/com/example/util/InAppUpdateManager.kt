@@ -54,9 +54,18 @@ object InAppUpdateManager {
                 return
             }
 
-            val fileName = "nexus-update-v$versionName.apk"
+            val fileName = "nexus.apk"
+            val destinationFile = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                fileName
+            )
+            // Delete old file if present so user gets the fresh build
+            if (destinationFile.exists()) {
+                try { destinationFile.delete() } catch (_: Exception) {}
+            }
+
             val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
-                setTitle("Nexus v$versionName")
+                setTitle("Nexus Manga v$versionName")
                 setDescription("جاري تحميل تحديث تطبيق Nexus...")
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
@@ -65,8 +74,40 @@ object InAppUpdateManager {
 
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
             if (downloadManager != null) {
-                downloadManager.enqueue(request)
-                Toast.makeText(context, "بدأ تحميل التحديث في الخلفية...", Toast.LENGTH_LONG).show()
+                val downloadId = downloadManager.enqueue(request)
+                Toast.makeText(context, "بدأ تحميل nexus.apk في الخلفية...", Toast.LENGTH_LONG).show()
+
+                // Register broadcast receiver to auto-prompt install when completed
+                val appContext = context.applicationContext
+                val receiver = object : android.content.BroadcastReceiver() {
+                    override fun onReceive(recvContext: Context?, intent: Intent?) {
+                        val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) ?: -1
+                        if (id == downloadId) {
+                            try {
+                                appContext.unregisterReceiver(this)
+                            } catch (_: Exception) {}
+                            val downloadedApk = File(
+                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                fileName
+                            )
+                            if (downloadedApk.exists()) {
+                                installApk(appContext, downloadedApk)
+                            }
+                        }
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    appContext.registerReceiver(
+                        receiver,
+                        android.content.IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                        Context.RECEIVER_EXPORTED
+                    )
+                } else {
+                    appContext.registerReceiver(
+                        receiver,
+                        android.content.IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+                    )
+                }
             } else {
                 // Fallback to browser intent if DownloadManager is unavailable
                 openDownloadInBrowser(context, downloadUrl)

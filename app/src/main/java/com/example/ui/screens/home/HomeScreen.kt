@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -174,6 +175,80 @@ fun HomeScreen(
                                 .testTag("home_screen_lazy_column"),
                             contentPadding = PaddingValues(bottom = 90.dp)
                         ) {
+                            // High-Visibility In-App Update Alert Banner
+                            if (uiState.updateInfo.updateAvailable) {
+                                item(key = "in_app_update_alert_banner") {
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                        border = BorderStroke(1.5.dp, Brush.horizontalGradient(listOf(NexusOrange, NexusGold))),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                            .clickable { onOpenUpdatesDialog() }
+                                            .testTag("home_update_available_banner")
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(42.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Brush.linearGradient(listOf(NexusOrange, NexusGold))),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.SystemUpdate,
+                                                    contentDescription = null,
+                                                    tint = BackgroundDark,
+                                                    modifier = Modifier.size(22.dp)
+                                                )
+                                            }
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "إصدار جديد متوفر الآن (v${uiState.updateInfo.latestVersion}) 🚀",
+                                                    style = MaterialTheme.typography.titleSmall.copy(
+                                                        fontWeight = FontWeight.Black,
+                                                        color = NexusGoldLight,
+                                                        fontSize = 13.sp
+                                                    )
+                                                )
+                                                Text(
+                                                    text = "تحديث nexus.apk جاهز للتحميل والتثبيت المباشر بنقرة واحدة",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = TextSecondary,
+                                                        fontSize = 11.sp
+                                                    )
+                                                )
+                                            }
+
+                                            Button(
+                                                onClick = onTriggerUpdate,
+                                                shape = RoundedCornerShape(10.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = NexusOrange,
+                                                    contentColor = BackgroundDark
+                                                ),
+                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                modifier = Modifier.height(36.dp)
+                                            ) {
+                                                Text(
+                                                    text = "تحديث",
+                                                    fontWeight = FontWeight.Black,
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             // Hero Carousel (Top 5 Featured Works - Height 290.dp)
                             if (uiState.heroMangaList.isNotEmpty()) {
                                 item {
@@ -418,7 +493,7 @@ fun NexusHomeTopBar(
                         border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v1.8.3",
+                            text = "v${com.example.BuildConfig.VERSION_NAME}",
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,

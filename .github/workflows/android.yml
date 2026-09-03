@@ -40,23 +40,38 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew || true
 
-      - name: Generate Debug Keystore
+      - name: Setup Permanent Release Keystore
         run: |
-          if [ ! -f debug.keystore ]; then
-            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey \
-              -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+          if [ -f release.keystore.base64 ] && [ ! -f release.keystore ]; then
+            echo "Decoding release.keystore from base64..."
+            base64 -d release.keystore.base64 > release.keystore
           fi
+          if [ ! -f release.keystore ]; then
+            echo "ERROR: release.keystore is missing!"
+            exit 1
+          fi
+          echo "Permanent release.keystore verified successfully."
 
-      - name: Build Debug APK
+      - name: Build Release APK
         run: |
-          ./gradlew assembleDebug --stacktrace || gradle assembleDebug
+          ./gradlew assembleRelease --stacktrace || gradle assembleRelease
+
+      - name: Prepare nexus.apk
+        run: |
+          mkdir -p release-output
+          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ] || [ ! -f "$APK_FILE" ]; then
+            APK_FILE=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          fi
+          echo "Found built APK: $APK_FILE"
+          cp "$APK_FILE" release-output/nexus.apk
+          ls -la release-output/
 
       - name: Extract Version Info
         id: version_step
         run: |
-          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.5")
-          if [ -z "$VERSION" ]; then VERSION="1.5"; fi
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed -E 's/.*versionName = "([^"]+)".*/\1/' || echo "1.8.4")
+          if [ -z "$VERSION" ]; then VERSION="1.8.4"; fi
           echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             TAG="${GITHUB_REF_NAME}"
@@ -69,8 +84,8 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-app-v${{ env.VERSION_NAME }}-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: nexus-v${{ env.VERSION_NAME }}
+          path: release-output/nexus.apk
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -80,14 +95,14 @@ jobs:
           body: |
             ## 🚀 إصدار جديد لتطبيق Nexus Manga (${{ env.RELEASE_TAG }})
             
-            - الربط المباشر مع مستودع البيانات السحابية `zxiu86/Data` (`data/works.json` و `data/[series-slug]/info.json`).
-            - دعم نظام التحديث التلقائي الديناميكي من مستودع `zxiu86/Nexus`.
-            - إضافة GitHub Actions Cache لتسريع البناء وتقليل وقت الـ CI/CD.
-            - تحسين قارئ الفصول والتنقل السلس.
+            - اعتماد مفتاح توقيع دائم وثابت (release.keystore) لحل مشكلة تعارض الحزم عند التحديث نهائياً.
+            - تسمية الحزمة الرسمية nexus.apk مباشرة لتسهيل التثبيت والتحديث.
+            - إشعار وتنبيه فوري داخل التطبيق عند توفر أي إصدار جديد جاهز للتحميل.
+            - تحسين أداء جلب البيانات السحابية وسلاسة التصفح بدون تعليق.
           draft: false
           prerelease: false
           files: |
-            app/build/outputs/apk/debug/*.apk
+            release-output/nexus.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

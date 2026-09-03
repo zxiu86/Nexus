@@ -17,16 +17,22 @@ android {
     applicationId = "com.aistudio.nexus.manga"
     minSdk = 24
     targetSdk = 36
-    versionCode = 24
-    versionName = "1.8.3"
+    versionCode = 25
+    versionName = "1.8.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
     create("release") {
+      val releaseKeystore = file("${rootDir}/release.keystore")
       val customKeystore = file("${rootDir}/my-upload-key.jks")
-      if (customKeystore.exists() && System.getenv("STORE_PASSWORD") != null) {
+      if (releaseKeystore.exists()) {
+        storeFile = releaseKeystore
+        storePassword = System.getenv("STORE_PASSWORD") ?: "nexus123456"
+        keyAlias = System.getenv("KEY_ALIAS") ?: "nexuskey"
+        keyPassword = System.getenv("KEY_PASSWORD") ?: "nexus123456"
+      } else if (customKeystore.exists() && System.getenv("STORE_PASSWORD") != null) {
         storeFile = customKeystore
         storePassword = System.getenv("STORE_PASSWORD")
         keyAlias = "upload"

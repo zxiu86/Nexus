@@ -278,6 +278,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             delay(1200L)
             _isAppReady.value = true
+            // Check for updates as soon as app is ready to notify user immediately
+            checkForUpdates()
         }
 
         // Automatically start silent background auto-sync and periodic update checker
@@ -312,9 +314,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.refreshMangaFromGitHub(forceFresh = true)
             while (isActive) {
-                delay(20_000L)
+                delay(30_000L)
                 try {
                     repository.refreshMangaFromGitHub(forceFresh = true)
+                    checkForUpdates()
                 } catch (e: Exception) {
                     // Ignore background polling glitches
                 }
@@ -347,6 +350,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             if (showIndicator) _isRefreshing.value = true
             repository.refreshMangaFromGitHub(forceFresh = true)
+            checkForUpdates()
             if (showIndicator) _isRefreshing.value = false
         }
     }
