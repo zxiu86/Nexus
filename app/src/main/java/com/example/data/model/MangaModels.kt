@@ -84,7 +84,9 @@ data class WorkDto(
     val type: String? = null,
     val author: String? = null,
     val artist: String? = null,
-    val genres: List<String>? = emptyList()
+    val genres: List<String>? = emptyList(),
+    val rate: Double? = null,
+    val rating: Double? = null
 )
 
 @JsonClass(generateAdapter = true)

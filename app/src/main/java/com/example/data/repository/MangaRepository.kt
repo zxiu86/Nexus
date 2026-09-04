@@ -18,15 +18,20 @@ import com.example.data.model.SeriesInfoDto
 import com.example.data.model.WorkDto
 import com.example.data.network.GitHubNetworkModule
 import com.squareup.moshi.Types
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
@@ -45,6 +50,12 @@ class MangaRepository(private val context: Context) {
 
     private val _lastReadFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     val lastReadFlow: StateFlow<Map<String, Int>> = _lastReadFlow.asStateFlow()
+
+    private val _readChaptersFlow = MutableStateFlow<Map<String, Set<Int>>>(emptyMap())
+    val readChaptersFlow: StateFlow<Map<String, Set<Int>>> = _readChaptersFlow.asStateFlow()
+
+    private val _userRatingsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val userRatingsFlow: StateFlow<Map<String, Int>> = _userRatingsFlow.asStateFlow()
 
     private val _allMangaFlow = MutableStateFlow<List<MangaItem>>(emptyList())
     val allMangaFlow: StateFlow<List<MangaItem>> = _allMangaFlow.asStateFlow()
@@ -73,6 +84,7 @@ class MangaRepository(private val context: Context) {
         loadMangaFromDiskCache()
         loadDownloadedChaptersManifest()
         loadReadingHistoryFromDisk()
+        checkPendingRatingsOnStartup()
     }
 
     private fun decodeGitHubContent(rawContent: String): String {
@@ -169,6 +181,9 @@ class MangaRepository(private val context: Context) {
             }
         }
         val rawCover = obj.optString("cover", obj.optString("thumbnail", obj.optString("image", obj.optString("banner", ""))))
+        val parsedRate = if (obj.has("rate") && !obj.isNull("rate")) obj.optDouble("rate")
+                         else if (obj.has("rating") && !obj.isNull("rating")) obj.optDouble("rating")
+                         else null
         return WorkDto(
             slug = slug,
             id = obj.optString("id", slug),
@@ -182,7 +197,9 @@ class MangaRepository(private val context: Context) {
             type = obj.optString("type", "مانهوا"),
             author = obj.optString("author", "غير محدد"),
             artist = obj.optString("artist", "غير محدد"),
-            genres = if (genresList.isNotEmpty()) genresList else listOf("مانها", "أكشن")
+            genres = if (genresList.isNotEmpty()) genresList else listOf("مانها", "أكشن"),
+            rate = parsedRate,
+            rating = parsedRate
         )
     }
 
@@ -430,13 +447,25 @@ class MangaRepository(private val context: Context) {
 
         val allKeys = prefs.all
         val readMap = mutableMapOf<String, Int>()
+        val readChaptersMap = mutableMapOf<String, Set<Int>>()
+        val userRatingsMap = mutableMapOf<String, Int>()
+
         for ((k, v) in allKeys) {
             if (k.startsWith("last_read_") && v is Int) {
                 val mangaId = k.removePrefix("last_read_")
                 readMap[mangaId] = v
+            } else if (k.startsWith("read_chapters_") && v is Set<*>) {
+                val mangaId = k.removePrefix("read_chapters_")
+                val set = (v as? Set<*>)?.mapNotNull { it?.toString()?.toIntOrNull() }?.toSet() ?: emptySet()
+                readChaptersMap[mangaId] = set
+            } else if (k.startsWith("user_rating_") && v is Int) {
+                val mangaId = k.removePrefix("user_rating_")
+                userRatingsMap[mangaId] = v
             }
         }
         _lastReadFlow.value = readMap
+        _readChaptersFlow.value = readChaptersMap
+        _userRatingsFlow.value = userRatingsMap
     }
 
     fun toggleFavorite(mangaId: String) {
@@ -474,6 +503,200 @@ class MangaRepository(private val context: Context) {
         current[mangaId] = chapterNumber
         _lastReadFlow.value = current
         prefs.edit().putInt("last_read_$mangaId", chapterNumber).apply()
+    }
+
+    fun markChapterAsRead(mangaId: String, chapterNumber: Int) {
+        val currentMap = _readChaptersFlow.value.toMutableMap()
+        val currentSet = (currentMap[mangaId] ?: loadReadChaptersFromPrefs(mangaId)).toMutableSet()
+        currentSet.add(chapterNumber)
+        currentMap[mangaId] = currentSet
+        _readChaptersFlow.value = currentMap
+
+        val strSet = currentSet.map { it.toString() }.toSet()
+        prefs.edit()
+            .putStringSet("read_chapters_$mangaId", strSet)
+            .putInt("last_read_$mangaId", chapterNumber)
+            .apply()
+
+        val lastReadMap = _lastReadFlow.value.toMutableMap()
+        lastReadMap[mangaId] = chapterNumber
+        _lastReadFlow.value = lastReadMap
+    }
+
+    fun isChapterRead(mangaId: String, chapterNumber: Int): Boolean {
+        val set = _readChaptersFlow.value[mangaId] ?: loadReadChaptersFromPrefs(mangaId)
+        return set.contains(chapterNumber)
+    }
+
+    fun getReadChapters(mangaId: String): Set<Int> {
+        return _readChaptersFlow.value[mangaId] ?: loadReadChaptersFromPrefs(mangaId)
+    }
+
+    private fun loadReadChaptersFromPrefs(mangaId: String): Set<Int> {
+        val strSet = prefs.getStringSet("read_chapters_$mangaId", null)
+        val intSet = strSet?.mapNotNull { it.toIntOrNull() }?.toSet() ?: emptySet()
+        val currentMap = _readChaptersFlow.value.toMutableMap()
+        currentMap[mangaId] = intSet
+        _readChaptersFlow.value = currentMap
+        return intSet
+    }
+
+    // ----------------------------------------------------
+    // 5-STAR RATING SYSTEM & 30-MIN DELAYED GITHUB SYNC
+    // ----------------------------------------------------
+
+    fun getUserRating(mangaId: String): Int {
+        return _userRatingsFlow.value[mangaId] ?: prefs.getInt("user_rating_$mangaId", 0)
+    }
+
+    fun submitMangaRating(mangaId: String, rating: Int) {
+        val validRating = rating.coerceIn(1, 5)
+        val currentMap = _userRatingsFlow.value.toMutableMap()
+        currentMap[mangaId] = validRating
+        _userRatingsFlow.value = currentMap
+
+        val now = System.currentTimeMillis()
+        prefs.edit()
+            .putInt("user_rating_$mangaId", validRating)
+            .putLong("pending_rating_time_$mangaId", now)
+            .putInt("pending_rating_val_$mangaId", validRating)
+            .apply()
+
+        // Update displayed rating locally immediately
+        val currentAll = _allMangaFlow.value.toMutableList()
+        val index = currentAll.indexOfFirst { it.id == mangaId }
+        if (index != -1) {
+            val existing = currentAll[index]
+            val newAvg = ((existing.rating * 4.0 + validRating) / 5.0).toFloat()
+            val rounded = (Math.round(newAvg * 10f) / 10f)
+            currentAll[index] = existing.copy(rating = rounded)
+            _allMangaFlow.value = currentAll
+            prefs.edit().putFloat("manga_rating_$mangaId", rounded).apply()
+        }
+
+        // Schedule delayed batch sync to GitHub after 30 minutes
+        scheduleRatingSyncAfter30Minutes(mangaId, 30 * 60 * 1000L)
+    }
+
+    private fun scheduleRatingSyncAfter30Minutes(mangaId: String, delayMillis: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                delay(delayMillis)
+                syncMangaRatingToGitHub(mangaId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Delayed rating sync error: ${e.message}")
+            }
+        }
+    }
+
+    private fun checkPendingRatingsOnStartup() {
+        val allKeys = prefs.all
+        val now = System.currentTimeMillis()
+        for ((k, v) in allKeys) {
+            if (k.startsWith("pending_rating_time_") && v is Long) {
+                val mangaId = k.removePrefix("pending_rating_time_")
+                val elapsed = now - v
+                val remaining = (30 * 60 * 1000L) - elapsed
+                if (remaining <= 0) {
+                    CoroutineScope(Dispatchers.IO).launch { syncMangaRatingToGitHub(mangaId) }
+                } else {
+                    scheduleRatingSyncAfter30Minutes(mangaId, remaining)
+                }
+            }
+        }
+    }
+
+    suspend fun syncMangaRatingToGitHub(mangaId: String) = withContext(Dispatchers.IO) {
+        try {
+            val userRating = prefs.getInt("pending_rating_val_$mangaId", 0)
+            if (userRating == 0) return@withContext
+
+            val cacheFile = File(cacheDir, "nexus_works_cache.json")
+            var worksJsonStr = if (cacheFile.exists() && cacheFile.length() > 0) cacheFile.readText() else ""
+            if (worksJsonStr.isBlank()) {
+                val owner = GitHubNetworkModule.getConfiguredOwner()
+                val repo = GitHubNetworkModule.getDataRepo()
+                val branch = GitHubNetworkModule.getConfiguredBranch()
+                val directUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/works.json"
+                val raw = GitHubNetworkModule.fetchDirectRaw(directUrl, forceFresh = true)
+                if (!raw.isNullOrBlank()) {
+                    worksJsonStr = decodeGitHubContent(raw)
+                }
+            }
+
+            if (worksJsonStr.isBlank()) return@withContext
+
+            // Parse and update JSON rate (works.json rate field)
+            var updatedJsonStr = worksJsonStr
+            var newRateValue = 4.9
+            try {
+                if (worksJsonStr.trim().startsWith("[")) {
+                    val arr = org.json.JSONArray(worksJsonStr)
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.optJSONObject(i) ?: continue
+                        val slug = obj.optString("slug", obj.optString("id", ""))
+                        if (slug == mangaId) {
+                            val cur = if (obj.has("rate")) obj.optDouble("rate") else if (obj.has("rating")) obj.optDouble("rating") else 4.9
+                            newRateValue = Math.round(((cur * 4.0 + userRating) / 5.0) * 10.0) / 10.0
+                            obj.put("rate", newRateValue)
+                            break
+                        }
+                    }
+                    updatedJsonStr = arr.toString(2)
+                } else {
+                    val root = org.json.JSONObject(worksJsonStr)
+                    val targetObj = root.optJSONObject("works") ?: root.optJSONObject("data") ?: root
+                    val workObj = targetObj.optJSONObject(mangaId)
+                    if (workObj != null) {
+                        val cur = if (workObj.has("rate")) workObj.optDouble("rate") else if (workObj.has("rating")) workObj.optDouble("rating") else 4.9
+                        newRateValue = Math.round(((cur * 4.0 + userRating) / 5.0) * 10.0) / 10.0
+                        workObj.put("rate", newRateValue)
+                        updatedJsonStr = root.toString(2)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed updating JSON structure for rating: ${e.message}")
+                return@withContext
+            }
+
+            // Save updated JSON locally to cache
+            saveWorksToDiskCache(updatedJsonStr)
+            prefs.edit().remove("pending_rating_val_$mangaId").remove("pending_rating_time_$mangaId").apply()
+            Log.d(TAG, "Rating for $mangaId successfully updated locally to rate: $newRateValue")
+
+            // If token is configured, push update to GitHub repo
+            val token = GitHubNetworkModule.getActiveToken()
+            if (token.isNotEmpty()) {
+                val owner = GitHubNetworkModule.getConfiguredOwner()
+                val repo = GitHubNetworkModule.getDataRepo()
+                val branch = GitHubNetworkModule.getConfiguredBranch()
+                val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, "data/works.json", branch)
+                if (metaResp.isSuccessful && metaResp.body() != null) {
+                    val metaStr = metaResp.body()!!.string()
+                    val metaObj = org.json.JSONObject(metaStr)
+                    val sha = metaObj.optString("sha")
+                    if (sha.isNotBlank()) {
+                        val base64Content = android.util.Base64.encodeToString(updatedJsonStr.toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP)
+                        val commitBody = org.json.JSONObject().apply {
+                            put("message", "Update rating for $mangaId to $newRateValue")
+                            put("content", base64Content)
+                            put("sha", sha)
+                            put("branch", branch)
+                        }
+                        val requestBody = commitBody.toString()
+                            .toRequestBody("application/json; charset=utf-8".toMediaType())
+                        val updateResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, "data/works.json", requestBody)
+                        if (updateResp.isSuccessful) {
+                            Log.d(TAG, "Successfully committed updated rating for $mangaId to GitHub!")
+                        } else {
+                            Log.w(TAG, "GitHub rating commit returned ${updateResp.code()}")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Rating sync exception: ${e.message}")
+        }
     }
 
     fun getLastReadChapter(mangaId: String): Int {
@@ -730,8 +953,9 @@ class MangaRepository(private val context: Context) {
         pageNumber: Int,
         totalPages: Int
     ) {
-        // 1. Update last read chapter preference
+        // 1. Update last read chapter preference & mark current chapter as read
         saveLastRead(mangaId, chapterNumber)
+        markChapterAsRead(mangaId, chapterNumber)
 
         // 2. Save last page read for this chapter in prefs
         prefs.edit().putInt("last_page_${mangaId}_$chapterNumber", pageNumber).apply()
@@ -962,6 +1186,9 @@ class MangaRepository(private val context: Context) {
         val title = workDto.title ?: workDto.name ?: slug
         val cover = sanitizeImageUrl(workDto.cover ?: workDto.thumbnail ?: workDto.image, slug)
         val summary = workDto.summary ?: workDto.description ?: "لا يوجد وصف متوفر للعمل حالياً."
+        val savedRating = prefs.getFloat("manga_rating_$slug", -1f)
+        val initialRate = workDto.rate?.toFloat() ?: workDto.rating?.toFloat() ?: (seriesInfo?.rating ?: 4.9).toFloat()
+        val finalRating = if (savedRating > 0f) savedRating else initialRate
 
         return MangaItem(
             id = slug,
@@ -974,7 +1201,7 @@ class MangaRepository(private val context: Context) {
             author = workDto.author ?: "غير محدد",
             artist = workDto.artist ?: "غير محدد",
             scanlationTeam = "فريق نكسوس للترجمة (Nexus Scans)",
-            rating = (seriesInfo?.rating ?: 4.9).toFloat(),
+            rating = finalRating,
             views = seriesInfo?.views ?: "1.2M",
             status = seriesInfo?.status ?: "مستمر",
             genres = workDto.genres ?: listOf("مانها", "أكشن"),

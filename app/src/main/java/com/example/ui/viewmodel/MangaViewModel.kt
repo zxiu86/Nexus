@@ -85,6 +85,8 @@ data class DetailsUiState(
     val isFavorite: Boolean = false,
     val isReadLater: Boolean = false,
     val lastReadChapterNumber: Int = 1,
+    val readChapterNumbers: Set<Int> = emptySet(),
+    val userRating: Int = 0,
     val currentBatchIndex: Int = 0, // 0 for chapters 1-30, 1 for 31-60, etc.
     val batchSize: Int = 30,
     val downloadedChapterNumbers: Set<Int> = emptySet(),
@@ -292,16 +294,35 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                 repository.allMangaFlow,
                 repository.downloadedChaptersFlow,
                 repository.downloadProgressFlow,
-                repository.readLaterFlow
-            ) { mangaList, downloaded, progressMap, readLater ->
+                repository.readLaterFlow,
+                repository.readChaptersFlow,
+                repository.userRatingsFlow
+            ) { args: Array<Any?> ->
+                @Suppress("UNCHECKED_CAST")
+                val mangaList = args[0] as List<MangaItem>
+                @Suppress("UNCHECKED_CAST")
+                val downloaded = args[1] as List<DownloadedChapter>
+                @Suppress("UNCHECKED_CAST")
+                val progressMap = args[2] as Map<String, ChapterDownloadProgress>
+                @Suppress("UNCHECKED_CAST")
+                val readLater = args[3] as Set<String>
+                @Suppress("UNCHECKED_CAST")
+                val readChapters = args[4] as Map<String, Set<Int>>
+                @Suppress("UNCHECKED_CAST")
+                val userRatings = args[5] as Map<String, Int>
+
                 val currentDetailsManga = _detailsUiState.value.manga
                 if (currentDetailsManga != null) {
                     val updated = mangaList.find { it.id == currentDetailsManga.id } ?: currentDetailsManga
                     val downloadedNums = downloaded.filter { it.mangaId == currentDetailsManga.id }.map { it.chapterNumber }.toSet()
+                    val reads = readChapters[currentDetailsManga.id] ?: repository.getReadChapters(currentDetailsManga.id)
+                    val rating = userRatings[currentDetailsManga.id] ?: repository.getUserRating(currentDetailsManga.id)
                     _detailsUiState.value = _detailsUiState.value.copy(
                         manga = updated,
                         isFavorite = repository.isFavorite(currentDetailsManga.id),
                         isReadLater = readLater.contains(currentDetailsManga.id),
+                        readChapterNumbers = reads,
+                        userRating = rating,
                         downloadedChapterNumbers = downloadedNums,
                         downloadProgressMap = progressMap
                     )
@@ -500,6 +521,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         val isFav = repository.isFavorite(mangaId)
         val isReadLater = repository.isReadLater(mangaId)
         val lastRead = repository.getLastReadChapter(mangaId)
+        val readNums = repository.getReadChapters(mangaId)
+        val userRating = repository.getUserRating(mangaId)
         val initialBatch = ((lastRead - 1) / 30).coerceAtLeast(0)
         val downloadedNums = repository.downloadedChaptersFlow.value
             .filter { it.mangaId == mangaId }
@@ -511,11 +534,31 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             isFavorite = isFav,
             isReadLater = isReadLater,
             lastReadChapterNumber = lastRead,
+            readChapterNumbers = readNums,
+            userRating = userRating,
             currentBatchIndex = initialBatch,
             batchSize = 30,
             downloadedChapterNumbers = downloadedNums,
             downloadProgressMap = repository.downloadProgressFlow.value
         )
+    }
+
+    fun submitRating(mangaId: String, rating: Int) {
+        repository.submitMangaRating(mangaId, rating)
+        val updatedManga = repository.getMangaById(mangaId)
+        _detailsUiState.value = _detailsUiState.value.copy(
+            userRating = rating,
+            manga = updatedManga ?: _detailsUiState.value.manga
+        )
+    }
+
+    fun markChapterAsRead(mangaId: String, chapterNumber: Int) {
+        repository.markChapterAsRead(mangaId, chapterNumber)
+        if (_detailsUiState.value.manga?.id == mangaId) {
+            _detailsUiState.value = _detailsUiState.value.copy(
+                readChapterNumbers = _detailsUiState.value.readChapterNumbers + chapterNumber
+            )
+        }
     }
 
     fun setBatchIndex(index: Int) {

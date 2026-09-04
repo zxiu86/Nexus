@@ -734,24 +734,9 @@ fun HeroCarouselSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange,
-                            shadowElevation = 4.dp
-                        ) {
-                            Text(
-                                text = manga.type.labelAr,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = BackgroundDark
-                                )
-                            )
-                        }
-
                         IconButton(
                             onClick = { onToggleFavorite(manga.id) },
                             modifier = Modifier
@@ -901,7 +886,7 @@ fun SearchAndFilterSection(
     selectedCategory: String,
     onCategorySelect: (String) -> Unit
 ) {
-    val categories = listOf("الكل", "أكشن", "خيال", "فنون قتال", "تناسخ", "سحر", "بوابات", "مانهوا كورية", "مانها صينية")
+    val categories = listOf("الكل", "أكشن", "خيال", "فنون قتال", "تناسخ", "سحر", "بوابات")
 
     Column(
         modifier = Modifier
@@ -913,7 +898,7 @@ fun SearchAndFilterSection(
             onValueChange = onSearchQueryChange,
             placeholder = {
                 Text(
-                    text = "ابحث عن مانهوا أو مانها المفضلة لديك...",
+                    text = "ابحث عن أعمالك وفصولك المفضلة...",
                     style = MaterialTheme.typography.bodyMedium.copy(color = TextTertiary)
                 )
             },
@@ -1118,23 +1103,6 @@ fun LatestMangaGridCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-
-                // Type badge on cover corner
-                Surface(
-                    shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                    color = if (manga.type == MangaType.MANHWA) NexusGold.copy(alpha = 0.95f) else NexusOrange.copy(alpha = 0.95f),
-                    modifier = Modifier.align(Alignment.TopStart)
-                ) {
-                    Text(
-                        text = if (manga.type == MangaType.MANHWA) "مانهوا" else "مانها",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BackgroundDark
-                        )
-                    )
-                }
 
                 // Rating overlay on bottom end
                 Surface(
@@ -1387,16 +1355,6 @@ fun DiscoverRandomSection(
                                     )
                                 )
                         )
-
-                        // Type dot badge
-                        Surface(
-                            shape = CircleShape,
-                            color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange,
-                            modifier = Modifier
-                                .size(8.dp)
-                                .align(Alignment.TopEnd)
-                                .padding(2.dp)
-                        ) {}
                     }
                 }
             }
@@ -1678,7 +1636,7 @@ fun NexusPreloadSplashScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "الإصدار 1.8.0 • تهيئة الصور والمستودع",
+                    text = "الإصدار 1.8.6 • تهيئة الصور والمستودع",
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = NexusOrangeLight,
                         fontWeight = FontWeight.Bold,

@@ -156,6 +156,7 @@ fun NexusNavGraph(
                         }
                     },
                     onChapterClick = { chapterNum ->
+                        viewModel.markChapterAsRead(mangaId, chapterNum)
                         navController.navigate(NexusDestinations.readerRoute(mangaId, chapterNum))
                     },
                     onToggleFavorite = {
@@ -163,6 +164,9 @@ fun NexusNavGraph(
                     },
                     onToggleReadLater = {
                         viewModel.toggleReadLater(mangaId)
+                    },
+                    onRateManga = { rating ->
+                        viewModel.submitRating(mangaId, rating)
                     },
                     onBatchIndexChange = { idx ->
                         viewModel.setBatchIndex(idx)

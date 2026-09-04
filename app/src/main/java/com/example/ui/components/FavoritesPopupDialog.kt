@@ -296,21 +296,6 @@ private fun FavoriteMangaRowItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (manga.type == MangaType.MANHWA) NexusGold else NexusOrange
-                    ) {
-                        Text(
-                            text = manga.type.labelAr,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = BackgroundDark,
-                                fontSize = 9.sp
-                            )
-                        )
-                    }
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(2.dp)

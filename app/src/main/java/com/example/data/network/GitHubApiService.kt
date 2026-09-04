@@ -80,5 +80,29 @@ interface GitHubApiService {
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): Response<List<GitHubReleaseDto>>
+
+    /**
+     * Gets file metadata including sha for updating repository files
+     */
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    @Headers("Accept: application/vnd.github.v3+json, application/json")
+    suspend fun getFileMetadata(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @Query("ref") branch: String = "main"
+    ): Response<ResponseBody>
+
+    /**
+     * Updates file in repository via GitHub Contents API
+     */
+    @retrofit2.http.PUT("repos/{owner}/{repo}/contents/{path}")
+    @Headers("Accept: application/vnd.github.v3+json, application/json")
+    suspend fun updateFileContent(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @retrofit2.http.Body body: okhttp3.RequestBody
+    ): Response<ResponseBody>
 }
 
