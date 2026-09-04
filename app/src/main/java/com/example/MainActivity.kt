@@ -22,6 +22,11 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MangaViewModel by viewModels()
 
+    override fun onResume() {
+        super.onResume()
+        com.example.util.InAppUpdateManager.checkPendingInstall(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

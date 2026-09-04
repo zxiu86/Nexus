@@ -712,7 +712,7 @@ class MangaRepository(private val context: Context) {
     }
 
     // =========================================================================
-    // SECURE OFFLINE DOWNLOADS (حماية المحتوى والتنزيل المشفر داخل التطبيق)
+    // OFFLINE DOWNLOADS (التنزيل المحلي والقراءة بدون إنترنت)
     // =========================================================================
 
     private fun loadDownloadedChaptersManifest() {
@@ -1480,12 +1480,12 @@ class MangaRepository(private val context: Context) {
      */
     suspend fun checkForAppUpdate(): AppUpdateState = withContext(Dispatchers.IO) {
         val currentVersion = com.example.BuildConfig.VERSION_NAME
-        val v184Changelog = "✨ مميزات وتحديثات الإصدار v$currentVersion:\n" +
-                "• 🛡️ حل تعارض الحزم نهائياً: اعتماد مفتاح التوقيع الثابت (release.keystore) لضمان التثبيت والتحديث المباشر بسلاسة تامة.\n" +
-                "• 📦 حزمة رسمية مباشرة (nexus.apk): بناء وتسمية ملف التحديث الرسمي باسم nexus.apk مباشرة.\n" +
-                "• 🔔 تنبيهات التحديث الفورية داخل التطبيق: إشعار تلقائي وبانر فوري عند توفر أي إصدار جديد جاهز للتحميل.\n" +
-                "• ⚡ سرعة استجابة فائقة: تحسين جلب البيانات والتحديثات السحابية وإزالة أي تأخير.\n" +
-                "• 🎨 تحسينات لواجهات القراءة والتصفح بدون لاج."
+        val v187Changelog = "✨ مميزات وتحديثات الإصدار v$currentVersion:\n" +
+                "• 🚀 حل مشكلة فك الحزمة: تنزيل وتثبيت سلس للتحديث بنقرة واحدة من داخل التطبيق.\n" +
+                "• ⚡ سرعة استجابة فائقة: تحسين جلب وتصفح الفصول والصفحات بدون أي تأخير.\n" +
+                "• 🎨 واجهة مستخدم نقية واحترافية: تركيز كامل على محتواك المفضل وقراءة مريحة للعين.\n" +
+                "• 📶 قراءة أوفلاين: تحميل الفصول مسبقاً وتصفحها بأي وقت بدون اتصال بالإنترنت.\n" +
+                "• 📖 تتبع دقيق للفصول المقروءة واستئناف القراءة فوراً."
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
@@ -1515,7 +1515,7 @@ class MangaRepository(private val context: Context) {
                             updateAvailable = true,
                             latestVersion = tag.ifEmpty { release.name ?: currentVersion },
                             currentVersion = currentVersion,
-                            releaseNotes = if (release.body.isNullOrBlank()) v184Changelog else "${release.body}\n\n$v184Changelog",
+                            releaseNotes = if (release.body.isNullOrBlank()) v187Changelog else "${release.body}\n\n$v187Changelog",
                             downloadUrl = downloadUrl
                         )
                     }
@@ -1546,7 +1546,7 @@ class MangaRepository(private val context: Context) {
                             updateAvailable = true,
                             latestVersion = tag.ifEmpty { release.name ?: currentVersion },
                             currentVersion = currentVersion,
-                            releaseNotes = if (release.body.isNullOrBlank()) v184Changelog else "${release.body}\n\n$v184Changelog",
+                            releaseNotes = if (release.body.isNullOrBlank()) v187Changelog else "${release.body}\n\n$v187Changelog",
                             downloadUrl = downloadUrl
                         )
                     }
@@ -1568,7 +1568,7 @@ class MangaRepository(private val context: Context) {
                             updateAvailable = true,
                             latestVersion = remoteVersion,
                             currentVersion = currentVersion,
-                            releaseNotes = v184Changelog,
+                            releaseNotes = v187Changelog,
                             downloadUrl = "https://github.com/$owner/$appRepo/releases/latest/download/nexus.apk"
                         )
                     }
@@ -1585,7 +1585,7 @@ class MangaRepository(private val context: Context) {
             updateAvailable = false,
             currentVersion = currentVersion,
             latestVersion = currentVersion,
-            releaseNotes = v184Changelog
+            releaseNotes = v187Changelog
         )
     }
 

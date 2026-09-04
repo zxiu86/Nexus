@@ -139,7 +139,6 @@ fun DetailsScreen(
     onChapterClick: (Int) -> Unit,
     onToggleFavorite: () -> Unit,
     onToggleReadLater: () -> Unit = {},
-    onRateManga: (Int) -> Unit = {},
     onBatchIndexChange: (Int) -> Unit,
     onNextBatch: () -> Unit,
     onPreviousBatch: () -> Unit,
@@ -182,7 +181,7 @@ fun DetailsScreen(
                         )
                     }
                 }
-                Text("جاري تحميل تفاصيل العمل...", color = TextSecondary)
+                Text("جاري تجهيز تفاصيل العمل...", color = TextSecondary)
             }
         }
         return
@@ -229,19 +228,10 @@ fun DetailsScreen(
             // Cover & Title Header Card
             item {
                 MangaHeaderCard(
-                    manga = manga,
-                    userRating = uiState.userRating
+                    manga = manga
                 )
             }
 
-            // 5-Star Interactive Rating Section
-            item {
-                MangaRatingSection(
-                    currentRating = manga.rating,
-                    userRating = uiState.userRating,
-                    onRate = onRateManga
-                )
-            }
 
             // Action Buttons: "متابعة القراءة" & "الفصل الأول" (Above chapters)
             item {
@@ -588,8 +578,7 @@ fun Rotating3DCoverCard(
 
 @Composable
 fun MangaHeaderCard(
-    manga: MangaItem,
-    userRating: Int = 0
+    manga: MangaItem
 ) {
     Card(
         modifier = Modifier
@@ -646,69 +635,6 @@ fun MangaHeaderCard(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // Rating & User Status Row (Views removed per request)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Overall Rating Pill
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = NexusGoldDark,
-                        border = BorderStroke(0.8.dp, NexusGold.copy(alpha = 0.6f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Text(
-                                text = "${manga.rating}",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = NexusGold,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-
-                    // User Rating Status
-                    if (userRating > 0) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = SurfaceVariantDark,
-                            border = BorderStroke(0.8.dp, BadgeSuccess.copy(alpha = 0.6f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = BadgeSuccess,
-                                    modifier = Modifier.size(11.dp)
-                                )
-                                Text(
-                                    text = "تقييمك: $userRating ★",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = BadgeSuccess,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
 
                 // Status & Total Chapters Tag
                 Surface(
@@ -743,111 +669,6 @@ fun MangaHeaderCard(
     }
 }
 
-/**
- * 5-Star Interactive Rating Section
- * Allows users to rate 1-5 stars.
- * Saves locally immediately and delays pushing average calculation to GitHub by 30 mins.
- */
-@Composable
-fun MangaRatingSection(
-    currentRating: Float,
-    userRating: Int,
-    onRate: (Int) -> Unit
-) {
-    var selectedStar by remember(userRating) { mutableIntStateOf(userRating) }
-    var showThankYou by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, if (selectedStar > 0) NexusGold.copy(alpha = 0.5f) else SurfaceElevated)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = NexusGold,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = "تقييم العمل",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            fontSize = 13.sp
-                        )
-                    )
-                }
-
-                Text(
-                    text = if (selectedStar > 0) "تقييمك: $selectedStar من 5" else "المتوسط: $currentRating / 5",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = if (selectedStar > 0) NexusGold else TextTertiary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp
-                    )
-                )
-            }
-
-            // 5 Interactive Stars
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                (1..5).forEach { star ->
-                    val isFilled = star <= if (selectedStar > 0) selectedStar else Math.round(currentRating)
-                    IconButton(
-                        onClick = {
-                            selectedStar = star
-                            showThankYou = true
-                            onRate(star)
-                        },
-                        modifier = Modifier
-                            .size(44.dp)
-                            .testTag("rate_star_$star")
-                    ) {
-                        Icon(
-                            imageVector = if (isFilled) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = "تقييم $star نجوم",
-                            tint = if (isFilled) NexusGold else TextTertiary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-            }
-
-            if (showThankYou || selectedStar > 0) {
-                Text(
-                    text = "تم تسجيل تقييمك محلياً وسيتم احتسابه وتحديث المتوسط العام بعد 30 دقيقة.",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = NexusGoldLight,
-                        fontSize = 10.sp,
-                        textAlign = TextAlign.Center
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
 
 /**
  * Action Buttons placed prominently above the content:

@@ -543,15 +543,6 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun submitRating(mangaId: String, rating: Int) {
-        repository.submitMangaRating(mangaId, rating)
-        val updatedManga = repository.getMangaById(mangaId)
-        _detailsUiState.value = _detailsUiState.value.copy(
-            userRating = rating,
-            manga = updatedManga ?: _detailsUiState.value.manga
-        )
-    }
-
     fun markChapterAsRead(mangaId: String, chapterNumber: Int) {
         repository.markChapterAsRead(mangaId, chapterNumber)
         if (_detailsUiState.value.manga?.id == mangaId) {

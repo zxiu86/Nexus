@@ -571,29 +571,14 @@ fun FavoritesTabContent(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Star,
-                                            contentDescription = null,
-                                            tint = NexusGold,
-                                            modifier = Modifier.size(13.dp)
+                                if (manga.genres.isNotEmpty()) {
+                                    Text(
+                                        text = manga.genres.take(2).joinToString(" ، "),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = NexusGoldLight,
+                                            fontSize = 11.sp
                                         )
-                                        Text(
-                                            text = "${manga.rating}",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = NexusGold,
-                                                fontSize = 11.sp
-                                            )
-                                        )
-                                    }
+                                    )
                                 }
 
                                 Text(
@@ -1038,7 +1023,7 @@ fun DownloadsTabContent(
                     )
 
                     Text(
-                        text = "يمكنك تحميل الفصول مسبقاً لقراءتها في أي وقت بدون إنترنت. جميع الملفات مشفرة ومحمية داخل التطبيق لمنع تسريبها.",
+                        text = "يمكنك تحميل الفصول مسبقاً لقراءتها في أي وقت بدون إنترنت مع حفظ آمن وتصفح فائق السرعة.",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = TextSecondary,
                             textAlign = TextAlign.Center,
@@ -1046,7 +1031,7 @@ fun DownloadsTabContent(
                         )
                     )
 
-                    // Security Badge
+                    // Storage Badge
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = BackgroundDark,
@@ -1058,13 +1043,13 @@ fun DownloadsTabContent(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Security,
+                                imageVector = Icons.Default.CloudDownload,
                                 contentDescription = null,
                                 tint = NexusGoldLight,
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "حماية أمنية وتشفير محلي 🔒",
+                                text = "حفظ محلي آمن 📥",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = NexusGoldLight,
                                     fontWeight = FontWeight.Bold,
@@ -1437,7 +1422,7 @@ fun UpdatesTabContent(
                     }
 
                     Text(
-                        text = "الخادم السحابي: خوادم نكسوس المشفرة (متصل ونشط)",
+                        text = "الخادم السحابي: خوادم نكسوس السحابية (متصل ونشط)",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = TextSecondary,
                             fontSize = 11.sp
@@ -1529,93 +1514,53 @@ fun UpdatesTabContent(
             }
         }
 
-        // Feature 1.8.4 - Key Fix
-        item {
-            FeatureHighlightCard(
-                icon = Icons.Default.Security,
-                iconTint = NexusGold,
-                title = "1. حل تعارض حزم التطبيق (مفتاح توقيع دائم release.keystore)",
-                description = "تم تحويل مفتاح توقيع التطبيق إلى release.keystore دائم وثابت لا يتغير مع التحديثات، مما يتيح التثبيت والتحديث المباشر بسلاسة تامة دون أي تعارض مع الحزم السابقة."
-            )
-        }
-
-        // Feature 1.8.4 - nexus.apk naming
-        item {
-            FeatureHighlightCard(
-                icon = Icons.Default.CloudDownload,
-                iconTint = NexusOrange,
-                title = "2. حزمة التحديث المباشرة الرسمية (nexus.apk)",
-                description = "يتم الآن بناء وتسمية ملف التحديث في GitHub مباشرة باسم nexus.apk بدلاً من app-debug.apk، لتثبيت فوري مباشر بنقرة واحدة."
-            )
-        }
-
-        // Feature 1.8.4 - In-App Notification
+        // Feature 1: Smooth direct update
         item {
             FeatureHighlightCard(
                 icon = Icons.Default.SystemUpdate,
-                iconTint = NexusGoldLight,
-                title = "3. التنبيه والإشعار الفوري بالتحديثات داخل التطبيق",
-                description = "نظام ذكي يقوم بفحص مستودع Nexus دورياً وإشعار المستخدم بوجود إصدار جديد عبر نافذة منبثقة تفاعلية وبانر علوي بارز وزر تحميل مباشر."
+                iconTint = NexusGold,
+                title = "1. تثبيت وتحديث سلس ومباشر",
+                description = "حل مشكلة فك الحزمة وإتاحة تنزيل التحديثات وتثبيتها بنقرة واحدة مباشرة من داخل التطبيق، أو اختيار التحميل المباشر عبر المتصفح حسب رغبتك."
             )
         }
 
-        // Feature 1: Offline Reading with Content Protection
+        // Feature 2: High Speed & Quality
         item {
             FeatureHighlightCard(
-                icon = Icons.Default.Lock,
-                iconTint = NexusGold,
-                title = "2. القراءة بدون اتصال مع التشفير والحماية",
-                description = "إمكانية تحميل أي فصل بضغطة زر وتخزينه محلياً للقراءة بدون إنترنت. يتم تشفير وحفظ صفحات الفصول في مجلدات التطبيق الخاصة المعزولة داخلياً لحماية المحتوى."
+                icon = Icons.Default.AutoAwesome,
+                iconTint = NexusOrange,
+                title = "2. سرعة فائقة في فتح الفصول",
+                description = "تحسين شامل لسرعة جلب وتحميل الصفحات وعرضها بأعلى دقة ووضوح مع استهلاك اقتصادي للبيانات والذاكرة."
             )
         }
 
-        // Feature 2: Immersive Full Screen Mode
+        // Feature 3: Immersive Reading Mode
         item {
             FeatureHighlightCard(
                 icon = Icons.Default.Visibility,
-                iconTint = NexusOrange,
-                title = "3. وضع القراءة المغمور (Immersive Mode)",
-                description = "إخفاء تلقائي لشريط الحالة وشريط التنقل أثناء القراءة لمنح تجربة شاشة كاملة 100% بدون أي تشتيت، مع نقرة واحدة على الشاشة للتبديل بين إظهار وإخفاء أدوات التحكم."
-            )
-        }
-
-        // Feature 3: Pinch to Zoom & Pan
-        item {
-            FeatureHighlightCard(
-                icon = Icons.Default.ZoomIn,
                 iconTint = NexusGoldLight,
-                title = "4. التكبير والتصغير التفاعلي (Pinch-to-Zoom)",
-                description = "دعم كامل للتقريب بإصبعين والتحريك بسلاسة فائقة للتكبير على أدق التفاصيل والنصوص داخل صفحات المانهوا والمانغا دون فقدان الجودة."
+                title = "3. وضع القراءة المغمور (شاشة كاملة)",
+                description = "قراءة على كامل الشاشة بدون أي إطارات مشتتة مع دعم التقريب بإصبعين (Pinch-to-Zoom) والتحريك الانسيابي وتثبيت شريط التحكم بنقرة واحدة."
             )
         }
 
-        // Feature 4: Anti-Screenshot Security
+        // Feature 4: Offline Reading
         item {
             FeatureHighlightCard(
-                icon = Icons.Default.Security,
-                iconTint = NexusOrangeLight,
-                title = "5. الحماية الأمنية ومنع لقطات الشاشة (FLAG_SECURE)",
-                description = "حماية حقوق صانعي العمل والمترجمين من خلال منع لقطات الشاشة وتسجيل الفيديو أثناء قراءة الفصول لحفظ المحتوى داخل التطبيق."
+                icon = Icons.Default.CloudDownload,
+                iconTint = NexusGold,
+                title = "4. قراءة بدون إنترنت (أوفلاين)",
+                description = "إمكانية تنزيل الفصول مسبقاً وتصفحها في أي وقت بدون اتصال بالإنترنت مع إدارة فورية وسلسة للفصول المحفوظة."
             )
         }
 
-        // Feature 5: Progress Tracking & History
+        // Feature 5: Reading History & Resume
         item {
             FeatureHighlightCard(
                 icon = Icons.Default.History,
-                iconTint = NexusGold,
-                title = "6. سجل القراءة وتتبع التقدم التلقائي",
-                description = "تحديد الفصول المقروءة تلقائياً وتخزين آخر صفحة تم الوصول إليها مع التاريخ والوقت، بالإضافة إلى زر المتابعة السريعة لاستئناف القراءة فوراً."
-            )
-        }
-
-        // Feature 6: Bottom Navigation Bar (Footer)
-        item {
-            FeatureHighlightCard(
-                icon = Icons.Default.Explore,
                 iconTint = NexusOrange,
-                title = "7. شريط التنقل السفلي الفاخر (Footer)",
-                description = "شريط تنقل أنيق وسلس في أسفل الشاشة يتيح التبديل السريع بين: الرئيسية، المفضلة، السجل، التحميلات، وقائمة التحديثات."
+                title = "5. استئناف فوري وحفظ دقيق للتقدم",
+                description = "حفظ تلقائي لآخر صفحة وفصل قرأته مع زر المتابعة الفورية للعودة مباشرة من حيث توقفت، بالإضافة إلى قائمة المفضلة السريعة."
             )
         }
     }

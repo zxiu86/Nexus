@@ -292,29 +292,14 @@ private fun FavoriteMangaRowItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = NexusGold,
-                            modifier = Modifier.size(13.dp)
+                if (manga.genres.isNotEmpty()) {
+                    Text(
+                        text = manga.genres.take(2).joinToString(" ، "),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = NexusGoldLight,
+                            fontSize = 11.sp
                         )
-                        Text(
-                            text = "${manga.rating}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NexusGold,
-                                fontSize = 11.sp
-                            )
-                        )
-                    }
+                    )
                 }
 
                 // Manga Name in Arabic

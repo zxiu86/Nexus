@@ -38,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -180,7 +181,7 @@ fun ReaderScreen(
             ) {
                 CircularProgressIndicator(color = NexusGold)
                 Text(
-                    text = "جاري فتح صفحات الفصل المشفرة...",
+                    text = "جاري تجهيز صفحات الفصل...",
                     style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
                 )
             }
@@ -481,8 +482,8 @@ fun ReaderTopBar(
                 ) {
                     if (isDownloaded) {
                         Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "مشفر أوفلاين",
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "محفوظ أوفلاين",
                             tint = NexusGold,
                             modifier = Modifier.size(12.dp)
                         )
@@ -722,13 +723,13 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Lock,
+                            imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
                             tint = NexusGoldLight,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            text = "قراءة بدون اتصال (مشفر ومحمي)",
+                            text = "قراءة بدون اتصال (محفوظ محلياً)",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = NexusGoldLight,
                                 fontSize = 10.sp,

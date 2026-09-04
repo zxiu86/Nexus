@@ -544,7 +544,7 @@ fun NexusHomeTopBar(
                     text = when (selectedTab) {
                         1 -> "الأعمال المفضلة والمشاهدة لاحقاً"
                         2 -> "سجل القراءة الذكي"
-                        3 -> "التحميلات المشفرة"
+                        3 -> "التحميلات أوفلاين"
                         4 -> "مركز التحديثات والمميزات"
                         else -> "بوابة المانهوا والمانغا السحابية"
                     },
@@ -760,27 +760,12 @@ fun HeroCarouselSection(
                             .align(Alignment.BottomStart)
                             .padding(14.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(16.dp)
-                            )
+                        if (manga.genres.isNotEmpty()) {
                             Text(
-                                text = "${manga.rating}",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = NexusGold
-                                )
-                            )
-                            Text(
-                                text = "• ${manga.genres.take(2).joinToString(" ، ")}",
+                                text = manga.genres.take(2).joinToString(" ، "),
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = TextSecondary
+                                    color = NexusGoldLight,
+                                    fontWeight = FontWeight.Bold
                                 )
                             )
                         }
@@ -1104,33 +1089,7 @@ fun LatestMangaGridCard(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Rating overlay on bottom end
-                Surface(
-                    shape = RoundedCornerShape(topStart = 6.dp),
-                    color = Color.Black.copy(alpha = 0.75f),
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = NexusGold,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = "${manga.rating}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                color = TextPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                }
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1272,7 +1231,7 @@ fun DiscoverRandomSection(
                         )
                     )
                     Text(
-                        text = "تتجدد تلقائياً كل 30 دقيقة • اضغط للتفاصيل",
+                        text = "اضغط للتفاصيل",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = TextSecondary,
                             fontSize = 10.sp
@@ -1663,7 +1622,7 @@ fun NexusPreloadSplashScreen(
                 )
 
                 Text(
-                    text = "جاري تحميل وتهيئة الأعمال...",
+                    text = "جاري تهيئة وتحديث الأعمال...",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = TextSecondary,
                         fontSize = 12.sp,

@@ -47,6 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.InAppUpdateManager
 import androidx.compose.ui.window.Dialog
 import com.example.data.model.AppUpdateState
 import com.example.ui.theme.BackgroundDark
@@ -191,26 +194,28 @@ fun AppUpdateDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                val context = LocalContext.current
+
                 // Quick Feature Badges
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    QuickBadge(text = "🎨 خلفية كافر أسطورية")
+                    QuickBadge(text = "🚀 تثبيت سلس ومباشر")
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "🔄 تحديث تلقائي 30ث")
+                    QuickBadge(text = "⚡ سرعة فائقة بدون لاج")
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "🎬 إعلانات بيانية سلسة")
+                    QuickBadge(text = "📖 تصفح وقراءة انسيابية")
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "🛡️ حدود إعلانية منضبطة")
+                    QuickBadge(text = "📶 قراءة بدون إنترنت")
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Release notes title
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في التحديث:" else "مميزات الإصدار (v1.8.3):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في التحديث:" else "مميزات الإصدار (v1.8.7):",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = NexusGoldLight,
@@ -241,13 +246,11 @@ fun AppUpdateDialog(
                         val notes = if (updateInfo.releaseNotes.isNotBlank()) {
                             updateInfo.releaseNotes
                         } else {
-                            "• 🎨 خلفية كافر الأعمال الأسطورية: دمج خلفية هالة اللهب الكونية لمربعات الأعمال في الصفحة الرئيسية.\n" +
-                                    "• 🔄 تحديث تلقائي للإعلانات (Auto-Refresh): تجديد هادئ كل 30 ثانية في جميع الصفحات بدون وميض.\n" +
-                                    "• 🎬 إعلانات بيانية تلقائية: ظهور فوري منظم عند فتح أي فصل وعند دخول صفحة التفاصيل.\n" +
-                                    "• 🛡️ معالجة شاملة لحدود الإعلانات: ضبط أبعاد ومحاذاة الإعلانات ومنع خروجها نهائياً عن حدود الشاشة.\n" +
-                                    "• 🏷️ مؤشر إعلاني متقن: عبارة 'إعلان' مركزة ومريحة أسفل الإعلان مباشرة.\n" +
-                                    "• ⚡ كاش ذكي فائق السرعة وتصفح انسيابي بدون لاج.\n" +
-                                    "• 📶 قراءة أوفلاين وتنزيل مشفر مع حماية المحتوى."
+                            "• 🚀 حل مشكلة فك الحزمة: إتاحة تنزيل التحديث وتثبيته مباشرة وبسلاسة من داخل التطبيق بنقرة واحدة.\n" +
+                                    "• ⚡ سرعة فائقة في فتح الفصول: تحسين شامل لسرعة تحميل وتصفح الصفحات بأعلى دقة.\n" +
+                                    "• 🎨 واجهة مستخدم نقية: إزالة العناصر الزائدة والتركيز على قراءة أعمالك المفضلة.\n" +
+                                    "• 📶 قراءة أوفلاين: تحميل الفصول مسبقاً وتصفحها بأي وقت بدون الحاجة للاتصال بالإنترنت.\n" +
+                                    "• 📖 حفظ ومتابعة تلقائية: تتبع دقيق للفصول المقروءة واستئناف القراءة فوراً من حيث توقفت."
                         }
                         Text(
                             text = notes,
@@ -260,46 +263,14 @@ fun AppUpdateDialog(
                     }
                 }
 
-                // Installation Advice Note
-                if (updateInfo.updateAvailable) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = NexusGoldDark.copy(alpha = 0.35f),
-                        border = BorderStroke(0.6.dp, NexusGold.copy(alpha = 0.4f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Security,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "نصيحة: إذا ظهرت رسالة 'تعارض الحزم'، قم بحذف الإصدار القديم مرة واحدة وتثبيت التحديث لمطابقة شهادة التوقيع الرسمية.",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = NexusGoldLight,
-                                    fontSize = 10.sp,
-                                    lineHeight = 14.sp
-                                )
-                            )
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Action Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    if (updateInfo.updateAvailable) {
+                if (updateInfo.updateAvailable) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         OutlinedButton(
                             onClick = onDismiss,
                             modifier = Modifier
@@ -336,21 +307,39 @@ fun AppUpdateDialog(
                                 Text("تحديث الآن", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
-                    } else {
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(46.dp)
-                                .testTag("close_update_dialog_button"),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NexusGold,
-                                contentColor = BackgroundDark
-                            )
-                        ) {
-                            Text("حسناً، فهمت", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Direct Browser Download Fallback
+                    TextButton(
+                        onClick = {
+                            InAppUpdateManager.openDownloadInBrowser(context, updateInfo.downloadUrl)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "أو التحميل المباشر عبر المتصفح ↗",
+                            color = NexusGoldLight,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .testTag("close_update_dialog_button"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NexusGold,
+                            contentColor = BackgroundDark
+                        )
+                    ) {
+                        Text("حسناً، فهمت", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
