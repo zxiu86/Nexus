@@ -11,6 +11,8 @@ import com.example.data.model.DownloadedChapter
 import com.example.data.model.MangaItem
 import com.example.data.model.ReadingHistoryEntry
 import com.example.data.repository.MangaRepository
+import com.example.data.settings.AppSettings
+import com.example.data.settings.AppSettingsManager
 import com.example.util.InAppUpdateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,7 +51,8 @@ data class HomeUiState(
     val showUpdateDialog: Boolean = false,
     val updateInfo: AppUpdateState = AppUpdateState(),
     val isAppReady: Boolean = false,
-    val isOffline: Boolean = false
+    val isOffline: Boolean = false,
+    val appSettings: AppSettings = AppSettings()
 ) {
     val totalPages: Int
         get() = if (latestMangaGrid.isEmpty()) 1 else (latestMangaGrid.size + itemsPerPage - 1) / itemsPerPage
@@ -160,6 +163,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = MangaRepository(application.applicationContext)
     private val networkMonitor = NetworkMonitor(application.applicationContext)
+    private val settingsManager = AppSettingsManager.getInstance(application.applicationContext)
 
     private val _selectedTab = MutableStateFlow(0)
     private val _searchQuery = MutableStateFlow("")
@@ -235,13 +239,30 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         OfflineDataState(downloaded, progress, history, readLater, lastReadMap)
     }
 
+    private data class UiControlsState(
+        val filterState: FilterState,
+        val dialogState: DialogState,
+        val settings: AppSettings
+    )
+
+    private val _uiControlsFlow = combine(
+        _filterStateFlow,
+        _dialogStateFlow,
+        settingsManager.settingsFlow
+    ) { filterState, dialogState, settings ->
+        UiControlsState(filterState, dialogState, settings)
+    }
+
     val homeUiState: StateFlow<HomeUiState> = combine(
         repository.allMangaFlow,
         repository.favoritesFlow,
         _offlineDataFlow,
-        _filterStateFlow,
-        _dialogStateFlow
-    ) { allMangaList, favorites, offlineData, filterState, dialogState ->
+        _uiControlsFlow
+    ) { allMangaList, favorites, offlineData, controls ->
+        val filterState = controls.filterState
+        val dialogState = controls.dialogState
+        val settings = controls.settings
+
         var filteredList = allMangaList
         if (filterState.query.isNotBlank()) {
             filteredList = filteredList.filter {
@@ -285,7 +306,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             showUpdateDialog = dialogState.showUpdate,
             updateInfo = dialogState.updateInfo,
             isAppReady = dialogState.isAppReady,
-            isOffline = dialogState.isOffline
+            isOffline = dialogState.isOffline,
+            appSettings = settings
         )
     }.stateIn(
         viewModelScope,
@@ -662,12 +684,49 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         _readerUiState.value = _readerUiState.value.copy(isQuickJumpSheetOpen = open)
     }
 
-    fun clearAppCache(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                context.cacheDir.deleteRecursively()
-                context.externalCacheDir?.deleteRecursively()
-            } catch (_: Exception) {}
+    fun updateReaderMode(mode: Int) {
+        settingsManager.updateReaderMode(mode)
+    }
+
+    fun updateImageQuality(quality: Int) {
+        settingsManager.updateImageQuality(quality)
+    }
+
+    fun updateKeepScreenOn(enabled: Boolean) {
+        settingsManager.updateKeepScreenOn(enabled)
+    }
+
+    fun updateVolumeScroll(enabled: Boolean) {
+        settingsManager.updateVolumeScroll(enabled)
+    }
+
+    fun updateDoubleTapZoom(enabled: Boolean) {
+        settingsManager.updateDoubleTapZoom(enabled)
+    }
+
+    fun updateWifiOnlyDownloads(enabled: Boolean) {
+        settingsManager.updateWifiOnlyDownloads(enabled)
+    }
+
+    fun updateAutoSyncUpdates(enabled: Boolean) {
+        settingsManager.updateAutoSyncUpdates(enabled)
+    }
+
+    fun clearAppCache(context: Context): String {
+        return settingsManager.clearAllCache(context)
+    }
+
+    fun getCalculatedCacheSize(context: Context): String {
+        return settingsManager.getCalculatedCacheSize(context)
+    }
+
+    fun deleteAllDownloadedChapters() {
+        viewModelScope.launch {
+            repository.deleteAllDownloadedChapters()
         }
+    }
+
+    fun deleteAllDownloads() {
+        deleteAllDownloadedChapters()
     }
 }

@@ -143,24 +143,21 @@ fun HomeScreen(
     onFavSubTabSelected: (Int) -> Unit = {},
     onToggleReadLater: (String) -> Unit = {},
     onClearCache: () -> Unit = {},
+    onUpdateReaderMode: (Int) -> Unit = {},
+    onUpdateImageQuality: (Int) -> Unit = {},
+    onUpdateKeepScreenOn: (Boolean) -> Unit = {},
+    onUpdateVolumeScroll: (Boolean) -> Unit = {},
+    onUpdateDoubleTapZoom: (Boolean) -> Unit = {},
+    onUpdateWifiOnlyDownloads: (Boolean) -> Unit = {},
+    onUpdateAutoSyncUpdates: (Boolean) -> Unit = {},
+    onDeleteAllDownloads: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // App Header Brand (Nexus only) with Live Refresh Button
-            NexusHomeTopBar(
-                selectedTab = uiState.selectedTab,
-                favoritesCount = uiState.favorites.size,
-                hasUpdate = uiState.updateInfo.updateAvailable,
-                isRefreshing = uiState.isRefreshing,
-                onFavoritesClick = { onTabSelected(2) },
-                onUpdateBadgeClick = onTriggerUpdate,
-                onRefreshClick = onRefresh
-            )
-
-            // Offline Status Indicator Banner (Professional layout)
+            // Offline Status Indicator Banner (Professional layout at top of screen)
             AnimatedVisibility(
                 visible = uiState.isOffline,
                 enter = expandVertically() + fadeIn(),
@@ -205,15 +202,6 @@ fun HomeScreen(
                     }
                 }
             }
-
-            // Sticky Header Ad Banner (ملصق بالهيدر في الصفحة الرئيسية)
-            StartIoBannerAd(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                adTag = "home_sticky_header_banner",
-                isHeaderSticky = true
-            )
 
             // Dynamic Tab Content with Smooth Transitions
             Box(
@@ -313,13 +301,24 @@ fun HomeScreen(
 
                             // Hero Carousel (Top 5 Featured Works - Height 290.dp)
                             if (uiState.heroMangaList.isNotEmpty()) {
-                                item {
+                                item(key = "hero_carousel_section_item") {
                                     HeroCarouselSection(
                                         heroList = uiState.heroMangaList,
                                         favorites = uiState.favorites,
                                         onMangaClick = onMangaClick,
                                         onChapterClick = onChapterClick,
                                         onToggleFavorite = onToggleFavorite
+                                    )
+                                }
+
+                                // Fixed Start.io Banner Ad directly below Hero
+                                item(key = "hero_under_banner_ad_item") {
+                                    StartIoBannerAd(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                                        adTag = "home_under_hero_banner",
+                                        isHeaderSticky = false
                                     )
                                 }
                             }
@@ -470,7 +469,15 @@ fun HomeScreen(
                             onCheckCloudUpdates = onCheckCloudUpdates,
                             onRefreshData = onRefresh,
                             onExploreHome = { onTabSelected(0) },
-                            onClearCache = onClearCache
+                            onClearCache = onClearCache,
+                            onUpdateReaderMode = onUpdateReaderMode,
+                            onUpdateImageQuality = onUpdateImageQuality,
+                            onUpdateKeepScreenOn = onUpdateKeepScreenOn,
+                            onUpdateVolumeScroll = onUpdateVolumeScroll,
+                            onUpdateDoubleTapZoom = onUpdateDoubleTapZoom,
+                            onUpdateWifiOnlyDownloads = onUpdateWifiOnlyDownloads,
+                            onUpdateAutoSyncUpdates = onUpdateAutoSyncUpdates,
+                            onDeleteAllDownloads = onDeleteAllDownloads
                         )
                     }
                 }

@@ -1688,33 +1688,15 @@ fun SearchTabContent(
     favorites: Set<String>,
     modifier: Modifier = Modifier
 ) {
-    var selectedTypeFilter by remember { mutableStateOf("الكل") } // الكل, مانهوا, مانجا, مانها
-    var selectedSortOption by remember { mutableIntStateOf(0) } // 0: الأعلى تقييماً, 1: الأكثر فصولاً, 2: الأحدث, 3: الأبجدي
     var isGridView by remember { mutableStateOf(true) }
 
-    val popularSearchTags = remember {
-        listOf("سولو ليفلينج", "ون بيس", "برج الإله", "الرجل الخارق", "أكشن", "فنتازيا", "رومانسي", "سحر", "غموض")
-    }
-
-    val typeFilters = listOf("الكل", "مانهوا (كوري)", "مانجا (ياباني)", "مانها (صيني)")
-    val sortOptions = listOf("الأعلى تقييماً ⭐", "الأكثر فصولاً 📚", "الأحدث نزولاً 🆕", "أ - ي 🔤")
-
-    // Filter and Sort Processing
-    val processedResults = remember(searchResults, selectedTypeFilter, selectedSortOption) {
-        var list = searchResults
-        if (selectedTypeFilter != "الكل") {
-            when (selectedTypeFilter) {
-                "مانهوا (كوري)" -> list = list.filter { it.type == MangaType.MANHWA }
-                "مانجا (ياباني)" -> list = list.filter { it.type == MangaType.MANGA }
-                "مانها (صيني)" -> list = list.filter { it.type == MangaType.MANHUA }
-            }
-        }
-        when (selectedSortOption) {
-            0 -> list.sortedByDescending { it.rating }
-            1 -> list.sortedByDescending { it.totalChaptersCount }
-            2 -> list.sortedByDescending { it.id }
-            3 -> list.sortedBy { it.titleAr }
-            else -> list
+    // When no search or category filter is active, display the top 5 newest works.
+    // When searching or filtering by category, display all matching results.
+    val displayedResults = remember(searchResults, searchQuery, selectedCategory) {
+        if (searchQuery.isBlank() && selectedCategory == "الكل") {
+            searchResults.take(5)
+        } else {
+            searchResults
         }
     }
 
@@ -1822,7 +1804,7 @@ fun SearchTabContent(
                         onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
-                                text = "ابحث بالاسم، المؤلف، النوع أو التصنيف...",
+                                text = "ابحث بالاسم، المؤلف، أو التصنيف...",
                                 color = TextTertiary,
                                 fontSize = 13.sp
                             )
@@ -1858,51 +1840,6 @@ fun SearchTabContent(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    // Popular Suggestion Chips
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocalFireDepartment,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = "الأكثر بحثاً:",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = TextSecondary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(popularSearchTags) { tag ->
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = SurfaceElevated.copy(alpha = 0.8f),
-                                    modifier = Modifier.clickable { onSearchQueryChange(tag) }
-                                ) {
-                                    Text(
-                                        text = tag,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGoldLight,
-                                            fontSize = 11.sp
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -1953,75 +1890,7 @@ fun SearchTabContent(
             }
         }
 
-        // Type & Sort Filters Bar
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Type Filter Chips Row
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(typeFilters) { type ->
-                        val isSelected = type == selectedTypeFilter
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) NexusGold else SurfaceCard,
-                            border = BorderStroke(1.dp, if (isSelected) NexusGold else SurfaceElevated),
-                            modifier = Modifier.clickable { selectedTypeFilter = type }
-                        ) {
-                            Text(
-                                text = type,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) BackgroundDark else TextSecondary,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Sort Options Selector
-        item {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(sortOptions.indices.toList()) { index ->
-                    val isSelected = selectedSortOption == index
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) SurfaceElevated else SurfaceDark,
-                        border = BorderStroke(1.dp, if (isSelected) NexusOrange else Color.Transparent),
-                        modifier = Modifier.clickable { selectedSortOption = index }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = sortOptions[index],
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) NexusOrange else TextSecondary,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Results Section Header
+        // Results Section Header (Without matching count number)
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2029,7 +1898,7 @@ fun SearchTabContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "الأعمال المطابقة (${processedResults.size})",
+                    text = if (searchQuery.isNotBlank() || selectedCategory != "الكل") "نتائج البحث" else "أحدث الأعمال المضافة",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -2037,16 +1906,15 @@ fun SearchTabContent(
                     )
                 )
 
-                if (selectedCategory != "الكل" || searchQuery.isNotBlank() || selectedTypeFilter != "الكل") {
+                if (selectedCategory != "الكل" || searchQuery.isNotBlank()) {
                     TextButton(
                         onClick = {
                             onCategorySelect("الكل")
                             onSearchQueryChange("")
-                            selectedTypeFilter = "الكل"
                         }
                     ) {
                         Text(
-                            text = "إعادة ضبط الفلاتر",
+                            text = "إعادة ضبط البحث",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = NexusOrange,
                                 fontSize = 11.sp
@@ -2057,7 +1925,7 @@ fun SearchTabContent(
             }
         }
 
-        if (processedResults.isEmpty()) {
+        if (displayedResults.isEmpty()) {
             item {
                 Card(
                     shape = RoundedCornerShape(18.dp),
@@ -2094,7 +1962,7 @@ fun SearchTabContent(
                             )
                         )
                         Text(
-                            text = "جرب البحث باسم مختلف أو قم بتغيير الفلاتر والتصنيفات",
+                            text = "جرب البحث باسم مختلف أو قم باختيار تصنيف آخر",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = TextTertiary,
                                 fontSize = 12.sp
@@ -2106,8 +1974,8 @@ fun SearchTabContent(
             }
         } else {
             if (isGridView) {
-                // GRID VIEW (2-column cards)
-                val chunkedResults = processedResults.chunked(2)
+                // GRID VIEW (2-column cards) without rating badges
+                val chunkedResults = displayedResults.chunked(2)
                 items(chunkedResults, key = { it.joinToString("-") { m -> m.id } }) { pair ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2153,36 +2021,6 @@ fun SearchTabContent(
                                                     tint = if (isFav) NexusOrange else Color.White,
                                                     modifier = Modifier.size(18.dp)
                                                 )
-                                            }
-
-                                            // Rating badge
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = Color.Black.copy(alpha = 0.75f),
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomStart)
-                                                    .padding(6.dp)
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Star,
-                                                        contentDescription = null,
-                                                        tint = NexusGold,
-                                                        modifier = Modifier.size(12.dp)
-                                                    )
-                                                    Text(
-                                                        text = manga.rating.toString(),
-                                                        style = MaterialTheme.typography.labelSmall.copy(
-                                                            color = Color.White,
-                                                            fontWeight = FontWeight.Bold,
-                                                            fontSize = 10.sp
-                                                        )
-                                                    )
-                                                }
                                             }
 
                                             // Type badge
@@ -2242,8 +2080,8 @@ fun SearchTabContent(
                     }
                 }
             } else {
-                // LIST VIEW (Detailed rows)
-                items(processedResults, key = { it.id }) { manga ->
+                // LIST VIEW (Detailed rows without rating badge)
+                items(displayedResults, key = { it.id }) { manga ->
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = SurfaceCard),
@@ -2279,31 +2117,18 @@ fun SearchTabContent(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = NexusOrange.copy(alpha = 0.15f)
                                 ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = NexusOrange.copy(alpha = 0.15f)
-                                    ) {
-                                        Text(
-                                            text = manga.type.labelAr,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                color = NexusOrange,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 9.sp
-                                            ),
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                        )
-                                    }
                                     Text(
-                                        text = "★ ${manga.rating}",
+                                        text = manga.type.labelAr,
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGold,
+                                            color = NexusOrange,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp
-                                        )
+                                            fontSize = 9.sp
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                     )
                                 }
 
@@ -2388,26 +2213,33 @@ fun SettingsTabContent(
     onRefreshData: () -> Unit,
     onExploreHome: () -> Unit,
     onClearCache: () -> Unit,
+    onUpdateReaderMode: (Int) -> Unit = {},
+    onUpdateImageQuality: (Int) -> Unit = {},
+    onUpdateKeepScreenOn: (Boolean) -> Unit = {},
+    onUpdateVolumeScroll: (Boolean) -> Unit = {},
+    onUpdateDoubleTapZoom: (Boolean) -> Unit = {},
+    onUpdateWifiOnlyDownloads: (Boolean) -> Unit = {},
+    onUpdateAutoSyncUpdates: (Boolean) -> Unit = {},
+    onDeleteAllDownloads: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var settingsCategory by remember { mutableIntStateOf(0) } // 0: التخزين والتحميلات, 1: القراءة والعرض, 2: التحديثات, 3: حول التطبيق
-    var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showClearDownloadsDialog by remember { mutableStateOf(false) }
     var cacheCleanedSuccess by remember { mutableStateOf(false) }
 
-    // User preference local toggles
-    var readerMode by remember { mutableIntStateOf(0) } // 0: ويبتون طولي, 1: أفقي RTL, 2: أفقي LTR
-    var imageQuality by remember { mutableIntStateOf(0) } // 0: عالية الدقة HD, 1: متوازنة, 2: موفر البيانات
-    var keepScreenOn by remember { mutableStateOf(true) }
-    var volumeScroll by remember { mutableStateOf(false) }
-    var doubleTapZoom by remember { mutableStateOf(true) }
-    var autoSyncUpdates by remember { mutableStateOf(true) }
-    var wifiOnlyDownloads by remember { mutableStateOf(false) }
+    // Read real user settings from AppSettings
+    val appSettings = uiState.appSettings
+    val readerMode = appSettings.readerMode
+    val imageQuality = appSettings.imageQuality
+    val keepScreenOn = appSettings.keepScreenOn
+    val volumeScroll = appSettings.volumeScroll
+    val doubleTapZoom = appSettings.doubleTapZoom
+    val wifiOnlyDownloads = appSettings.wifiOnlyDownloads
 
     val categoryTabs = listOf(
         "التحميلات والتخزين" to Icons.Default.Storage,
         "تفضيلات القارئ" to Icons.AutoMirrored.Filled.MenuBook,
-        "التحديثات v1.9.1" to Icons.Default.AutoAwesome,
+        "التحديثات v1.9.2" to Icons.Default.AutoAwesome,
         "حول التطبيق" to Icons.Default.Info
     )
 
@@ -2643,7 +2475,7 @@ fun SettingsTabContent(
                                 }
                                 Switch(
                                     checked = wifiOnlyDownloads,
-                                    onCheckedChange = { wifiOnlyDownloads = it },
+                                    onCheckedChange = { onUpdateWifiOnlyDownloads(it) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = BackgroundDark,
                                         checkedTrackColor = NexusOrange,
@@ -2824,7 +2656,7 @@ fun SettingsTabContent(
                                             border = BorderStroke(1.dp, if (isSelected) NexusOrange else SurfaceElevated),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clickable { readerMode = idx }
+                                                .clickable { onUpdateReaderMode(idx) }
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -2902,7 +2734,7 @@ fun SettingsTabContent(
                                             border = BorderStroke(1.dp, if (isSelected) NexusGold else SurfaceElevated),
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .clickable { imageQuality = idx }
+                                                .clickable { onUpdateImageQuality(idx) }
                                         ) {
                                             Box(
                                                 modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
@@ -2982,7 +2814,7 @@ fun SettingsTabContent(
                                     }
                                     Switch(
                                         checked = keepScreenOn,
-                                        onCheckedChange = { keepScreenOn = it },
+                                        onCheckedChange = { onUpdateKeepScreenOn(it) },
                                         colors = SwitchDefaults.colors(
                                             checkedThumbColor = BackgroundDark,
                                             checkedTrackColor = NexusOrange,
@@ -3017,7 +2849,7 @@ fun SettingsTabContent(
                                     }
                                     Switch(
                                         checked = volumeScroll,
-                                        onCheckedChange = { volumeScroll = it },
+                                        onCheckedChange = { onUpdateVolumeScroll(it) },
                                         colors = SwitchDefaults.colors(
                                             checkedThumbColor = BackgroundDark,
                                             checkedTrackColor = NexusOrange,
@@ -3052,7 +2884,7 @@ fun SettingsTabContent(
                                     }
                                     Switch(
                                         checked = doubleTapZoom,
-                                        onCheckedChange = { doubleTapZoom = it },
+                                        onCheckedChange = { onUpdateDoubleTapZoom(it) },
                                         colors = SwitchDefaults.colors(
                                             checkedThumbColor = BackgroundDark,
                                             checkedTrackColor = NexusOrange,
@@ -3066,7 +2898,7 @@ fun SettingsTabContent(
                 }
             }
             2 -> {
-                // TAB 2: UPDATES & CHANGELOG (v1.9.1)
+                // TAB 2: UPDATES & CHANGELOG (v1.9.2)
                 UpdatesTabContent(
                     uiState = uiState,
                     onTriggerUpdate = onTriggerUpdate,
@@ -3127,7 +2959,7 @@ fun SettingsTabContent(
                                     color = NexusGold.copy(alpha = 0.15f)
                                 ) {
                                     Text(
-                                        text = "الإصدار الرسمي v${com.example.BuildConfig.VERSION_NAME} (Build 30)",
+                                        text = "الإصدار الرسمي v${com.example.BuildConfig.VERSION_NAME} (Build 31)",
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = NexusGold
@@ -3225,9 +3057,7 @@ fun SettingsTabContent(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        uiState.downloadedChapters.forEach {
-                            onDeleteDownload(it.mangaId, it.chapterNumber)
-                        }
+                        onDeleteAllDownloads()
                         showClearDownloadsDialog = false
                     }
                 ) {

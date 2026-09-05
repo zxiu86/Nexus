@@ -909,6 +909,20 @@ class MangaRepository(private val context: Context) {
         }
     }
 
+    suspend fun deleteAllDownloadedChapters() = withContext(Dispatchers.IO) {
+        try {
+            if (secureStorageDir.exists()) {
+                secureStorageDir.deleteRecursively()
+                secureStorageDir.mkdirs()
+            }
+            _downloadedChaptersFlow.value = emptyList()
+            saveDownloadedChaptersManifest()
+            _downloadProgressFlow.value = emptyMap()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting all downloaded chapters", e)
+        }
+    }
+
     fun getTotalDownloadedSizeBytes(): Long {
         return _downloadedChaptersFlow.value.sumOf { it.sizeBytes }
     }
