@@ -1,10 +1,13 @@
 package com.example.util
 
+import android.app.DownloadManager
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -18,6 +21,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 
@@ -32,7 +36,7 @@ object InAppUpdateManager {
             .followRedirects(true)
             .followSslRedirects(true)
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(90, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
@@ -90,10 +94,49 @@ object InAppUpdateManager {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val pendingPath = prefs.getString(KEY_PENDING_APK_PATH, null) ?: return
         val apkFile = File(pendingPath)
-        if (apkFile.exists() && apkFile.length() > 1024 * 1024) {
+        if (apkFile.exists() && isValidApkZip(apkFile)) {
             prefs.edit().remove(KEY_PENDING_APK_PATH).apply()
             installApk(context, apkFile)
         }
+    }
+
+    /**
+     * Checks if the file is a valid Zip/APK file by checking its magic header (PK\x03\x04)
+     */
+    fun isValidApkZip(file: File): Boolean {
+        if (!file.exists() || file.length() < 1024 * 1024) return false
+        return try {
+            FileInputStream(file).use { fis ->
+                val header = ByteArray(4)
+                val read = fis.read(header)
+                read == 4 && header[0] == 0x50.toByte() && header[1] == 0x4B.toByte() &&
+                        (header[2] == 0x03.toByte() || header[2] == 0x05.toByte() || header[2] == 0x07.toByte()) &&
+                        (header[3] == 0x04.toByte() || header[3] == 0x06.toByte() || header[3] == 0x08.toByte())
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Resolves the best directory to store the APK for installation.
+     * Prefers getExternalFilesDir(DIRECTORY_DOWNLOADS) to ensure Android's PackageInstaller
+     * has full cross-process read access without SELinux denials.
+     */
+    private fun getUpdateStorageDir(context: Context): File {
+        val extDownloads = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        if (extDownloads != null && (extDownloads.exists() || extDownloads.mkdirs())) {
+            return extDownloads
+        }
+        val extCache = context.externalCacheDir
+        if (extCache != null && (extCache.exists() || extCache.mkdirs())) {
+            return extCache
+        }
+        val internalUpdates = File(context.filesDir, "app_updates")
+        if (internalUpdates.exists() || internalUpdates.mkdirs()) {
+            return internalUpdates
+        }
+        return context.cacheDir
     }
 
     /**
@@ -111,17 +154,17 @@ object InAppUpdateManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Use app's private cache/files dir to avoid all Scoped Storage & permission issues
-                val updateDir = File(appContext.cacheDir, "app_updates").apply { mkdirs() }
+                val updateDir = getUpdateStorageDir(appContext)
                 val targetApk = File(updateDir, "nexus_v$versionName.apk")
                 val tempApk = File(updateDir, "nexus_v$versionName.apk.tmp")
 
                 if (tempApk.exists()) tempApk.delete()
+                if (targetApk.exists()) targetApk.delete()
 
                 val request = Request.Builder()
                     .url(downloadUrl)
-                    .header("User-Agent", "Nexus-Android-Updater")
-                    .header("Accept", "application/vnd.android.package-archive, */*")
+                    .header("User-Agent", "Mozilla/5.0 (Android; Nexus-Updater)")
+                    .header("Accept", "*/*")
                     .build()
 
                 val response = httpClient.newCall(request).execute()
@@ -130,11 +173,10 @@ object InAppUpdateManager {
                 }
 
                 val body = response.body!!
-                val contentLength = body.contentLength()
                 val inputStream = body.byteStream()
                 val outputStream = FileOutputStream(tempApk)
 
-                val buffer = ByteArray(32 * 1024)
+                val buffer = ByteArray(64 * 1024)
                 var bytesRead: Int
                 var totalBytesRead = 0L
 
@@ -150,30 +192,37 @@ object InAppUpdateManager {
                     try { body.close() } catch (_: Exception) {}
                 }
 
-                if (tempApk.length() < 1024 * 1024) { // Less than 1MB is likely an error/redirect page
+                // Verify file size and header
+                if (!isValidApkZip(tempApk)) {
                     tempApk.delete()
-                    throw IllegalStateException("الملف المنزل غير مكتمل أو غير صالح (${totalBytesRead / 1024} KB)")
+                    throw IllegalStateException("الملف المنزل غير مكتمل أو تالف (${totalBytesRead / 1024} KB)")
                 }
 
                 // Atomic rename to final APK file
-                if (targetApk.exists()) targetApk.delete()
                 if (!tempApk.renameTo(targetApk)) {
                     tempApk.copyTo(targetApk, overwrite = true)
                     tempApk.delete()
                 }
 
+                // Make readable
+                targetApk.setReadable(true, false)
+
                 // Verify APK integrity using Android's PackageManager
-                val packageInfo = appContext.packageManager.getPackageArchiveInfo(targetApk.absolutePath, 0)
+                val packageInfo = appContext.packageManager.getPackageArchiveInfo(targetApk.absolutePath, PackageManager.GET_ACTIVITIES)
                 if (packageInfo == null) {
-                    targetApk.delete()
-                    withContext(Dispatchers.Main) {
-                        showToast(appContext, "فشل التحقق من حزمة التحديث، جاري فتح التحميل عبر المتصفح...", true)
-                        openDownloadInBrowser(appContext, downloadUrl)
+                    Log.w(TAG, "packageArchiveInfo is null for downloaded APK, trying without flags")
+                    val fallbackInfo = appContext.packageManager.getPackageArchiveInfo(targetApk.absolutePath, 0)
+                    if (fallbackInfo == null) {
+                        targetApk.delete()
+                        withContext(Dispatchers.Main) {
+                            showToast(appContext, "الحزمة غير متوافقة أو تالفة، جاري فتح التحميل عبر المتصفح...", true)
+                            openDownloadInBrowser(appContext, downloadUrl)
+                        }
+                        return@launch
                     }
-                    return@launch
                 }
 
-                Log.d(TAG, "APK successfully verified: ${packageInfo.packageName} v${packageInfo.versionName}")
+                Log.d(TAG, "APK successfully verified: ${targetApk.absolutePath} (${targetApk.length()} bytes)")
 
                 withContext(Dispatchers.Main) {
                     showToast(appContext, "اكتمل التنزيل بنجاح! جاري التثبيت...")
@@ -200,11 +249,18 @@ object InAppUpdateManager {
                 return
             }
 
+            if (!isValidApkZip(apkFile)) {
+                showToast(context, "ملف التحديث تالف أو غير مكتمل، يرجى إعادة التحميل", true)
+                return
+            }
+
             if (!canInstallPackages(context)) {
                 showToast(context, "يرجى منح إذن تثبيت التطبيقات من الإعدادات للمتابعة", true)
                 requestInstallPermission(context, apkFile)
                 return
             }
+
+            apkFile.setReadable(true, false)
 
             val apkUri = FileProvider.getUriForFile(
                 context,
@@ -215,26 +271,59 @@ object InAppUpdateManager {
             val installIntent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-                putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                clipData = ClipData.newRawUri("nexus_apk", apkUri)
             }
 
-            // Explicitly grant URI read permissions to all matching installer components
+            // Grant URI read permission explicitly to package installer packages
+            val knownInstallers = listOf(
+                "com.google.android.packageinstaller",
+                "com.android.packageinstaller",
+                "com.google.android.apps.packageinstaller",
+                "com.samsung.android.packageinstaller"
+            )
+            for (pkg in knownInstallers) {
+                try {
+                    context.grantUriPermission(pkg, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (_: Exception) {}
+            }
+
             val resolvedActivities = context.packageManager.queryIntentActivities(
                 installIntent,
                 PackageManager.MATCH_DEFAULT_ONLY
             )
             for (resolveInfo in resolvedActivities) {
                 val pkg = resolveInfo.activityInfo.packageName
-                context.grantUriPermission(pkg, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                try {
+                    context.grantUriPermission(pkg, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (_: Exception) {}
             }
 
             context.startActivity(installIntent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch package installer", e)
             showToast(context, "تعذر فتح مثبت الحزم: ${e.message}", true)
+        }
+    }
+
+    /**
+     * Alternative: Downloads directly via Android's native system DownloadManager
+     */
+    fun downloadViaSystemDownloadManager(context: Context, downloadUrl: String, versionName: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
+                setTitle("Nexus Update v$versionName")
+                setDescription("تنزيل تحديث تطبيق نكسوس")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "nexus_v$versionName.apk")
+                setMimeType("application/vnd.android.package-archive")
+            }
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            showToast(context, "تم بدء التنزيل عبر مدير تنزيلات النظام. تابعه من لوحة الإشعارات", true)
+        } catch (e: Exception) {
+            Log.e(TAG, "DownloadManager failed", e)
+            openDownloadInBrowser(context, downloadUrl)
         }
     }
 

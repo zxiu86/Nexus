@@ -23,11 +23,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import com.example.util.NetworkMonitor
+import java.io.File
 import java.text.DecimalFormat
 import kotlin.random.Random
 
 data class HomeUiState(
-    val selectedTab: Int = 0, // 0: Home, 1: Favorites, 2: History, 3: Downloads, 4: Updates
+    val selectedTab: Int = 0, // 0: Home, 1: Search, 2: Favorites, 3: History, 4: Settings
     val heroMangaList: List<MangaItem> = emptyList(),
     val latestMangaGrid: List<MangaItem> = emptyList(),
     val allMangaList: List<MangaItem> = emptyList(),
@@ -46,7 +48,8 @@ data class HomeUiState(
     val isRefreshing: Boolean = false,
     val showUpdateDialog: Boolean = false,
     val updateInfo: AppUpdateState = AppUpdateState(),
-    val isAppReady: Boolean = false
+    val isAppReady: Boolean = false,
+    val isOffline: Boolean = false
 ) {
     val totalPages: Int
         get() = if (latestMangaGrid.isEmpty()) 1 else (latestMangaGrid.size + itemsPerPage - 1) / itemsPerPage
@@ -65,6 +68,27 @@ data class HomeUiState(
 
     val readLaterMangaList: List<MangaItem>
         get() = allMangaList.filter { readLater.contains(it.id) }
+
+    val categories: List<String>
+        get() = listOf("الكل", "أكشن", "مغامرات", "فنتازيا", "رومانسي", "دراما", "إثارة", "خيال علمي", "سحر")
+
+    val filteredMangaList: List<MangaItem>
+        get() {
+            var list = allMangaList
+            if (selectedCategory != "الكل") {
+                list = list.filter { it.genres.any { g -> g.contains(selectedCategory, ignoreCase = true) } }
+            }
+            if (searchQuery.isNotBlank()) {
+                val q = searchQuery.trim().lowercase()
+                list = list.filter {
+                    it.titleAr.lowercase().contains(q) ||
+                    it.titleEn.lowercase().contains(q) ||
+                    it.author.lowercase().contains(q) ||
+                    it.genres.any { g -> g.lowercase().contains(q) }
+                }
+            }
+            return list
+        }
 
     val formattedTotalStorage: String
         get() {
@@ -135,6 +159,7 @@ data class ReaderUiState(
 class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = MangaRepository(application.applicationContext)
+    private val networkMonitor = NetworkMonitor(application.applicationContext)
 
     private val _selectedTab = MutableStateFlow(0)
     private val _searchQuery = MutableStateFlow("")
@@ -151,16 +176,18 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         val isRefreshing: Boolean,
         val showUpdate: Boolean,
         val updateInfo: AppUpdateState,
-        val isAppReady: Boolean
+        val isAppReady: Boolean,
+        val isOffline: Boolean
     )
 
     private val _dialogStateFlow = combine(
         _isRefreshing,
         _showUpdateDialog,
         _appUpdateState,
-        _isAppReady
-    ) { isRefreshing, showUpdate, updateInfo, isAppReady ->
-        DialogState(isRefreshing, showUpdate, updateInfo, isAppReady)
+        _isAppReady,
+        networkMonitor.isOnline
+    ) { isRefreshing, showUpdate, updateInfo, isAppReady, isOnline ->
+        DialogState(isRefreshing, showUpdate, updateInfo, isAppReady, isOffline = !isOnline)
     }
 
     private data class FilterState(
@@ -257,7 +284,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             isRefreshing = dialogState.isRefreshing,
             showUpdateDialog = dialogState.showUpdate,
             updateInfo = dialogState.updateInfo,
-            isAppReady = dialogState.isAppReady
+            isAppReady = dialogState.isAppReady,
+            isOffline = dialogState.isOffline
         )
     }.stateIn(
         viewModelScope,
@@ -632,5 +660,14 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setQuickJumpSheetOpen(open: Boolean) {
         _readerUiState.value = _readerUiState.value.copy(isQuickJumpSheetOpen = open)
+    }
+
+    fun clearAppCache(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                context.cacheDir.deleteRecursively()
+                context.externalCacheDir?.deleteRecursively()
+            } catch (_: Exception) {}
+        }
     }
 }

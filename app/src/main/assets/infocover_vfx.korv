@@ -1,0 +1,9 @@
+# KORVA_VFX_COVER_EFFECT
+# File: infocover_vfx.korv
+# Place your custom effects data here.
+version=1.0
+type=ambient_cover_aura_particles
+speed=1.0
+density=60
+glow_radius=24
+tint_color=#FFAA00

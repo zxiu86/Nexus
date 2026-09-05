@@ -43,6 +43,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -139,6 +142,7 @@ fun HomeScreen(
     onRefreshRandomDiscovery: () -> Unit = {},
     onFavSubTabSelected: (Int) -> Unit = {},
     onToggleReadLater: (String) -> Unit = {},
+    onClearCache: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
@@ -151,10 +155,56 @@ fun HomeScreen(
                 favoritesCount = uiState.favorites.size,
                 hasUpdate = uiState.updateInfo.updateAvailable,
                 isRefreshing = uiState.isRefreshing,
-                onFavoritesClick = { onTabSelected(1) },
+                onFavoritesClick = { onTabSelected(2) },
                 onUpdateBadgeClick = onTriggerUpdate,
                 onRefreshClick = onRefresh
             )
+
+            // Offline Status Indicator Banner (Professional layout)
+            AnimatedVisibility(
+                visible = uiState.isOffline,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Surface(
+                    color = Color(0xFF231414),
+                    border = BorderStroke(1.dp, Color(0xFFE53935).copy(alpha = 0.45f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFE53935).copy(alpha = 0.2f),
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudOff,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF6B6B),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "أنت حالياً في وضع عدم الاتصال بالإنترنت | يتم عرض الفصول المحملة والمحتوى المحفوظ",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = Color(0xFFFFA8A8),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.5.sp
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
 
             // Sticky Header Ad Banner (ملصق بالهيدر في الصفحة الرئيسية)
             StartIoBannerAd(
@@ -373,6 +423,20 @@ fun HomeScreen(
                         }
                     }
                     1 -> {
+                        // Search & Discovery Tab Content
+                        SearchTabContent(
+                            searchQuery = uiState.searchQuery,
+                            onSearchQueryChange = onSearchQueryChange,
+                            selectedCategory = uiState.selectedCategory,
+                            onCategorySelect = onCategorySelect,
+                            categories = uiState.categories,
+                            searchResults = uiState.filteredMangaList,
+                            onMangaClick = onMangaClick,
+                            onToggleFavorite = onToggleFavorite,
+                            favorites = uiState.favorites
+                        )
+                    }
+                    2 -> {
                         // Favorites & Read Later Tab Content
                         FavoritesTabContent(
                             favoriteList = uiState.favoriteMangaList,
@@ -386,7 +450,7 @@ fun HomeScreen(
                             onExploreHome = { onTabSelected(0) }
                         )
                     }
-                    2 -> {
+                    3 -> {
                         // History Tab Content
                         HistoryTabContent(
                             historyList = uiState.readingHistory,
@@ -396,23 +460,17 @@ fun HomeScreen(
                             onExploreHome = { onTabSelected(0) }
                         )
                     }
-                    3 -> {
-                        // Downloads Tab Content (Encrypted Offline Reading)
-                        DownloadsTabContent(
-                            downloadedList = uiState.downloadedChapters,
-                            totalStorageFormatted = uiState.formattedTotalStorage,
+                    4 -> {
+                        // Settings Tab Content (Downloads, Updates, Cache & Info)
+                        SettingsTabContent(
+                            uiState = uiState,
                             onReadChapter = { mangaId, chNum -> onChapterClick(mangaId, chNum) },
                             onDeleteDownload = onDeleteDownloadedChapter,
-                            onExploreHome = { onTabSelected(0) }
-                        )
-                    }
-                    4 -> {
-                        // Updates & Changelog Tab Content
-                        UpdatesTabContent(
-                            uiState = uiState,
                             onTriggerUpdate = onTriggerUpdate,
                             onCheckCloudUpdates = onCheckCloudUpdates,
-                            onRefreshData = onRefresh
+                            onRefreshData = onRefresh,
+                            onExploreHome = { onTabSelected(0) },
+                            onClearCache = onClearCache
                         )
                     }
                 }

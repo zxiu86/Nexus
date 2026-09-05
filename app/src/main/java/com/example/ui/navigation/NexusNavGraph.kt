@@ -130,6 +130,9 @@ fun NexusNavGraph(
                     },
                     onToggleReadLater = { mangaId ->
                         viewModel.toggleReadLater(mangaId)
+                    },
+                    onClearCache = {
+                        viewModel.clearAppCache(context)
                     }
                 )
             }

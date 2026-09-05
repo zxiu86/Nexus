@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
@@ -70,10 +71,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -779,23 +783,128 @@ fun ComicPageItem(
     pageNumber: Int,
     totalPages: Int
 ) {
+    var reloadKey by remember(imageUrl) { mutableIntStateOf(0) }
+    var isLoaded by remember(imageUrl, reloadKey) { mutableStateOf(false) }
+    var isError by remember(imageUrl, reloadKey) { mutableStateOf(false) }
+    var isTimeout by remember(imageUrl, reloadKey) { mutableStateOf(false) }
+
+    LaunchedEffect(imageUrl, reloadKey) {
+        if (!imageUrl.isNullOrBlank()) {
+            isLoaded = false
+            isError = false
+            isTimeout = false
+            delay(5000L)
+            if (!isLoaded) {
+                isTimeout = true
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black)
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
     ) {
         if (!imageUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .build(),
-                contentDescription = "صفحة $pageNumber من $totalPages",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier.fillMaxWidth()
-            )
+            key(reloadKey) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .listener(
+                            onSuccess = { _, _ ->
+                                isLoaded = true
+                                isError = false
+                                isTimeout = false
+                            },
+                            onError = { _, _ ->
+                                isError = true
+                            }
+                        )
+                        .build(),
+                    contentDescription = "صفحة $pageNumber من $totalPages",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // If image fails to load or exceeds 5 seconds, show retry card
+            if ((isTimeout || isError) && !isLoaded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .background(SurfaceCard),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = NexusOrange.copy(alpha = 0.15f),
+                            modifier = Modifier.size(54.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    tint = NexusOrange,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = if (isError) "تعذر تحميل الصفحة $pageNumber" else "استغرق تحميل الصفحة $pageNumber أكثر من 5 ثوانٍ",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = "تحقق من اتصالك بالإنترنت ثم اضغط على زر إعادة المحاولة",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = TextTertiary,
+                                fontSize = 11.sp
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Button(
+                            onClick = {
+                                isLoaded = false
+                                isError = false
+                                isTimeout = false
+                                reloadKey++
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NexusOrange,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "إعادة تحميل الصورة",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                }
+            }
         } else if (pageRes != null && pageRes != 0) {
             Image(
                 painter = painterResource(id = pageRes),

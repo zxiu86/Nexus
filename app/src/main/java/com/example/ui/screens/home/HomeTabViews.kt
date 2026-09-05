@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,12 +30,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -43,29 +50,41 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,16 +125,16 @@ import com.example.ui.viewmodel.HomeUiState
 /**
  * Modern Nexus Bottom Footer Navigation Bar:
  * - Tab 0: الرئيسية (Home)
- * - Tab 1: المفضلة (Favorites)
- * - Tab 2: السجل (History)
- * - Tab 3: التحميلات (Downloads)
- * - Tab 4: التحديثات (Updates)
+ * - Tab 1: البحث (Search)
+ * - Tab 2: المفضلة (Favorites)
+ * - Tab 3: السجل (History)
+ * - Tab 4: الإعدادات (Settings - includes Downloads and Updates)
  */
 @Composable
 fun NexusBottomFooterBar(
     selectedTab: Int,
     favoritesCount: Int,
-    downloadedCount: Int,
+    downloadedCount: Int = 0,
     hasUpdate: Boolean,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -131,7 +150,7 @@ fun NexusBottomFooterBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 6.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -145,41 +164,40 @@ fun NexusBottomFooterBar(
             )
 
             FooterNavItem(
+                icon = Icons.Default.Search,
+                label = "البحث",
+                isSelected = selectedTab == 1,
+                badgeCount = null,
+                onClick = { onTabSelected(1) },
+                testTag = "footer_tab_search"
+            )
+
+            FooterNavItem(
                 icon = Icons.Default.Favorite,
                 label = "المفضلة",
-                isSelected = selectedTab == 1,
+                isSelected = selectedTab == 2,
                 badgeCount = if (favoritesCount > 0) favoritesCount else null,
                 badgeColor = NexusOrange,
-                onClick = { onTabSelected(1) },
+                onClick = { onTabSelected(2) },
                 testTag = "footer_tab_favorites"
             )
 
             FooterNavItem(
                 icon = Icons.Default.History,
                 label = "السجل",
-                isSelected = selectedTab == 2,
+                isSelected = selectedTab == 3,
                 badgeCount = null,
-                onClick = { onTabSelected(2) },
+                onClick = { onTabSelected(3) },
                 testTag = "footer_tab_history"
             )
 
             FooterNavItem(
-                icon = Icons.Default.CloudDownload,
-                label = "التحميلات",
-                isSelected = selectedTab == 3,
-                badgeCount = if (downloadedCount > 0) downloadedCount else null,
-                badgeColor = NexusGold,
-                onClick = { onTabSelected(3) },
-                testTag = "footer_tab_downloads"
-            )
-
-            FooterNavItem(
-                icon = Icons.Default.AutoAwesome,
-                label = "التحديثات",
+                icon = Icons.Default.Settings,
+                label = "الإعدادات",
                 isSelected = selectedTab == 4,
                 hasDot = hasUpdate,
                 onClick = { onTabSelected(4) },
-                testTag = "footer_tab_updates"
+                testTag = "footer_tab_settings"
             )
         }
     }
@@ -1626,3 +1644,680 @@ private fun FeatureHighlightCard(
         }
     }
 }
+
+/**
+ * Modern Search Tab with keyword search, categories, and instant results
+ */
+@Composable
+fun SearchTabContent(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    selectedCategory: String,
+    onCategorySelect: (String) -> Unit,
+    categories: List<String>,
+    searchResults: List<MangaItem>,
+    onMangaClick: (String) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+    favorites: Set<String>,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Search Header Card
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceElevated),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "البحث والاستكشاف",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            color = TextPrimary,
+                            fontSize = 17.sp
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        placeholder = {
+                            Text(
+                                text = "ابحث عن مانجا، مانهوا، أو مؤلف...",
+                                color = TextTertiary,
+                                fontSize = 13.sp
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = NexusOrange
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(onClick = { onSearchQueryChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "مسح",
+                                        tint = TextSecondary
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NexusOrange,
+                            unfocusedBorderColor = SurfaceElevated,
+                            focusedContainerColor = SurfaceDark,
+                            unfocusedContainerColor = SurfaceDark,
+                            cursorColor = NexusOrange,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // Category Filter Chips
+        item {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(categories) { category ->
+                    val isSelected = category == selectedCategory
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onCategorySelect(category) },
+                        label = {
+                            Text(
+                                text = category,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) BackgroundDark else TextSecondary
+                                )
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NexusOrange,
+                            containerColor = SurfaceCard
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = if (isSelected) NexusOrange else SurfaceElevated,
+                            selectedBorderColor = NexusOrange,
+                            enabled = true,
+                            selected = isSelected
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+            }
+        }
+
+        // Results Section Header
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (searchQuery.isBlank() && selectedCategory == "الكل") "كل الأعمال المتاحة (${searchResults.size})"
+                    else "نتائج البحث (${searchResults.size})",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        fontSize = 14.sp
+                    )
+                )
+            }
+        }
+
+        if (searchResults.isEmpty()) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = TextTertiary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "لم يتم العثور على أي نتائج مطابقة",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary
+                            )
+                        )
+                        Text(
+                            text = "جرب البحث بكلمات أخرى أو اختر تصنيفاً مختلفاً",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = TextTertiary,
+                                fontSize = 12.sp
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            // Display Results as Grid Items
+            val chunkedResults = searchResults.chunked(2)
+            items(chunkedResults) { pair ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    for (manga in pair) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            Card(
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                border = BorderStroke(1.dp, SurfaceElevated),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onMangaClick(manga.id) }
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp)
+                                    ) {
+                                        NexusMangaImage(
+                                            imageUrl = manga.coverUrl,
+                                            fallbackRes = manga.coverRes,
+                                            contentDescription = manga.titleAr,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+
+                                        // Favorite button
+                                        val isFav = favorites.contains(manga.id)
+                                        IconButton(
+                                            onClick = { onToggleFavorite(manga.id) },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(6.dp)
+                                                .size(32.dp)
+                                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                contentDescription = "المفضلة",
+                                                tint = if (isFav) NexusOrange else Color.White,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        // Rating badge
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color.Black.copy(alpha = 0.75f),
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .padding(6.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Star,
+                                                    contentDescription = null,
+                                                    tint = NexusGold,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Text(
+                                                    text = manga.rating.toString(),
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = Color.White,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 10.sp
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = manga.titleAr.ifEmpty { manga.titleEn },
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary,
+                                                fontSize = 13.sp
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+
+                                        Text(
+                                            text = "${manga.totalChaptersCount} فصلاً • ${manga.genres.firstOrNull() ?: manga.type.labelAr}",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (pair.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Settings Tab Content that hosts:
+ * 1. Downloads section (التحميلات)
+ * 2. Updates & Changelog section (التحديثات)
+ * 3. App Storage & Cache Management
+ * 4. App Info & Version
+ */
+@Composable
+fun SettingsTabContent(
+    uiState: HomeUiState,
+    onReadChapter: (String, Int) -> Unit,
+    onDeleteDownload: (String, Int) -> Unit,
+    onTriggerUpdate: () -> Unit,
+    onCheckCloudUpdates: () -> Unit,
+    onRefreshData: () -> Unit,
+    onExploreHome: () -> Unit,
+    onClearCache: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var settingsSubTab by remember { mutableIntStateOf(0) } // 0: General & Downloads, 1: Updates
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+    ) {
+        // Settings Sub-Tabs Switcher (التحميلات والإعدادات | التحديثات)
+        Surface(
+            color = SurfaceDark,
+            border = BorderStroke(1.dp, SurfaceElevated),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Tab 0: General & Downloads
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (settingsSubTab == 0) NexusOrange else Color.Transparent,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { settingsSubTab = 0 }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = null,
+                            tint = if (settingsSubTab == 0) BackgroundDark else TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "التحميلات والإعدادات",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (settingsSubTab == 0) BackgroundDark else TextSecondary
+                            )
+                        )
+                    }
+                }
+
+                // Tab 1: Updates & Changelog
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (settingsSubTab == 1) NexusGold else Color.Transparent,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { settingsSubTab = 1 }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = if (settingsSubTab == 1) BackgroundDark else TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "التحديثات والإصدار",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (settingsSubTab == 1) BackgroundDark else TextSecondary
+                            )
+                        )
+                        if (uiState.updateInfo.updateAvailable) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Red)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        when (settingsSubTab) {
+            0 -> {
+                // Show Downloads & General Settings
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // App Management Card
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = null,
+                                        tint = NexusOrange,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Text(
+                                        text = "إعدادات التطبيق والمساحة",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "تنظيف الذاكرة المؤقتة (Cache)",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary
+                                            )
+                                        )
+                                        Text(
+                                            text = "مسح الصور المؤقتة لتحرير مساحة التخزين",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = onClearCache,
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = NexusOrange
+                                        ),
+                                        border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f))
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CleaningServices,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "تنظيف",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider(color = SurfaceElevated)
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "إصدار التطبيق الحالي",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = TextSecondary
+                                        )
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = NexusGold.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = "v${com.example.BuildConfig.VERSION_NAME}",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = NexusGold
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Embedded Downloads Header
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = null,
+                                tint = NexusGold,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "الفصول المحملة للقراءة أوفلاين (${uiState.downloadedChapters.size})",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            )
+                        }
+                    }
+
+                    if (uiState.downloadedChapters.isEmpty()) {
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(28.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDownload,
+                                        contentDescription = null,
+                                        tint = TextTertiary,
+                                        modifier = Modifier.size(42.dp)
+                                    )
+                                    Text(
+                                        text = "لا توجد فصول محملة حالياً",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextSecondary
+                                        )
+                                    )
+                                    Text(
+                                        text = "يمكنك تحميل أي فصل من صفحة تفاصيل العمل لقراءته بدون إنترنت",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = TextTertiary,
+                                            fontSize = 11.sp
+                                        ),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        items(uiState.downloadedChapters, key = { "${it.mangaId}_${it.chapterNumber}" }) { chapter ->
+                            Card(
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                border = BorderStroke(1.dp, SurfaceElevated),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onReadChapter(chapter.mangaId, chapter.chapterNumber) }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = NexusGoldDark,
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.CloudDone,
+                                                contentDescription = null,
+                                                tint = NexusGold,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = chapter.mangaTitle,
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "الفصل ${chapter.chapterNumber} • ${chapter.formattedSize}",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = NexusGoldLight,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { onDeleteDownload(chapter.mangaId, chapter.chapterNumber) }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteOutline,
+                                            contentDescription = "حذف التنزيل",
+                                            tint = Color(0xFFEF5350),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            1 -> {
+                // Show Updates & Changelog
+                UpdatesTabContent(
+                    uiState = uiState,
+                    onTriggerUpdate = onTriggerUpdate,
+                    onCheckCloudUpdates = onCheckCloudUpdates,
+                    onRefreshData = onRefreshData
+                )
+            }
+        }
+    }
+}
+
