@@ -1,9 +1,17 @@
 package com.example.ui.screens.home
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,12 +38,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Clear
@@ -43,28 +51,41 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -74,15 +95,20 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -1646,7 +1672,8 @@ private fun FeatureHighlightCard(
 }
 
 /**
- * Modern Search Tab with keyword search, categories, and instant results
+ * Upgraded & High-Tech Search Tab with animated query suggestions, multi-tier filters,
+ * sort controls, view layout switcher (Grid/List), and responsive animations.
  */
 @Composable
 fun SearchTabContent(
@@ -1661,6 +1688,36 @@ fun SearchTabContent(
     favorites: Set<String>,
     modifier: Modifier = Modifier
 ) {
+    var selectedTypeFilter by remember { mutableStateOf("الكل") } // الكل, مانهوا, مانجا, مانها
+    var selectedSortOption by remember { mutableIntStateOf(0) } // 0: الأعلى تقييماً, 1: الأكثر فصولاً, 2: الأحدث, 3: الأبجدي
+    var isGridView by remember { mutableStateOf(true) }
+
+    val popularSearchTags = remember {
+        listOf("سولو ليفلينج", "ون بيس", "برج الإله", "الرجل الخارق", "أكشن", "فنتازيا", "رومانسي", "سحر", "غموض")
+    }
+
+    val typeFilters = listOf("الكل", "مانهوا (كوري)", "مانجا (ياباني)", "مانها (صيني)")
+    val sortOptions = listOf("الأعلى تقييماً ⭐", "الأكثر فصولاً 📚", "الأحدث نزولاً 🆕", "أ - ي 🔤")
+
+    // Filter and Sort Processing
+    val processedResults = remember(searchResults, selectedTypeFilter, selectedSortOption) {
+        var list = searchResults
+        if (selectedTypeFilter != "الكل") {
+            when (selectedTypeFilter) {
+                "مانهوا (كوري)" -> list = list.filter { it.type == MangaType.MANHWA }
+                "مانجا (ياباني)" -> list = list.filter { it.type == MangaType.MANGA }
+                "مانها (صيني)" -> list = list.filter { it.type == MangaType.MANHUA }
+            }
+        }
+        when (selectedSortOption) {
+            0 -> list.sortedByDescending { it.rating }
+            1 -> list.sortedByDescending { it.totalChaptersCount }
+            2 -> list.sortedByDescending { it.id }
+            3 -> list.sortedBy { it.titleAr }
+            else -> list
+        }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -1668,10 +1725,10 @@ fun SearchTabContent(
         contentPadding = PaddingValues(top = 12.dp, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Search Header Card
+        // Modern Floating Search Card
         item {
             Card(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
                 border = BorderStroke(1.dp, SurfaceElevated),
                 modifier = Modifier.fillMaxWidth()
@@ -1680,23 +1737,92 @@ fun SearchTabContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = "البحث والاستكشاف",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            color = TextPrimary,
-                            fontSize = 17.sp
-                        )
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = NexusOrangeDark,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null,
+                                        tint = NexusOrange,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "البحث والاستكشاف الذكي",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Black,
+                                    color = TextPrimary,
+                                    fontSize = 16.sp
+                                )
+                            )
+                        }
 
+                        // Grid / List Toggle
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(SurfaceDark)
+                                .border(1.dp, SurfaceElevated, RoundedCornerShape(10.dp))
+                                .padding(2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isGridView) NexusOrange else Color.Transparent,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clickable { isGridView = true }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.GridView,
+                                        contentDescription = "عرض شبكي",
+                                        tint = if (isGridView) BackgroundDark else TextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (!isGridView) NexusOrange else Color.Transparent,
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clickable { isGridView = false }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.List,
+                                        contentDescription = "عرض قائمة",
+                                        tint = if (!isGridView) BackgroundDark else TextSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Search input
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
-                                text = "ابحث عن مانجا، مانهوا، أو مؤلف...",
+                                text = "ابحث بالاسم، المؤلف، النوع أو التصنيف...",
                                 color = TextTertiary,
                                 fontSize = 13.sp
                             )
@@ -1705,7 +1831,7 @@ fun SearchTabContent(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = NexusOrange
+                                tint = if (searchQuery.isNotBlank()) NexusOrange else TextSecondary
                             )
                         },
                         trailingIcon = {
@@ -1713,14 +1839,14 @@ fun SearchTabContent(
                                 IconButton(onClick = { onSearchQueryChange("") }) {
                                     Icon(
                                         imageVector = Icons.Default.Clear,
-                                        contentDescription = "مسح",
-                                        tint = TextSecondary
+                                        contentDescription = "مسح البحث",
+                                        tint = NexusOrange
                                     )
                                 }
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = NexusOrange,
                             unfocusedBorderColor = SurfaceElevated,
@@ -1732,42 +1858,165 @@ fun SearchTabContent(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    // Popular Suggestion Chips
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalFireDepartment,
+                                contentDescription = null,
+                                tint = NexusGold,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "الأكثر بحثاً:",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(popularSearchTags) { tag ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = SurfaceElevated.copy(alpha = 0.8f),
+                                    modifier = Modifier.clickable { onSearchQueryChange(tag) }
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = NexusGoldLight,
+                                            fontSize = 11.sp
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        // Category Filter Chips
+        // Filter Section: Categories
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "التصنيفات والأنواع",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(categories) { category ->
+                        val isSelected = category == selectedCategory
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onCategorySelect(category) },
+                            label = {
+                                Text(
+                                    text = category,
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) BackgroundDark else TextSecondary
+                                    )
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = NexusOrange,
+                                containerColor = SurfaceCard
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = if (isSelected) NexusOrange else SurfaceElevated,
+                                selectedBorderColor = NexusOrange,
+                                enabled = true,
+                                selected = isSelected
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Type & Sort Filters Bar
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Type Filter Chips Row
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(typeFilters) { type ->
+                        val isSelected = type == selectedTypeFilter
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) NexusGold else SurfaceCard,
+                            border = BorderStroke(1.dp, if (isSelected) NexusGold else SurfaceElevated),
+                            modifier = Modifier.clickable { selectedTypeFilter = type }
+                        ) {
+                            Text(
+                                text = type,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) BackgroundDark else TextSecondary,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort Options Selector
         item {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(categories) { category ->
-                    val isSelected = category == selectedCategory
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onCategorySelect(category) },
-                        label = {
+                items(sortOptions.indices.toList()) { index ->
+                    val isSelected = selectedSortOption == index
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSelected) SurfaceElevated else SurfaceDark,
+                        border = BorderStroke(1.dp, if (isSelected) NexusOrange else Color.Transparent),
+                        modifier = Modifier.clickable { selectedSortOption = index }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Text(
-                                text = category,
-                                style = MaterialTheme.typography.labelMedium.copy(
+                                text = sortOptions[index],
+                                style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) BackgroundDark else TextSecondary
+                                    color = if (isSelected) NexusOrange else TextSecondary,
+                                    fontSize = 11.sp
                                 )
                             )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NexusOrange,
-                            containerColor = SurfaceCard
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = if (isSelected) NexusOrange else SurfaceElevated,
-                            selectedBorderColor = NexusOrange,
-                            enabled = true,
-                            selected = isSelected
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    )
+                        }
+                    }
                 }
             }
         }
@@ -1780,22 +2029,40 @@ fun SearchTabContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (searchQuery.isBlank() && selectedCategory == "الكل") "كل الأعمال المتاحة (${searchResults.size})"
-                    else "نتائج البحث (${searchResults.size})",
+                    text = "الأعمال المطابقة (${processedResults.size})",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         fontSize = 14.sp
                     )
                 )
+
+                if (selectedCategory != "الكل" || searchQuery.isNotBlank() || selectedTypeFilter != "الكل") {
+                    TextButton(
+                        onClick = {
+                            onCategorySelect("الكل")
+                            onSearchQueryChange("")
+                            selectedTypeFilter = "الكل"
+                        }
+                    ) {
+                        Text(
+                            text = "إعادة ضبط الفلاتر",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = NexusOrange,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
             }
         }
 
-        if (searchResults.isEmpty()) {
+        if (processedResults.isEmpty()) {
             item {
                 Card(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                    border = BorderStroke(1.dp, SurfaceElevated),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -1803,145 +2070,299 @@ fun SearchTabContent(
                             .fillMaxWidth()
                             .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = TextTertiary,
-                            modifier = Modifier.size(48.dp)
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = SurfaceElevated,
+                            modifier = Modifier.size(60.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = TextTertiary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                         Text(
                             text = "لم يتم العثور على أي نتائج مطابقة",
-                            style = MaterialTheme.typography.titleSmall.copy(
+                            style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = TextSecondary
                             )
                         )
                         Text(
-                            text = "جرب البحث بكلمات أخرى أو اختر تصنيفاً مختلفاً",
+                            text = "جرب البحث باسم مختلف أو قم بتغيير الفلاتر والتصنيفات",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = TextTertiary,
                                 fontSize = 12.sp
-                            )
+                            ),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
         } else {
-            // Display Results as Grid Items
-            val chunkedResults = searchResults.chunked(2)
-            items(chunkedResults) { pair ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    for (manga in pair) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            Card(
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                                border = BorderStroke(1.dp, SurfaceElevated),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onMangaClick(manga.id) }
-                            ) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(180.dp)
-                                    ) {
-                                        NexusMangaImage(
-                                            imageUrl = manga.coverUrl,
-                                            fallbackRes = manga.coverRes,
-                                            contentDescription = manga.titleAr,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-
-                                        // Favorite button
-                                        val isFav = favorites.contains(manga.id)
-                                        IconButton(
-                                            onClick = { onToggleFavorite(manga.id) },
+            if (isGridView) {
+                // GRID VIEW (2-column cards)
+                val chunkedResults = processedResults.chunked(2)
+                items(chunkedResults, key = { it.joinToString("-") { m -> m.id } }) { pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        for (manga in pair) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                    border = BorderStroke(1.dp, SurfaceElevated),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onMangaClick(manga.id) }
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Box(
                                             modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(6.dp)
-                                                .size(32.dp)
-                                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                                .fillMaxWidth()
+                                                .height(190.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                                contentDescription = "المفضلة",
-                                                tint = if (isFav) NexusOrange else Color.White,
-                                                modifier = Modifier.size(18.dp)
+                                            NexusMangaImage(
+                                                imageUrl = manga.coverUrl,
+                                                fallbackRes = manga.coverRes,
+                                                contentDescription = manga.titleAr,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
                                             )
-                                        }
 
-                                        // Rating badge
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = Color.Black.copy(alpha = 0.75f),
-                                            modifier = Modifier
-                                                .align(Alignment.BottomStart)
-                                                .padding(6.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                            // Favorite button
+                                            val isFav = favorites.contains(manga.id)
+                                            IconButton(
+                                                onClick = { onToggleFavorite(manga.id) },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(6.dp)
+                                                    .size(32.dp)
+                                                    .background(Color.Black.copy(alpha = 0.65f), CircleShape)
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Star,
-                                                    contentDescription = null,
-                                                    tint = NexusGold,
-                                                    modifier = Modifier.size(12.dp)
+                                                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                    contentDescription = "المفضلة",
+                                                    tint = if (isFav) NexusOrange else Color.White,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
-                                                Text(
-                                                    text = manga.rating.toString(),
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        color = Color.White,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 10.sp
+                                            }
+
+                                            // Rating badge
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = Color.Black.copy(alpha = 0.75f),
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomStart)
+                                                    .padding(6.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Star,
+                                                        contentDescription = null,
+                                                        tint = NexusGold,
+                                                        modifier = Modifier.size(12.dp)
                                                     )
+                                                    Text(
+                                                        text = manga.rating.toString(),
+                                                        style = MaterialTheme.typography.labelSmall.copy(
+                                                            color = Color.White,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 10.sp
+                                                        )
+                                                    )
+                                                }
+                                            }
+
+                                            // Type badge
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = NexusOrangeDark.copy(alpha = 0.9f),
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .padding(6.dp)
+                                            ) {
+                                                Text(
+                                                    text = manga.type.labelAr,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = NexusOrange,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 9.sp
+                                                    ),
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                                 )
                                             }
                                         }
-                                    }
 
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = manga.titleAr.ifEmpty { manga.titleEn },
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = TextPrimary,
-                                                fontSize = 13.sp
-                                            ),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = manga.titleAr.ifEmpty { manga.titleEn },
+                                                style = MaterialTheme.typography.titleSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = TextPrimary,
+                                                    fontSize = 13.sp
+                                                ),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
 
-                                        Text(
-                                            text = "${manga.totalChaptersCount} فصلاً • ${manga.genres.firstOrNull() ?: manga.type.labelAr}",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                color = TextSecondary,
-                                                fontSize = 11.sp
-                                            ),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                            Text(
+                                                text = "${manga.totalChaptersCount} فصلاً • ${manga.genres.firstOrNull() ?: manga.type.labelAr}",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = TextSecondary,
+                                                    fontSize = 11.sp
+                                                ),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
+                        if (pair.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
-                    if (pair.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
+                }
+            } else {
+                // LIST VIEW (Detailed rows)
+                items(processedResults, key = { it.id }) { manga ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                        border = BorderStroke(1.dp, SurfaceElevated),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onMangaClick(manga.id) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Cover Image
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 75.dp, height = 100.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                            ) {
+                                NexusMangaImage(
+                                    imageUrl = manga.coverUrl,
+                                    fallbackRes = manga.coverRes,
+                                    contentDescription = manga.titleAr,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            // Details column
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = NexusOrange.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = manga.type.labelAr,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = NexusOrange,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 9.sp
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = "★ ${manga.rating}",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = NexusGold,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+
+                                Text(
+                                    text = manga.titleAr.ifEmpty { manga.titleEn },
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        fontSize = 14.sp
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Text(
+                                    text = manga.synopsis,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = TextTertiary,
+                                        fontSize = 11.sp
+                                    ),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${manga.totalChaptersCount} فصلاً",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = TextSecondary,
+                                            fontSize = 10.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = "•",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = TextTertiary)
+                                    )
+                                    Text(
+                                        text = manga.genres.take(2).joinToString("، "),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = NexusGoldLight,
+                                            fontSize = 10.sp
+                                        )
+                                    )
+                                }
+                            }
+
+                            // Favorite Icon button
+                            val isFav = favorites.contains(manga.id)
+                            IconButton(onClick = { onToggleFavorite(manga.id) }) {
+                                Icon(
+                                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = "المفضلة",
+                                    tint = if (isFav) NexusOrange else TextSecondary
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1950,11 +2371,12 @@ fun SearchTabContent(
 }
 
 /**
- * Settings Tab Content that hosts:
- * 1. Downloads section (التحميلات)
- * 2. Updates & Changelog section (التحديثات)
- * 3. App Storage & Cache Management
- * 4. App Info & Version
+ * Professional, fully featured Settings Tab Content.
+ * Features:
+ * 1. Storage & Downloads Management (Detailed storage quota, batch delete, cache clean).
+ * 2. Reader & Display Preferences (Reading mode, image quality, keep screen on, volume keys scroll).
+ * 3. Updates & Changelog (In-app updates v1.9.1, cloud checks, auto-sync).
+ * 4. About & Community (Nexus Manga Studio team, GitHub, contact).
  */
 @Composable
 fun SettingsTabContent(
@@ -1968,90 +2390,70 @@ fun SettingsTabContent(
     onClearCache: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var settingsSubTab by remember { mutableIntStateOf(0) } // 0: General & Downloads, 1: Updates
+    var settingsCategory by remember { mutableIntStateOf(0) } // 0: التخزين والتحميلات, 1: القراءة والعرض, 2: التحديثات, 3: حول التطبيق
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
+    var showClearDownloadsDialog by remember { mutableStateOf(false) }
+    var cacheCleanedSuccess by remember { mutableStateOf(false) }
+
+    // User preference local toggles
+    var readerMode by remember { mutableIntStateOf(0) } // 0: ويبتون طولي, 1: أفقي RTL, 2: أفقي LTR
+    var imageQuality by remember { mutableIntStateOf(0) } // 0: عالية الدقة HD, 1: متوازنة, 2: موفر البيانات
+    var keepScreenOn by remember { mutableStateOf(true) }
+    var volumeScroll by remember { mutableStateOf(false) }
+    var doubleTapZoom by remember { mutableStateOf(true) }
+    var autoSyncUpdates by remember { mutableStateOf(true) }
+    var wifiOnlyDownloads by remember { mutableStateOf(false) }
+
+    val categoryTabs = listOf(
+        "التحميلات والتخزين" to Icons.Default.Storage,
+        "تفضيلات القارئ" to Icons.AutoMirrored.Filled.MenuBook,
+        "التحديثات v1.9.1" to Icons.Default.AutoAwesome,
+        "حول التطبيق" to Icons.Default.Info
+    )
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Settings Sub-Tabs Switcher (التحميلات والإعدادات | التحديثات)
-        Surface(
-            color = SurfaceDark,
-            border = BorderStroke(1.dp, SurfaceElevated),
+        // Top Categories Segmented Bar
+        LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(14.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // Tab 0: General & Downloads
+            items(categoryTabs.indices.toList()) { index ->
+                val (title, icon) = categoryTabs[index]
+                val isSelected = settingsCategory == index
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (settingsSubTab == 0) NexusOrange else Color.Transparent,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { settingsSubTab = 0 }
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) NexusOrange else SurfaceDark,
+                    border = BorderStroke(1.dp, if (isSelected) NexusOrange else SurfaceElevated),
+                    modifier = Modifier.clickable { settingsCategory = index }
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CloudDownload,
+                            imageVector = icon,
                             contentDescription = null,
-                            tint = if (settingsSubTab == 0) BackgroundDark else TextSecondary,
+                            tint = if (isSelected) BackgroundDark else TextSecondary,
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "التحميلات والإعدادات",
+                            text = title,
                             style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (settingsSubTab == 0) BackgroundDark else TextSecondary
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) BackgroundDark else TextSecondary
                             )
                         )
-                    }
-                }
-
-                // Tab 1: Updates & Changelog
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (settingsSubTab == 1) NexusGold else Color.Transparent,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { settingsSubTab = 1 }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = if (settingsSubTab == 1) BackgroundDark else TextSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "التحديثات والإصدار",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (settingsSubTab == 1) BackgroundDark else TextSecondary
-                            )
-                        )
-                        if (uiState.updateInfo.updateAvailable) {
-                            Spacer(modifier = Modifier.width(6.dp))
+                        if (index == 2 && uiState.updateInfo.updateAvailable) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(7.dp)
                                     .clip(CircleShape)
                                     .background(Color.Red)
                             )
@@ -2061,20 +2463,20 @@ fun SettingsTabContent(
             }
         }
 
-        when (settingsSubTab) {
+        when (settingsCategory) {
             0 -> {
-                // Show Downloads & General Settings
+                // TAB 0: DOWNLOADS & STORAGE MANAGEMENT
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 90.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // App Management Card
+                    // Storage Quota Card
                     item {
                         Card(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(18.dp),
                             colors = CardDefaults.cardColors(containerColor = SurfaceCard),
                             border = BorderStroke(1.dp, SurfaceElevated),
                             modifier = Modifier.fillMaxWidth()
@@ -2086,121 +2488,182 @@ fun SettingsTabContent(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                        tint = NexusOrange,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Text(
-                                        text = "إعدادات التطبيق والمساحة",
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary
-                                        )
-                                    )
-                                }
-
-                                Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
-                                        Text(
-                                            text = "تنظيف الذاكرة المؤقتة (Cache)",
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = TextPrimary
-                                            )
-                                        )
-                                        Text(
-                                            text = "مسح الصور المؤقتة لتحرير مساحة التخزين",
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                color = TextSecondary,
-                                                fontSize = 11.sp
-                                            )
-                                        )
-                                    }
-
-                                    OutlinedButton(
-                                        onClick = onClearCache,
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = NexusOrange
-                                        ),
-                                        border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CleaningServices,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "تنظيف",
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                fontWeight = FontWeight.Bold
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = NexusGoldDark,
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Storage,
+                                                    contentDescription = null,
+                                                    tint = NexusGold,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+                                        Column {
+                                            Text(
+                                                text = "مساحة التخزين المستهلكة",
+                                                style = MaterialTheme.typography.titleSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = TextPrimary
+                                                )
                                             )
-                                        )
+                                            Text(
+                                                text = "${uiState.downloadedChapters.size} فصول محملة محلياً",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = TextSecondary,
+                                                    fontSize = 11.sp
+                                                )
+                                            )
+                                        }
                                     }
-                                }
 
-                                HorizontalDivider(color = SurfaceElevated)
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "إصدار التطبيق الحالي",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = TextSecondary
-                                        )
-                                    )
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = NexusGold.copy(alpha = 0.15f)
                                     ) {
                                         Text(
-                                            text = "v${com.example.BuildConfig.VERSION_NAME}",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Bold,
+                                            text = uiState.formattedTotalStorage,
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Black,
                                                 color = NexusGold
                                             ),
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                         )
+                                    }
+                                }
+
+                                // Storage meter
+                                LinearProgressIndicator(
+                                    progress = {
+                                        (uiState.downloadedChapters.size.toFloat() / 50f).coerceIn(0.05f, 1f)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    color = NexusGold,
+                                    trackColor = SurfaceElevated
+                                )
+
+                                HorizontalDivider(color = SurfaceElevated)
+
+                                // Quick actions
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            onClearCache()
+                                            cacheCleanedSuccess = true
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = NexusOrange),
+                                        border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f)),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (cacheCleanedSuccess) Icons.Default.Check else Icons.Default.CleaningServices,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (cacheCleanedSuccess) "تم التنظيف ✓" else "مسح الكاش",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+
+                                    if (uiState.downloadedChapters.isNotEmpty()) {
+                                        OutlinedButton(
+                                            onClick = { showClearDownloadsDialog = true },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF5350)),
+                                            border = BorderStroke(1.dp, Color(0xFFEF5350).copy(alpha = 0.5f)),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.DeleteOutline,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "حذف الكل",
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Embedded Downloads Header
+                    // Download Over Wi-Fi Toggle Card
                     item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 6.dp)
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDownload,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "الفصول المحملة للقراءة أوفلاين (${uiState.downloadedChapters.size})",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "التحميل عبر الواي فاي فقط",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    )
+                                    Text(
+                                        text = "توفير باقة بيانات الجوال عند تنزيل الفصول",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = TextTertiary,
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                                Switch(
+                                    checked = wifiOnlyDownloads,
+                                    onCheckedChange = { wifiOnlyDownloads = it },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = BackgroundDark,
+                                        checkedTrackColor = NexusOrange,
+                                        uncheckedTrackColor = SurfaceElevated
+                                    )
                                 )
-                            )
+                            }
                         }
+                    }
+
+                    // Downloaded Chapters Section Header
+                    item {
+                        Text(
+                            text = "الفصول المحملة للقراءة أوفلاين (${uiState.downloadedChapters.size})",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            ),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
 
                     if (uiState.downloadedChapters.isEmpty()) {
@@ -2208,6 +2671,7 @@ fun SettingsTabContent(
                             Card(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                                border = BorderStroke(1.dp, SurfaceElevated),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
@@ -2215,13 +2679,13 @@ fun SettingsTabContent(
                                         .fillMaxWidth()
                                         .padding(28.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CloudDownload,
                                         contentDescription = null,
                                         tint = TextTertiary,
-                                        modifier = Modifier.size(42.dp)
+                                        modifier = Modifier.size(44.dp)
                                     )
                                     Text(
                                         text = "لا توجد فصول محملة حالياً",
@@ -2231,7 +2695,7 @@ fun SettingsTabContent(
                                         )
                                     )
                                     Text(
-                                        text = "يمكنك تحميل أي فصل من صفحة تفاصيل العمل لقراءته بدون إنترنت",
+                                        text = "يمكنك تحميل أي فصل بضغطة زر من صفحة تفاصيل العمل لقراءته بأي وقت بدون إنترنت",
                                         style = MaterialTheme.typography.bodySmall.copy(
                                             color = TextTertiary,
                                             fontSize = 11.sp
@@ -2261,14 +2725,14 @@ fun SettingsTabContent(
                                     Surface(
                                         shape = CircleShape,
                                         color = NexusGoldDark,
-                                        modifier = Modifier.size(40.dp)
+                                        modifier = Modifier.size(42.dp)
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
                                                 imageVector = Icons.Default.CloudDone,
                                                 contentDescription = null,
                                                 tint = NexusGold,
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(22.dp)
                                             )
                                         }
                                     }
@@ -2284,7 +2748,7 @@ fun SettingsTabContent(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = "الفصل ${chapter.chapterNumber} • ${chapter.formattedSize}",
+                                            text = "الفصل ${chapter.chapterNumber} • ${chapter.formattedSize} • متاح أوفلاين",
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 color = NexusGoldLight,
                                                 fontSize = 11.sp
@@ -2309,7 +2773,300 @@ fun SettingsTabContent(
                 }
             }
             1 -> {
-                // Show Updates & Changelog
+                // TAB 1: READER & DISPLAY PREFERENCES
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 90.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Reading Direction Selector
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SwapVert,
+                                        contentDescription = null,
+                                        tint = NexusOrange,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "نمط واتجاه القراءة الافتراضي",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    )
+                                }
+
+                                val readerModes = listOf("ويب تون عمودي (مستمر)", "أفقي (من اليمين لليسار)", "أفقي (من اليسار لليمين)")
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    readerModes.forEachIndexed { idx, modeName ->
+                                        val isSelected = readerMode == idx
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isSelected) NexusOrangeDark else SurfaceDark,
+                                            border = BorderStroke(1.dp, if (isSelected) NexusOrange else SurfaceElevated),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { readerMode = idx }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(12.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = modeName,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        color = if (isSelected) TextPrimary else TextSecondary,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                    )
+                                                )
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = NexusOrange,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Image Quality Selector
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        tint = NexusGold,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "جودة تحميل صور الفصول",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    )
+                                }
+
+                                val qualities = listOf("عالية الدقة الأصلية (HD)", "متوازنة (الموصى بها)", "موفر البيانات (سريعة)")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    qualities.forEachIndexed { idx, qTitle ->
+                                        val isSelected = imageQuality == idx
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isSelected) NexusGold else SurfaceDark,
+                                            border = BorderStroke(1.dp, if (isSelected) NexusGold else SurfaceElevated),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { imageQuality = idx }
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = qTitle,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = if (isSelected) BackgroundDark else TextSecondary,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Reader Switches Card
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DisplaySettings,
+                                        contentDescription = null,
+                                        tint = NexusOrange,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "ميزات إضافية للقارئ",
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    )
+                                }
+
+                                // Keep Screen On
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "إبقاء الشاشة مفعلة",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary
+                                            )
+                                        )
+                                        Text(
+                                            text = "منع إغلاق الشاشة تلقائياً أثناء قراءة الفصول",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = TextTertiary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+                                    Switch(
+                                        checked = keepScreenOn,
+                                        onCheckedChange = { keepScreenOn = it },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = BackgroundDark,
+                                            checkedTrackColor = NexusOrange,
+                                            uncheckedTrackColor = SurfaceElevated
+                                        )
+                                    )
+                                }
+
+                                HorizontalDivider(color = SurfaceElevated)
+
+                                // Volume Keys Scroll
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "تقليب الصفحات بأزرار الصوت",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary
+                                            )
+                                        )
+                                        Text(
+                                            text = "استخدام أزرار رفع وخفض الصوت للتنقل بين الصفحات",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = TextTertiary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+                                    Switch(
+                                        checked = volumeScroll,
+                                        onCheckedChange = { volumeScroll = it },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = BackgroundDark,
+                                            checkedTrackColor = NexusOrange,
+                                            uncheckedTrackColor = SurfaceElevated
+                                        )
+                                    )
+                                }
+
+                                HorizontalDivider(color = SurfaceElevated)
+
+                                // Double Tap Zoom
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "تكبير سريع بالنقر المزدوج",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = TextPrimary
+                                            )
+                                        )
+                                        Text(
+                                            text = "تكبير وتصغير صفحات المانجا بنقرتين متتاليتين",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = TextTertiary,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+                                    Switch(
+                                        checked = doubleTapZoom,
+                                        onCheckedChange = { doubleTapZoom = it },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = BackgroundDark,
+                                            checkedTrackColor = NexusOrange,
+                                            uncheckedTrackColor = SurfaceElevated
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            2 -> {
+                // TAB 2: UPDATES & CHANGELOG (v1.9.1)
                 UpdatesTabContent(
                     uiState = uiState,
                     onTriggerUpdate = onTriggerUpdate,
@@ -2317,7 +3074,179 @@ fun SettingsTabContent(
                     onRefreshData = onRefreshData
                 )
             }
+            3 -> {
+                // TAB 3: ABOUT & COMMUNITY
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 90.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // App Branding Banner
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = NexusOrangeDark,
+                                    border = BorderStroke(2.dp, NexusOrange),
+                                    modifier = Modifier.size(64.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.AutoAwesome,
+                                            contentDescription = null,
+                                            tint = NexusOrange,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = "Nexus Manga Reader",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Black,
+                                        color = TextPrimary
+                                    )
+                                )
+
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = NexusGold.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "الإصدار الرسمي v${com.example.BuildConfig.VERSION_NAME} (Build 30)",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = NexusGold
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = "تطبيق قراءة المانجا والمانهوا والمانها الأول باللغة العربية. تم تصميمه لتقديم تجربة فائقة السرعة، استقرار تام، ودعم قراءة كامل بدون إنترنت.",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = TextSecondary,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp
+                                    ),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    // Tech & Features Specs Card
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                            border = BorderStroke(1.dp, SurfaceElevated),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "المواصفات والتقنيات المبني بها",
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                )
+
+                                val specs = listOf(
+                                    "واجهة المستخدم" to "Jetpack Compose (Material 3)",
+                                    "محرك القراءة" to "محسن للقراءة السريعة والأوفلاين",
+                                    "التخزين المحلي" to "Room Database & File Cache",
+                                    "التحديثات السحابية" to "GitHub Releases Auto-Sync"
+                                )
+
+                                specs.forEach { (label, value) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                                        )
+                                        Text(
+                                            text = value,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = NexusOrange
+                                            )
+                                        )
+                                    }
+                                    HorizontalDivider(color = SurfaceElevated.copy(alpha = 0.5f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    // Clear Downloads Confirmation Dialog
+    if (showClearDownloadsDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDownloadsDialog = false },
+            title = {
+                Text(
+                    text = "حذف جميع التحميلات؟",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Text(
+                    text = "هل أنت متأكد من حذف كافة الفصول المحملة محلياً وتحرير مساحة التخزين؟",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        uiState.downloadedChapters.forEach {
+                            onDeleteDownload(it.mangaId, it.chapterNumber)
+                        }
+                        showClearDownloadsDialog = false
+                    }
+                ) {
+                    Text(
+                        text = "نعم، حذف الكل",
+                        color = Color(0xFFEF5350),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDownloadsDialog = false }) {
+                    Text("إلغاء")
+                }
+            },
+            containerColor = SurfaceCard,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary
+        )
     }
 }
 

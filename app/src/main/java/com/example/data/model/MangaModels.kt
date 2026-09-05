@@ -5,16 +5,17 @@ import com.squareup.moshi.JsonClass
 
 enum class MangaType(val labelAr: String) {
     MANHWA("مانهوا كورية"),
-    MANHUA("مانها صينية");
+    MANHUA("مانها صينية"),
+    MANGA("مانجا يابانية");
 
     companion object {
         fun fromString(value: String?): MangaType {
             if (value == null) return MANHWA
             val normalized = value.trim().lowercase()
-            return if (normalized.contains("مانها") || normalized.contains("manhua")) {
-                MANHUA
-            } else {
-                MANHWA
+            return when {
+                normalized.contains("مانها") || normalized.contains("manhua") -> MANHUA
+                normalized.contains("مانجا") || normalized.contains("manga") -> MANGA
+                else -> MANHWA
             }
         }
     }

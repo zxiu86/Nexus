@@ -1,6 +1,5 @@
 package com.example.ui.screens.details
 
-import com.example.vfx.InfoCoverVfxLayer
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -476,12 +475,8 @@ fun Rotating3DCoverCard(
         contentAlignment = Alignment.Center
     ) {
         if (!isBackFace) {
-            // FRONT FACE: Manga Cover with infocover_vfx.korv layer directly behind
+            // FRONT FACE: Manga Cover
             Box(modifier = Modifier.fillMaxSize()) {
-                InfoCoverVfxLayer(
-                    modifier = Modifier.fillMaxSize()
-                )
-
                 NexusMangaImage(
                     imageUrl = manga.coverUrl,
                     fallbackRes = manga.coverRes,
@@ -608,15 +603,8 @@ fun MangaHeaderCard(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 3D Rotating Work Cover with Boxcover Aura on back and infocover_vfx.korv layer
-            Box(contentAlignment = Alignment.Center) {
-                InfoCoverVfxLayer(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(-8.dp)
-                )
-                Rotating3DCoverCard(manga = manga)
-            }
+            // 3D Rotating Work Cover
+            Rotating3DCoverCard(manga = manga)
 
             // Manga Metadata Details
             Column(
