@@ -326,6 +326,13 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     private val _readerUiState = MutableStateFlow(ReaderUiState())
     val readerUiState: StateFlow<ReaderUiState> = _readerUiState.asStateFlow()
 
+    private val _favoriteToast = MutableStateFlow<com.example.data.model.FavoriteToastData?>(null)
+    val favoriteToast: StateFlow<com.example.data.model.FavoriteToastData?> = _favoriteToast.asStateFlow()
+
+    fun dismissFavoriteToast() {
+        _favoriteToast.value = null
+    }
+
     init {
         // App Preload warmup for smooth entry without stutter
         viewModelScope.launch {
@@ -470,14 +477,29 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleFavorite(mangaId: String) {
         viewModelScope.launch {
             repository.toggleFavorite(mangaId)
+            val isFav = repository.isFavorite(mangaId)
             if (_detailsUiState.value.manga?.id == mangaId) {
                 _detailsUiState.value = _detailsUiState.value.copy(
-                    isFavorite = repository.isFavorite(mangaId)
+                    isFavorite = isFav
                 )
             }
             if (_readerUiState.value.manga?.id == mangaId) {
                 _readerUiState.value = _readerUiState.value.copy(
-                    isFavorite = repository.isFavorite(mangaId)
+                    isFavorite = isFav
+                )
+            }
+            val manga = repository.getMangaById(mangaId)
+                ?: _detailsUiState.value.manga
+                ?: _readerUiState.value.manga
+                ?: repository.allMangaFlow.value.firstOrNull { it.id == mangaId }
+            if (manga != null) {
+                _favoriteToast.value = com.example.data.model.FavoriteToastData(
+                    mangaId = manga.id,
+                    title = manga.titleAr,
+                    coverUrl = manga.coverUrl,
+                    coverRes = manga.coverRes,
+                    isAdded = isFav,
+                    timestamp = System.currentTimeMillis()
                 )
             }
         }

@@ -117,6 +117,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextTertiary
 import com.example.ui.viewmodel.HomeUiState
+import com.example.util.AppVersionConfig
 import kotlinx.coroutines.delay
 
 @Composable
@@ -234,8 +235,8 @@ fun HomeScreen(
                                 item(key = "in_app_update_alert_banner") {
                                     Card(
                                         shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                                        border = BorderStroke(1.5.dp, Brush.horizontalGradient(listOf(NexusOrange, NexusGold))),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = BorderStroke(1.5.dp, Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -253,13 +254,13 @@ fun HomeScreen(
                                                 modifier = Modifier
                                                     .size(42.dp)
                                                     .clip(CircleShape)
-                                                    .background(Brush.linearGradient(listOf(NexusOrange, NexusGold))),
+                                                    .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.SystemUpdate,
                                                     contentDescription = null,
-                                                    tint = BackgroundDark,
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
                                                     modifier = Modifier.size(22.dp)
                                                 )
                                             }
@@ -269,14 +270,14 @@ fun HomeScreen(
                                                     text = "إصدار جديد متوفر الآن (v${uiState.updateInfo.latestVersion}) 🚀",
                                                     style = MaterialTheme.typography.titleSmall.copy(
                                                         fontWeight = FontWeight.Black,
-                                                        color = NexusGoldLight,
+                                                        color = MaterialTheme.colorScheme.primary,
                                                         fontSize = 13.sp
                                                     )
                                                 )
                                                 Text(
                                                     text = "تحديث nexus.apk جاهز للتحميل والتثبيت المباشر بنقرة واحدة",
                                                     style = MaterialTheme.typography.labelSmall.copy(
-                                                        color = TextSecondary,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                         fontSize = 11.sp
                                                     )
                                                 )
@@ -286,8 +287,8 @@ fun HomeScreen(
                                                 onClick = onTriggerUpdate,
                                                 shape = RoundedCornerShape(10.dp),
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = NexusOrange,
-                                                    contentColor = BackgroundDark
+                                                    containerColor = MaterialTheme.colorScheme.primary,
+                                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                                 ),
                                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                                 modifier = Modifier.height(36.dp)
@@ -338,11 +339,9 @@ fun HomeScreen(
                                 }
                             }
 
-                            // Search & Filter Categories
+                            // Clean Category Filter Bar (Search field removed as requested)
                             item {
-                                SearchAndFilterSection(
-                                    searchQuery = uiState.searchQuery,
-                                    onSearchQueryChange = onSearchQueryChange,
+                                HomeCategoryFilterSection(
                                     selectedCategory = uiState.selectedCategory,
                                     onCategorySelect = onCategorySelect
                                 )
@@ -351,7 +350,7 @@ fun HomeScreen(
                             // Section Title: أحدث الفصول (Latest Chapters)
                             item {
                                 SectionHeaderTitle(
-                                    title = if (uiState.searchQuery.isBlank() && uiState.selectedCategory == "الكل") "أحدث الفصول المضافة" else "نتائج البحث والتصفية",
+                                    title = if (uiState.selectedCategory == "الكل") "أحدث الفصول المضافة" else "تصنيف: ${uiState.selectedCategory}",
                                     subtitle = "صفحة ${uiState.currentPage} من ${uiState.totalPages} (عرض 14 عملاً)"
                                 )
                             }
@@ -568,8 +567,8 @@ fun NexusHomeTopBar(
             // App Icon Box in Header
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = SurfaceCard,
-                border = BorderStroke(1.5.dp, NexusGold),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
                 shadowElevation = 4.dp,
                 modifier = Modifier.size(42.dp)
             ) {
@@ -593,21 +592,21 @@ fun NexusHomeTopBar(
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.2.sp,
-                            color = NexusGoldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 18.sp
                         )
                     )
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = NexusGoldDark,
-                        border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v${com.example.BuildConfig.VERSION_NAME}",
+                            text = AppVersionConfig.getFullVersionString(),
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = NexusGold,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 10.sp
                             )
                         )
@@ -622,7 +621,7 @@ fun NexusHomeTopBar(
                         else -> "بوابة المانهوا والمانغا السحابية"
                     },
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = if (selectedTab == 0) TextSecondary else NexusGoldLight,
+                        color = if (selectedTab == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                         fontWeight = if (selectedTab == 0) FontWeight.Normal else FontWeight.Bold,
                         fontSize = 11.sp
                     )
@@ -638,8 +637,8 @@ fun NexusHomeTopBar(
             // Live Force Sync Button with Spinning Feedback
             Surface(
                 shape = CircleShape,
-                color = SurfaceDark,
-                border = BorderStroke(1.dp, if (isRefreshing) NexusGold else NexusGold.copy(alpha = 0.25f)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, if (isRefreshing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
@@ -653,7 +652,7 @@ fun NexusHomeTopBar(
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "تحديث البيانات المباشر وتجاوز الكاش",
-                        tint = if (isRefreshing) NexusGold else TextSecondary,
+                        tint = if (isRefreshing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(17.dp)
                             .rotate(if (isRefreshing) rotation else 0f)
@@ -665,8 +664,8 @@ fun NexusHomeTopBar(
             if (favoritesCount > 0) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = NexusOrange.copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, NexusOrangeLight.copy(alpha = 0.6f)),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .clickable { onFavoritesClick() }
@@ -680,14 +679,14 @@ fun NexusHomeTopBar(
                         Icon(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = NexusOrange,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
                             text = "$favoritesCount",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = NexusOrangeLight,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                         )
@@ -698,8 +697,8 @@ fun NexusHomeTopBar(
             if (hasUpdate) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = NexusGold,
-                    border = BorderStroke(1.dp, NexusOrangeLight),
+                    color = MaterialTheme.colorScheme.primary,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .clickable { onUpdateBadgeClick() }
@@ -712,14 +711,14 @@ fun NexusHomeTopBar(
                         Icon(
                             imageVector = Icons.Default.SystemUpdate,
                             contentDescription = null,
-                            tint = BackgroundDark,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = "تحديث",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = BackgroundDark,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 10.sp
                             )
                         )
@@ -821,7 +820,7 @@ fun HeroCarouselSection(
                             Icon(
                                 imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "المفضلة",
-                                tint = if (isFav) NexusOrange else Color.White,
+                                tint = if (isFav) MaterialTheme.colorScheme.primary else Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -837,7 +836,7 @@ fun HeroCarouselSection(
                             Text(
                                 text = manga.genres.take(2).joinToString(" ، "),
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = NexusGoldLight,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
@@ -865,8 +864,8 @@ fun HeroCarouselSection(
                                 onClick = { onMangaClick(manga.id) },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.elevatedButtonColors(
-                                    containerColor = NexusGold,
-                                    contentColor = BackgroundDark
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                 ),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.height(32.dp)
@@ -882,8 +881,8 @@ fun HeroCarouselSection(
                             if (lastCh != null) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = SurfaceDark.copy(alpha = 0.85f),
-                                    border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.6f)),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                                     modifier = Modifier
                                         .height(32.dp)
                                         .clickable { onChapterClick(manga.id, lastCh.number) }
@@ -896,14 +895,14 @@ fun HeroCarouselSection(
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.MenuBook,
                                             contentDescription = null,
-                                            tint = NexusOrangeLight,
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Text(
                                             text = "اقرأ الفصل ${lastCh.number}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NexusOrangeLight
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -930,97 +929,54 @@ fun HeroCarouselSection(
                         .height(5.dp)
                         .width(if (isSelected) 22.dp else 6.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(if (isSelected) NexusGoldLight else SurfaceElevated)
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
             }
         }
     }
 }
 
+/**
+ * Clean Category Filter Bar (Search field removed as requested by user)
+ */
 @Composable
-fun SearchAndFilterSection(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
+fun HomeCategoryFilterSection(
     selectedCategory: String,
     onCategorySelect: (String) -> Unit
 ) {
     val categories = listOf("الكل", "أكشن", "خيال", "فنون قتال", "تناسخ", "سحر", "بوابات")
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val onAccentPrimary = MaterialTheme.colorScheme.onPrimary
 
-    Column(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp)
     ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            placeholder = {
+        items(categories, key = { it }) { category ->
+            val isSelected = selectedCategory == category
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (isSelected) accentPrimary else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(
+                    1.dp,
+                    if (isSelected) accentPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onCategorySelect(category) }
+                    .testTag("home_category_$category")
+            ) {
                 Text(
-                    text = "ابحث عن أعمالك وفصولك المفضلة...",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = TextTertiary)
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "بحث",
-                    tint = NexusGoldLight
-                )
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchQueryChange("") }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "مسح",
-                            tint = TextSecondary
-                        )
-                    }
-                }
-            },
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = SurfaceCard,
-                unfocusedContainerColor = SurfaceCard,
-                focusedBorderColor = NexusGold,
-                unfocusedBorderColor = SurfaceElevated,
-                focusedTextColor = TextPrimary,
-                unfocusedTextColor = TextPrimary
-            ),
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("search_text_field")
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 2.dp)
-        ) {
-            items(categories, key = { it }) { category ->
-                val isSelected = selectedCategory == category
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) NexusGold else SurfaceCard,
-                    border = BorderStroke(
-                        1.dp,
-                        if (isSelected) NexusOrange else SurfaceElevated
-                    ),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable { onCategorySelect(category) }
-                ) {
-                    Text(
-                        text = category,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) BackgroundDark else TextSecondary
-                        )
+                    text = category,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) onAccentPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
+                )
             }
         }
     }
@@ -1047,7 +1003,7 @@ fun SectionHeaderTitle(
                     modifier = Modifier
                         .size(4.dp, 18.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(NexusGold)
+                        .background(MaterialTheme.colorScheme.primary)
                 )
                 Text(
                     text = title,
@@ -1290,15 +1246,15 @@ fun DiscoverRandomSection(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = NexusOrangeDark,
-                    border = BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f)),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                     modifier = Modifier.size(28.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.Casino,
                             contentDescription = null,
-                            tint = NexusOrangeLight,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -1327,7 +1283,7 @@ fun DiscoverRandomSection(
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = SurfaceVariantDark,
-                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.3f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onRefreshRandom() }
@@ -1341,13 +1297,13 @@ fun DiscoverRandomSection(
                     Icon(
                         imageVector = Icons.Default.Shuffle,
                         contentDescription = "خلط",
-                        tint = NexusGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
                         text = "عشوائي",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = NexusGold,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp
                         )
@@ -1368,7 +1324,7 @@ fun DiscoverRandomSection(
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.35f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
                     modifier = Modifier
                         .size(width = 82.dp, height = 118.dp)
@@ -1482,7 +1438,7 @@ fun PaginationControlsSection(
                 color = if (currentPage > 1) SurfaceVariantDark else SurfaceDark.copy(alpha = 0.4f),
                 border = BorderStroke(
                     1.dp,
-                    if (currentPage > 1) NexusGold.copy(alpha = 0.4f) else Color.Transparent
+                    if (currentPage > 1) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Transparent
                 ),
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
@@ -1497,7 +1453,7 @@ fun PaginationControlsSection(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "السابق",
-                        tint = if (currentPage > 1) NexusGold else TextTertiary,
+                        tint = if (currentPage > 1) MaterialTheme.colorScheme.primary else TextTertiary,
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
@@ -1522,10 +1478,10 @@ fun PaginationControlsSection(
                             val isSelected = item.number == currentPage
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (isSelected) NexusGold else SurfaceVariantDark,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else SurfaceVariantDark,
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isSelected) NexusGoldLight else SurfaceElevated
+                                    if (isSelected) MaterialTheme.colorScheme.primary else SurfaceElevated
                                 ),
                                 modifier = Modifier
                                     .size(30.dp)
@@ -1538,7 +1494,7 @@ fun PaginationControlsSection(
                                         text = "${item.number}",
                                         style = MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                            color = if (isSelected) BackgroundDark else TextSecondary,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else TextSecondary,
                                             fontSize = 12.sp
                                         )
                                     )
@@ -1561,7 +1517,7 @@ fun PaginationControlsSection(
                                         text = "...",
                                         style = MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Bold,
-                                            color = NexusGold.copy(alpha = 0.8f),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                             fontSize = 11.sp
                                         )
                                     )
@@ -1578,7 +1534,7 @@ fun PaginationControlsSection(
                 color = if (currentPage < totalPages) SurfaceVariantDark else SurfaceDark.copy(alpha = 0.4f),
                 border = BorderStroke(
                     1.dp,
-                    if (currentPage < totalPages) NexusGold.copy(alpha = 0.4f) else Color.Transparent
+                    if (currentPage < totalPages) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Color.Transparent
                 ),
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
@@ -1601,7 +1557,7 @@ fun PaginationControlsSection(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "التالي",
-                        tint = if (currentPage < totalPages) NexusGold else TextTertiary,
+                        tint = if (currentPage < totalPages) MaterialTheme.colorScheme.primary else TextTertiary,
                         modifier = Modifier.size(15.dp)
                     )
                 }
@@ -1643,11 +1599,11 @@ fun NexusPreloadSplashScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier.padding(32.dp)
         ) {
-            // Nexus Logo Emblem with Gold Aura
+            // Nexus Logo Emblem with Dynamic Theme Aura
             Surface(
                 shape = CircleShape,
                 color = SurfaceCard,
-                border = BorderStroke(2.dp, NexusGold),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                 shadowElevation = 12.dp,
                 modifier = Modifier
                     .size(90.dp)
@@ -1657,7 +1613,7 @@ fun NexusPreloadSplashScreen(
                         text = "N",
                         style = MaterialTheme.typography.displaySmall.copy(
                             fontWeight = FontWeight.Black,
-                            color = NexusGoldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 44.sp
                         )
                     )
@@ -1678,9 +1634,9 @@ fun NexusPreloadSplashScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "الإصدار 1.8.6 • تهيئة الصور والمستودع",
+                    text = AppVersionConfig.getSplashVersionLabel(),
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = NexusOrangeLight,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -1696,7 +1652,7 @@ fun NexusPreloadSplashScreen(
                 modifier = Modifier.width(220.dp)
             ) {
                 LinearProgressIndicator(
-                    color = NexusGold,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = SurfaceVariantDark,
                     modifier = Modifier
                         .fillMaxWidth()

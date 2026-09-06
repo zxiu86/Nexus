@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -28,6 +29,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -163,6 +167,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextTertiary
 import com.example.ui.viewmodel.HomeUiState
+import com.example.util.AppVersionConfig
 
 /**
  * Modern Nexus Bottom Footer Navigation Bar:
@@ -181,66 +186,86 @@ fun NexusBottomFooterBar(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("nexus_bottom_footer_bar"),
-        color = SurfaceDark.copy(alpha = 0.98f),
-        border = BorderStroke(0.5.dp, SurfaceElevated),
-        shadowElevation = 16.dp
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .testTag("nexus_bottom_footer_bar")
     ) {
-        Row(
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            border = BorderStroke(
+                1.2.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        accentPrimary.copy(alpha = 0.45f),
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                        accentSecondary.copy(alpha = 0.45f)
+                    )
+                )
+            ),
+            shadowElevation = 14.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .clip(RoundedCornerShape(24.dp))
         ) {
-            FooterNavItem(
-                icon = Icons.Default.Explore,
-                label = "الرئيسية",
-                isSelected = selectedTab == 0,
-                badgeCount = null,
-                onClick = { onTabSelected(0) },
-                testTag = "footer_tab_home"
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FooterNavItem(
+                    icon = Icons.Default.Explore,
+                    label = "الرئيسية",
+                    isSelected = selectedTab == 0,
+                    badgeCount = null,
+                    onClick = { onTabSelected(0) },
+                    testTag = "footer_tab_home"
+                )
 
-            FooterNavItem(
-                icon = Icons.Default.Search,
-                label = "البحث",
-                isSelected = selectedTab == 1,
-                badgeCount = null,
-                onClick = { onTabSelected(1) },
-                testTag = "footer_tab_search"
-            )
+                FooterNavItem(
+                    icon = Icons.Default.Search,
+                    label = "البحث",
+                    isSelected = selectedTab == 1,
+                    badgeCount = null,
+                    onClick = { onTabSelected(1) },
+                    testTag = "footer_tab_search"
+                )
 
-            FooterNavItem(
-                icon = Icons.Default.Favorite,
-                label = "المفضلة",
-                isSelected = selectedTab == 2,
-                badgeCount = if (favoritesCount > 0) favoritesCount else null,
-                badgeColor = NexusOrange,
-                onClick = { onTabSelected(2) },
-                testTag = "footer_tab_favorites"
-            )
+                FooterNavItem(
+                    icon = Icons.Default.Favorite,
+                    label = "المفضلة",
+                    isSelected = selectedTab == 2,
+                    badgeCount = if (favoritesCount > 0) favoritesCount else null,
+                    badgeColor = accentPrimary,
+                    onClick = { onTabSelected(2) },
+                    testTag = "footer_tab_favorites"
+                )
 
-            FooterNavItem(
-                icon = Icons.Default.History,
-                label = "السجل",
-                isSelected = selectedTab == 3,
-                badgeCount = null,
-                onClick = { onTabSelected(3) },
-                testTag = "footer_tab_history"
-            )
+                FooterNavItem(
+                    icon = Icons.Default.History,
+                    label = "السجل",
+                    isSelected = selectedTab == 3,
+                    badgeCount = null,
+                    onClick = { onTabSelected(3) },
+                    testTag = "footer_tab_history"
+                )
 
-            FooterNavItem(
-                icon = Icons.Default.Settings,
-                label = "الإعدادات",
-                isSelected = selectedTab == 4,
-                hasDot = hasUpdate,
-                onClick = { onTabSelected(4) },
-                testTag = "footer_tab_settings"
-            )
+                FooterNavItem(
+                    icon = Icons.Default.Settings,
+                    label = "الإعدادات",
+                    isSelected = selectedTab == 4,
+                    hasDot = hasUpdate,
+                    onClick = { onTabSelected(4) },
+                    testTag = "footer_tab_settings"
+                )
+            }
         }
     }
 }
@@ -251,39 +276,57 @@ private fun FooterNavItem(
     label: String,
     isSelected: Boolean,
     badgeCount: Int? = null,
-    badgeColor: Color = NexusGold,
+    badgeColor: Color = MaterialTheme.colorScheme.primary,
     hasDot: Boolean = false,
     onClick: () -> Unit,
     testTag: String = ""
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val onAccentPrimary = MaterialTheme.colorScheme.onPrimary
+    val unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.05f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = 400f),
         label = "footer_item_scale"
     )
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) NexusGold.copy(alpha = 0.15f) else Color.Transparent,
+        shape = RoundedCornerShape(18.dp),
+        color = if (isSelected) accentPrimary.copy(alpha = 0.15f) else Color.Transparent,
         border = BorderStroke(
             1.dp,
-            if (isSelected) NexusGold.copy(alpha = 0.4f) else Color.Transparent
+            if (isSelected) accentPrimary.copy(alpha = 0.45f) else Color.Transparent
         ),
         modifier = Modifier
             .scale(scale)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .testTag(testTag)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
+            // Glowing mini indicator line on top of active item
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .width(16.dp)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(accentPrimary)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(3.dp))
+            }
+
             Box(contentAlignment = Alignment.TopEnd) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = if (isSelected) NexusGoldLight else TextTertiary,
+                    tint = if (isSelected) accentPrimary else unselectedColor,
                     modifier = Modifier.size(22.dp)
                 )
 
@@ -301,7 +344,7 @@ private fun FooterNavItem(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = BackgroundDark
+                                    color = onAccentPrimary
                                 )
                             )
                         }
@@ -311,7 +354,7 @@ private fun FooterNavItem(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(NexusOrange)
+                            .background(accentPrimary)
                             .align(Alignment.TopEnd)
                     )
                 }
@@ -322,7 +365,7 @@ private fun FooterNavItem(
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) NexusGoldLight else TextTertiary
+                    color = if (isSelected) accentPrimary else unselectedColor
                 )
             )
         }
@@ -348,26 +391,43 @@ fun FavoritesTabContent(
 ) {
     val currentList = if (selectedSubTab == 0) favoriteList else readLaterList
     val isFavoritesTab = selectedSubTab == 0
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
 
-    Column(
+    var showSidePopup by remember { mutableStateOf(false) }
+    var popupMessage by remember { mutableStateOf("") }
+    var popupItemTitle by remember { mutableStateOf("") }
+    var popupIsFav by remember { mutableStateOf(true) }
+
+    LaunchedEffect(showSidePopup) {
+        if (showSidePopup) {
+            delay(2200)
+            showSidePopup = false
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .testTag("favorites_tab_container")
     ) {
-        // Sub-Tab Switcher: المفضلة / المشاهدة لاحقاً
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Sub-Tab Switcher: المفضلة / المشاهدة لاحقاً
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp)
-                .background(SurfaceCard, RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(14.dp))
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Favorites Sub-tab
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = if (selectedSubTab == 0) NexusOrangeDark else Color.Transparent,
-                border = if (selectedSubTab == 0) BorderStroke(1.dp, NexusOrange.copy(alpha = 0.5f)) else null,
+                color = if (selectedSubTab == 0) accentPrimary.copy(alpha = 0.2f) else Color.Transparent,
+                border = if (selectedSubTab == 0) BorderStroke(1.dp, accentPrimary.copy(alpha = 0.5f)) else null,
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
@@ -382,7 +442,7 @@ fun FavoritesTabContent(
                     Icon(
                         imageVector = Icons.Default.Favorite,
                         contentDescription = null,
-                        tint = if (selectedSubTab == 0) NexusOrangeLight else TextSecondary,
+                        tint = if (selectedSubTab == 0) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -390,7 +450,7 @@ fun FavoritesTabContent(
                         text = "المفضلة (${favoriteList.size})",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (selectedSubTab == 0) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selectedSubTab == 0) TextPrimary else TextSecondary,
+                            color = if (selectedSubTab == 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     )
@@ -400,8 +460,8 @@ fun FavoritesTabContent(
             // Read Later Sub-tab
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = if (selectedSubTab == 1) NexusGoldDark else Color.Transparent,
-                border = if (selectedSubTab == 1) BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)) else null,
+                color = if (selectedSubTab == 1) accentSecondary.copy(alpha = 0.2f) else Color.Transparent,
+                border = if (selectedSubTab == 1) BorderStroke(1.dp, accentSecondary.copy(alpha = 0.5f)) else null,
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
@@ -416,7 +476,7 @@ fun FavoritesTabContent(
                     Icon(
                         imageVector = Icons.Default.Bookmark,
                         contentDescription = null,
-                        tint = if (selectedSubTab == 1) NexusGoldLight else TextSecondary,
+                        tint = if (selectedSubTab == 1) accentSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -424,7 +484,7 @@ fun FavoritesTabContent(
                         text = "المشاهدة لاحقاً (${readLaterList.size})",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (selectedSubTab == 1) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selectedSubTab == 1) TextPrimary else TextSecondary,
+                            color = if (selectedSubTab == 1) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     )
@@ -441,8 +501,8 @@ fun FavoritesTabContent(
             ) {
                 Card(
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, SurfaceElevated),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -454,10 +514,10 @@ fun FavoritesTabContent(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = SurfaceVariantDark,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             border = BorderStroke(
                                 1.dp,
-                                if (isFavoritesTab) NexusOrange.copy(alpha = 0.4f) else NexusGold.copy(alpha = 0.4f)
+                                if (isFavoritesTab) Color(0xFFE53935).copy(alpha = 0.4f) else accentPrimary.copy(alpha = 0.4f)
                             ),
                             modifier = Modifier.size(72.dp)
                         ) {
@@ -465,7 +525,7 @@ fun FavoritesTabContent(
                                 Icon(
                                     imageVector = if (isFavoritesTab) Icons.Default.FavoriteBorder else Icons.Default.BookmarkBorder,
                                     contentDescription = null,
-                                    tint = if (isFavoritesTab) NexusOrange else NexusGold,
+                                    tint = if (isFavoritesTab) Color(0xFFE53935) else accentPrimary,
                                     modifier = Modifier.size(36.dp)
                                 )
                             }
@@ -475,7 +535,7 @@ fun FavoritesTabContent(
                             text = if (isFavoritesTab) "قائمة المفضلة فارغة" else "قائمة المشاهدة لاحقاً فارغة",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 18.sp
                             )
                         )
@@ -486,7 +546,7 @@ fun FavoritesTabContent(
                             else
                                 "لم تقم بحفظ أي عمل للمشاهدة لاحقاً. انقر على أيقونة الإشارة المرجعية في تفاصيل العمل لحفظه هنا.",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                                 lineHeight = 20.sp
                             )
@@ -496,8 +556,8 @@ fun FavoritesTabContent(
                             onClick = onExploreHome,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = NexusGold,
-                                contentColor = BackgroundDark
+                                containerColor = accentPrimary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             modifier = Modifier.height(44.dp)
                         ) {
@@ -535,20 +595,20 @@ fun FavoritesTabContent(
                                 text = if (isFavoritesTab) "الأعمال المفضلة (${currentList.size})" else "قائمة المشاهدة لاحقاً (${currentList.size})",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Black,
-                                    color = TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 18.sp
                                 )
                             )
                             Text(
                                 text = if (isFavoritesTab) "تنبيهات وتحديثات الفصول فور نزولها" else "أعمال تم حفظها لقراءتها لاحقاً",
-                                style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary)
+                                style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                             )
                         }
 
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isFavoritesTab) NexusOrangeDark else NexusGoldDark,
-                            border = BorderStroke(1.dp, if (isFavoritesTab) NexusOrange.copy(alpha = 0.5f) else NexusGold.copy(alpha = 0.5f))
+                            color = if (isFavoritesTab) Color(0xFFE53935).copy(alpha = 0.2f) else accentPrimary.copy(alpha = 0.2f),
+                            border = BorderStroke(1.dp, if (isFavoritesTab) Color(0xFFE53935).copy(alpha = 0.5f) else accentPrimary.copy(alpha = 0.5f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -558,14 +618,14 @@ fun FavoritesTabContent(
                                 Icon(
                                     imageVector = if (isFavoritesTab) Icons.Default.Favorite else Icons.Default.Bookmark,
                                     contentDescription = null,
-                                    tint = if (isFavoritesTab) NexusOrangeLight else NexusGoldLight,
+                                    tint = if (isFavoritesTab) Color(0xFFE53935) else accentPrimary,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
                                     text = "${currentList.size} عمل",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isFavoritesTab) NexusOrangeLight else NexusGoldLight
+                                        color = if (isFavoritesTab) Color(0xFFE53935) else accentPrimary
                                     )
                                 )
                             }
@@ -576,8 +636,8 @@ fun FavoritesTabContent(
                 items(currentList, key = { it.id }) { manga ->
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                        border = BorderStroke(1.dp, SurfaceElevated),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
@@ -596,7 +656,7 @@ fun FavoritesTabContent(
                                 modifier = Modifier
                                     .size(width = 68.dp, height = 92.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .border(1.dp, NexusGold.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                                    .border(1.dp, accentPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                             ) {
                                 NexusMangaImage(
                                     imageUrl = manga.coverUrl,
@@ -635,7 +695,7 @@ fun FavoritesTabContent(
                                     Text(
                                         text = manga.genres.take(2).joinToString(" ، "),
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGoldLight,
+                                            color = accentPrimary,
                                             fontSize = 11.sp
                                         )
                                     )
@@ -645,7 +705,7 @@ fun FavoritesTabContent(
                                     text = manga.titleAr,
                                     style = MaterialTheme.typography.titleSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = TextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 15.sp
                                     ),
                                     maxLines = 1,
@@ -655,7 +715,7 @@ fun FavoritesTabContent(
                                 Text(
                                     text = manga.genres.take(3).joinToString(" • "),
                                     style = MaterialTheme.typography.bodySmall.copy(
-                                        color = TextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp
                                     ),
                                     maxLines = 1,
@@ -669,14 +729,14 @@ fun FavoritesTabContent(
                                     Text(
                                         text = "${manga.chapters.size} فصول متوفرة",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGoldLight,
+                                            color = accentPrimary,
                                             fontSize = 11.sp
                                         )
                                     )
 
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
-                                        color = SurfaceVariantDark,
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
                                             .clickable { onChapterClick(manga.id, 1) }
@@ -689,13 +749,13 @@ fun FavoritesTabContent(
                                             Icon(
                                                 imageVector = Icons.Default.PlayArrow,
                                                 contentDescription = null,
-                                                tint = NexusGold,
+                                                tint = accentPrimary,
                                                 modifier = Modifier.size(12.dp)
                                             )
                                             Text(
                                                 text = "اقرأ الفصل 1",
                                                 style = MaterialTheme.typography.labelSmall.copy(
-                                                    color = NexusGold,
+                                                    color = accentPrimary,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 10.sp
                                                 )
@@ -708,21 +768,27 @@ fun FavoritesTabContent(
                             // Toggle / Remove Button
                             IconButton(
                                 onClick = {
+                                    popupItemTitle = manga.titleAr
                                     if (isFavoritesTab) {
+                                        popupIsFav = true
+                                        popupMessage = "تمت الإزالة من المفضلة 💔"
                                         onToggleFavorite(manga.id)
                                     } else {
+                                        popupIsFav = false
+                                        popupMessage = "تمت الإزالة من المشاهدة لاحقاً"
                                         onToggleReadLater(manga.id)
                                     }
+                                    showSidePopup = true
                                 },
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(SurfaceVariantDark)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
                                 Icon(
                                     imageVector = if (isFavoritesTab) Icons.Default.Favorite else Icons.Default.Bookmark,
                                     contentDescription = "إزالة",
-                                    tint = if (isFavoritesTab) NexusOrange else NexusGold,
+                                    tint = if (isFavoritesTab) Color(0xFFE53935) else accentPrimary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -732,6 +798,85 @@ fun FavoritesTabContent(
             }
         }
     }
+
+    // Side Popup Notification Banner
+    AnimatedVisibility(
+        visible = showSidePopup,
+        enter = slideInHorizontally(
+            initialOffsetX = { it },
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        ) + fadeIn(),
+        exit = slideOutHorizontally(
+            targetOffsetX = { it },
+            animationSpec = tween(280)
+        ) + fadeOut(),
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 16.dp, end = 12.dp)
+            .zIndex(99f)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            border = BorderStroke(
+                1.5.dp,
+                if (popupIsFav) Color(0xFFE53935) else accentPrimary
+            ),
+            shadowElevation = 10.dp,
+            modifier = Modifier.clip(RoundedCornerShape(16.dp))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Small Logo / Badge
+                Surface(
+                    shape = CircleShape,
+                    color = if (popupIsFav) Color(0xFFE53935).copy(alpha = 0.18f) else accentPrimary.copy(alpha = 0.18f),
+                    border = BorderStroke(
+                        1.dp,
+                        if (popupIsFav) Color(0xFFE53935) else accentPrimary
+                    ),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (popupIsFav) Icons.Default.FavoriteBorder else Icons.Default.BookmarkBorder,
+                            contentDescription = null,
+                            tint = if (popupIsFav) Color(0xFFE53935) else accentPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = popupMessage,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 12.sp
+                        )
+                    )
+                    Text(
+                        text = popupItemTitle,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 10.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 150.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 }
 
 /**
@@ -747,6 +892,9 @@ fun HistoryTabContent(
     onClearAllHistory: () -> Unit,
     onExploreHome: () -> Unit
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
     if (historyList.isEmpty()) {
         Box(
             modifier = Modifier
@@ -756,8 +904,8 @@ fun HistoryTabContent(
         ) {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, SurfaceElevated),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -769,15 +917,15 @@ fun HistoryTabContent(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = SurfaceVariantDark,
-                        border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f)),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                         modifier = Modifier.size(72.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.History,
                                 contentDescription = null,
-                                tint = NexusGold,
+                                tint = accentPrimary,
                                 modifier = Modifier.size(36.dp)
                             )
                         }
@@ -787,7 +935,7 @@ fun HistoryTabContent(
                         text = "سجل القراءة فارغ",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp
                         )
                     )
@@ -795,7 +943,7 @@ fun HistoryTabContent(
                     Text(
                         text = "عند قراءتك لأي فصل في التطبيق، سيتم حفظ الفصول والصفحة التي توقفت عندها تلقائياً هنا لتتمكن من المتابعة بنقرة واحدة.",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             lineHeight = 20.sp
                         )
@@ -805,8 +953,8 @@ fun HistoryTabContent(
                         onClick = onExploreHome,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark
+                            containerColor = accentPrimary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.height(44.dp)
                     ) {
@@ -844,21 +992,21 @@ fun HistoryTabContent(
                             text = "سجل القراءة الأخير",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 18.sp
                             )
                         )
                         Text(
                             text = "يتذكر الفصول والصفحة التي توقفت عندها",
-                            style = MaterialTheme.typography.labelSmall.copy(color = TextSecondary)
+                            style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                     }
 
                     OutlinedButton(
                         onClick = onClearAllHistory,
                         shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, SurfaceElevated),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextTertiary),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         modifier = Modifier.height(34.dp)
                     ) {
@@ -880,8 +1028,8 @@ fun HistoryTabContent(
             items(historyList, key = { it.mangaId }) { item ->
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, SurfaceElevated),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
@@ -900,7 +1048,7 @@ fun HistoryTabContent(
                             modifier = Modifier
                                 .size(width = 64.dp, height = 86.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .border(1.dp, NexusGold.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+                                .border(1.dp, accentPrimary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
                         ) {
                             NexusMangaImage(
                                 imageUrl = item.mangaCover,
@@ -920,7 +1068,7 @@ fun HistoryTabContent(
                                 text = item.mangaTitle,
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 15.sp
                                 ),
                                 maxLines = 1,
@@ -933,13 +1081,14 @@ fun HistoryTabContent(
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = NexusGoldDark
+                                    color = accentPrimary.copy(alpha = 0.15f),
+                                    border = BorderStroke(0.5.dp, accentPrimary.copy(alpha = 0.4f))
                                 ) {
                                     Text(
                                         text = "الفصل ${item.chapterNumber}",
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGold,
+                                            color = accentPrimary,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp
                                         )
@@ -950,7 +1099,7 @@ fun HistoryTabContent(
                                     Text(
                                         text = "صفحة ${item.pageNumber} من ${item.totalPages}",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = TextSecondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 11.sp
                                         )
                                     )
@@ -964,13 +1113,13 @@ fun HistoryTabContent(
                                 Icon(
                                     imageVector = Icons.Default.Schedule,
                                     contentDescription = null,
-                                    tint = TextTertiary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Text(
                                     text = item.timestampFormatted,
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = TextTertiary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                         fontSize = 10.sp
                                     )
                                 )
@@ -986,8 +1135,8 @@ fun HistoryTabContent(
                                 onClick = { onContinueReading(item.mangaId, item.chapterNumber) },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = NexusGold,
-                                    contentColor = BackgroundDark
+                                    containerColor = accentPrimary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                 ),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                 modifier = Modifier.height(34.dp)
@@ -1012,7 +1161,7 @@ fun HistoryTabContent(
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "حذف من السجل",
-                                    tint = TextTertiary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -1037,6 +1186,8 @@ fun DownloadsTabContent(
     onDeleteDownload: (String, Int) -> Unit,
     onExploreHome: () -> Unit
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     if (downloadedList.isEmpty()) {
         Box(
             modifier = Modifier
@@ -1046,8 +1197,8 @@ fun DownloadsTabContent(
         ) {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, SurfaceElevated),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -1059,15 +1210,15 @@ fun DownloadsTabContent(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = SurfaceVariantDark,
-                        border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f)),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                         modifier = Modifier.size(72.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.CloudDownload,
                                 contentDescription = null,
-                                tint = NexusGold,
+                                tint = accentPrimary,
                                 modifier = Modifier.size(36.dp)
                             )
                         }
@@ -1077,7 +1228,7 @@ fun DownloadsTabContent(
                         text = "لا توجد فصول محملة بعد",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp
                         )
                     )
@@ -1085,7 +1236,7 @@ fun DownloadsTabContent(
                     Text(
                         text = "يمكنك تحميل الفصول مسبقاً لقراءتها في أي وقت بدون إنترنت مع حفظ آمن وتصفح فائق السرعة.",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             lineHeight = 20.sp
                         )
@@ -1094,8 +1245,8 @@ fun DownloadsTabContent(
                     // Storage Badge
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = BackgroundDark,
-                        border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.3f))
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.3f))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -1105,13 +1256,13 @@ fun DownloadsTabContent(
                             Icon(
                                 imageVector = Icons.Default.CloudDownload,
                                 contentDescription = null,
-                                tint = NexusGoldLight,
+                                tint = accentPrimary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "حفظ محلي آمن 📥",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = NexusGoldLight,
+                                    color = accentPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp
                                 )
@@ -1123,8 +1274,8 @@ fun DownloadsTabContent(
                         onClick = onExploreHome,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark
+                            containerColor = accentPrimary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.height(44.dp)
                     ) {
@@ -1155,8 +1306,8 @@ fun DownloadsTabContent(
             item {
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -1172,14 +1323,15 @@ fun DownloadsTabContent(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = NexusGoldDark,
+                                color = accentPrimary.copy(alpha = 0.15f),
+                                border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                                 modifier = Modifier.size(44.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.DownloadDone,
                                         contentDescription = null,
-                                        tint = NexusGold,
+                                        tint = accentPrimary,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -1190,14 +1342,14 @@ fun DownloadsTabContent(
                                     text = "الفصول المحملة (${downloadedList.size})",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Black,
-                                        color = TextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 16.sp
                                     )
                                 )
                                 Text(
                                     text = "المساحة المشغولة: $totalStorageFormatted",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = NexusGoldLight,
+                                        color = accentPrimary,
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
@@ -1206,8 +1358,8 @@ fun DownloadsTabContent(
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = BackgroundDark,
-                            border = BorderStroke(0.5.dp, SurfaceElevated)
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1217,13 +1369,13 @@ fun DownloadsTabContent(
                                 Icon(
                                     imageVector = Icons.Default.Lock,
                                     contentDescription = null,
-                                    tint = NexusGold,
+                                    tint = accentPrimary,
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Text(
                                     text = "محمي",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = NexusGold,
+                                        color = accentPrimary,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1237,8 +1389,8 @@ fun DownloadsTabContent(
             items(downloadedList, key = { "${it.mangaId}-${it.chapterNumber}" }) { item ->
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, SurfaceElevated),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
@@ -1257,7 +1409,7 @@ fun DownloadsTabContent(
                             modifier = Modifier
                                 .size(width = 64.dp, height = 86.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .border(1.dp, NexusGold.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+                                .border(1.dp, accentPrimary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
                         ) {
                             NexusMangaImage(
                                 imageUrl = item.mangaCover,
@@ -1277,7 +1429,7 @@ fun DownloadsTabContent(
                                 text = item.mangaTitle,
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 15.sp
                                 ),
                                 maxLines = 1,
@@ -1290,13 +1442,14 @@ fun DownloadsTabContent(
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = NexusGoldDark
+                                    color = accentPrimary.copy(alpha = 0.15f),
+                                    border = BorderStroke(0.5.dp, accentPrimary.copy(alpha = 0.4f))
                                 ) {
                                     Text(
                                         text = "الفصل ${item.chapterNumber}",
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGold,
+                                            color = accentPrimary,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp
                                         )
@@ -1306,7 +1459,7 @@ fun DownloadsTabContent(
                                 Text(
                                     text = "${item.totalPages} صفحة • ${item.formattedSize}",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = TextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp
                                     )
                                 )
@@ -1342,8 +1495,8 @@ fun DownloadsTabContent(
                                 onClick = { onReadChapter(item.mangaId, item.chapterNumber) },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = NexusGold,
-                                    contentColor = BackgroundDark
+                                    containerColor = accentPrimary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                 ),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                 modifier = Modifier.height(34.dp)
@@ -1368,7 +1521,7 @@ fun DownloadsTabContent(
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "حذف التحميل",
-                                    tint = TextTertiary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -2420,7 +2573,7 @@ fun SettingsTabContent(
                                 color = accentPrimary.copy(alpha = 0.18f)
                             ) {
                                 Text(
-                                    text = "v1.9.3",
+                                    text = AppVersionConfig.getSettingsVersionLabel(),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = accentPrimary,
                                         fontWeight = FontWeight.Bold,
@@ -3245,7 +3398,7 @@ fun SettingsTabContent(
                     ) {
                         Column {
                             Text(
-                                text = "الإصدار الحالي: v1.9.3",
+                                text = AppVersionConfig.getCurrentVersionBadge(),
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -3265,7 +3418,7 @@ fun SettingsTabContent(
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = accentPrimary,
-                                contentColor = Color.Black
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.height(34.dp)
@@ -3294,7 +3447,7 @@ fun SettingsTabContent(
                         accent = accentPrimary
                     )
 
-                    // مميزات الإصدار 1.9.3 Card
+                    // مميزات الإصدار الجديد Card
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -3306,22 +3459,15 @@ fun SettingsTabContent(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "جديد الإصدار v1.9.3:",
+                                text = AppVersionConfig.getChangelogHeader(),
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = accentPrimary
                                 )
                             )
-                            val changelog = listOf(
-                                "• إضافة محرك التكبير والتصغير بالسحب بإصبعين (Pinch-to-Zoom) بسلاسة فائقة.",
-                                "• إعادة تصميم شاملة لصفحة الإعدادات وفق التصميم العالمي الحديث.",
-                                "• إضافة ثيمات ألوان متعددة (أسود كامل AMOLED / الوضع الافتراضي / أبيض).",
-                                "• خيارات ألوان تجميلية (ذهبي نكسوس / أزرق ملكي / أحمر قرمزي).",
-                                "• سياسة منع حفظ الفصول في الكاش الثابت وتفريغ الذاكرة المؤقتة فور الخروج."
-                            )
-                            changelog.forEach { logItem ->
+                            AppVersionConfig.CURRENT_CHANGELOG_FEATURES.forEach { logItem ->
                                 Text(
-                                    text = logItem,
+                                    text = "• $logItem",
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp,
@@ -3381,7 +3527,7 @@ fun SettingsTabContent(
                         color = accentPrimary.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "الإصدار الرسمي v1.9.3 (Build 32) • فريق Nexus",
+                            text = AppVersionConfig.getSettingsFullDetails(),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = accentPrimary,
                                 fontWeight = FontWeight.Bold,

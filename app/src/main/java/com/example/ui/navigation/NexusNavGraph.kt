@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,6 +19,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.ui.components.FavoriteSidePopup
 import com.example.ui.screens.details.DetailsScreen
 import com.example.ui.screens.home.HomeScreen
 import com.example.ui.screens.reader.ReaderScreen
@@ -38,31 +40,34 @@ fun NexusNavGraph(
     viewModel: MangaViewModel,
     modifier: Modifier = Modifier
 ) {
+    val favoriteToast by viewModel.favoriteToast.collectAsState()
+
     // Provide Right-to-Left (RTL) layout direction natively for Arabic interface
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        NavHost(
-            navController = navController,
-            startDestination = NexusDestinations.HOME,
-            modifier = modifier.fillMaxSize(),
-            enterTransition = {
-                fadeIn(animationSpec = tween(220)) + slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Start,
-                    animationSpec = tween(220)
-                )
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(180))
-            },
-            popEnterTransition = {
-                fadeIn(animationSpec = tween(220))
-            },
-            popExitTransition = {
-                fadeOut(animationSpec = tween(180)) + slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.End,
-                    animationSpec = tween(220)
-                )
-            }
-        ) {
+        Box(modifier = modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = NexusDestinations.HOME,
+                modifier = Modifier.fillMaxSize(),
+                enterTransition = {
+                    fadeIn(animationSpec = tween(220)) + slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(220)
+                    )
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(180))
+                },
+                popEnterTransition = {
+                    fadeIn(animationSpec = tween(220))
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(180)) + slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(220)
+                    )
+                }
+            ) {
             // Screen 1: Home Screen (الصفحة الرئيسية)
             composable(NexusDestinations.HOME) {
                 val homeState by viewModel.homeUiState.collectAsState()
@@ -279,5 +284,12 @@ fun NexusNavGraph(
                 )
             }
         }
+
+        // Side Popup Toast when adding/removing Manga to/from Favorites
+        FavoriteSidePopup(
+            toastData = favoriteToast,
+            onDismiss = { viewModel.dismissFavoriteToast() }
+        )
     }
+}
 }

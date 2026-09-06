@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,10 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RocketLaunch
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,28 +35,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.platform.LocalContext
-import com.example.util.InAppUpdateManager
 import androidx.compose.ui.window.Dialog
 import com.example.data.model.AppUpdateState
 import com.example.ui.theme.BackgroundDark
-import com.example.ui.theme.NexusGold
-import com.example.ui.theme.NexusGoldDark
-import com.example.ui.theme.NexusGoldLight
-import com.example.ui.theme.NexusOrange
-import com.example.ui.theme.NexusOrangeLight
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceElevated
@@ -65,11 +57,11 @@ import com.example.ui.theme.SurfaceVariantDark
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextTertiary
+import com.example.util.AppVersionConfig
+import com.example.util.InAppUpdateManager
 
 /**
- * Redesigned, Modern Material 3 App Update Dialog.
- * Highlights release features for v1.8.3 with high visual polish,
- * feature pills, and complete absence of any external repository links.
+ * Modern Material 3 App Update Dialog with Dynamic Theme Colors and AppVersionConfig integration.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -78,14 +70,18 @@ fun AppUpdateDialog(
     onUpdateClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+    val onAccentPrimary = MaterialTheme.colorScheme.onPrimary
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             border = BorderStroke(
                 1.5.dp,
                 Brush.linearGradient(
-                    listOf(NexusGold, NexusOrange.copy(alpha = 0.8f), NexusGoldDark)
+                    listOf(accentPrimary, accentSecondary.copy(alpha = 0.8f), accentPrimary.copy(alpha = 0.5f))
                 )
             ),
             modifier = Modifier
@@ -105,7 +101,7 @@ fun AppUpdateDialog(
                         .size(68.dp)
                         .background(
                             brush = Brush.radialGradient(
-                                colors = listOf(NexusGold.copy(alpha = 0.35f), Color.Transparent)
+                                colors = listOf(accentPrimary.copy(alpha = 0.35f), Color.Transparent)
                             ),
                             shape = CircleShape
                         ),
@@ -115,13 +111,13 @@ fun AppUpdateDialog(
                         modifier = Modifier.size(54.dp),
                         shape = CircleShape,
                         color = SurfaceVariantDark,
-                        border = BorderStroke(1.2.dp, NexusGoldLight)
+                        border = BorderStroke(1.2.dp, accentPrimary)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (updateInfo.updateAvailable) Icons.Default.RocketLaunch else Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = NexusGold,
+                                tint = accentPrimary,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -135,7 +131,7 @@ fun AppUpdateDialog(
                     text = if (updateInfo.updateAvailable) "تحديث جديد متوفر! 🚀" else "نكسوس مانجا • التحديثات ✨",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Black,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 20.sp
                     ),
                     textAlign = TextAlign.Center
@@ -160,11 +156,11 @@ fun AppUpdateDialog(
                                 text = "الإصدار المثبت: v${updateInfo.currentVersion}",
                                 style = MaterialTheme.typography.labelSmall.copy(color = TextTertiary)
                             )
-                            Text(text = "◄", color = NexusOrange, fontSize = 11.sp)
+                            Text(text = "◄", color = accentPrimary, fontSize = 11.sp)
                             Text(
                                 text = "الإصدار الجديد: v${updateInfo.latestVersion}",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = NexusGoldLight,
+                                    color = accentPrimary,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
@@ -178,13 +174,13 @@ fun AppUpdateDialog(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = NexusGold,
+                                tint = accentPrimary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = "أحدث إصدار مثبت: v${updateInfo.currentVersion}",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = NexusGoldLight,
+                                    color = accentPrimary,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
@@ -202,23 +198,23 @@ fun AppUpdateDialog(
                     horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    QuickBadge(text = "🚀 تثبيت سلس ومباشر")
+                    QuickBadge(text = "🚀 تثبيت سلس ومباشر", accent = accentPrimary)
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "⚡ سرعة فائقة بدون لاج")
+                    QuickBadge(text = "⚡ سرعة فائقة بدون لاج", accent = accentPrimary)
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "📖 تصفح وقراءة انسيابية")
+                    QuickBadge(text = "📖 تصفح وقراءة انسيابية", accent = accentPrimary)
                     Spacer(modifier = Modifier.width(4.dp))
-                    QuickBadge(text = "📶 قراءة بدون إنترنت")
+                    QuickBadge(text = "📶 قراءة بدون إنترنت", accent = accentPrimary)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Release notes title
                 Text(
-                    text = if (updateInfo.updateAvailable) "ما الجديد في التحديث:" else "مميزات الإصدار (v1.8.7):",
+                    text = if (updateInfo.updateAvailable) "ما الجديد في التحديث:" else "مميزات ${AppVersionConfig.getCurrentVersionBadge()}:",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = NexusGoldLight,
+                        color = accentPrimary,
                         fontSize = 13.sp
                     ),
                     modifier = Modifier.fillMaxWidth(),
@@ -246,11 +242,7 @@ fun AppUpdateDialog(
                         val notes = if (updateInfo.releaseNotes.isNotBlank()) {
                             updateInfo.releaseNotes
                         } else {
-                            "• 🚀 حل مشكلة فك الحزمة: إتاحة تنزيل التحديث وتثبيته مباشرة وبسلاسة من داخل التطبيق بنقرة واحدة.\n" +
-                                    "• ⚡ سرعة فائقة في فتح الفصول: تحسين شامل لسرعة تحميل وتصفح الصفحات بأعلى دقة.\n" +
-                                    "• 🎨 واجهة مستخدم نقية: إزالة العناصر الزائدة والتركيز على قراءة أعمالك المفضلة.\n" +
-                                    "• 📶 قراءة أوفلاين: تحميل الفصول مسبقاً وتصفحها بأي وقت بدون الحاجة للاتصال بالإنترنت.\n" +
-                                    "• 📖 حفظ ومتابعة تلقائية: تتبع دقيق للفصول المقروءة واستئناف القراءة فوراً من حيث توقفت."
+                            AppVersionConfig.CURRENT_CHANGELOG_FEATURES.joinToString("\n") { "• $it" }
                         }
                         Text(
                             text = notes,
@@ -291,8 +283,8 @@ fun AppUpdateDialog(
                                 .testTag("confirm_app_update_button"),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = NexusGold,
-                                contentColor = BackgroundDark
+                                containerColor = accentPrimary,
+                                contentColor = onAccentPrimary
                             )
                         ) {
                             Row(
@@ -321,7 +313,7 @@ fun AppUpdateDialog(
                     ) {
                         Text(
                             text = "أو التحميل المباشر عبر المتصفح ↗",
-                            color = NexusGoldLight,
+                            color = accentPrimary,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -335,8 +327,8 @@ fun AppUpdateDialog(
                             .testTag("close_update_dialog_button"),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark
+                            containerColor = accentPrimary,
+                            contentColor = onAccentPrimary
                         )
                     ) {
                         Text("حسناً، فهمت", fontWeight = FontWeight.Bold, fontSize = 13.sp)
@@ -348,16 +340,16 @@ fun AppUpdateDialog(
 }
 
 @Composable
-private fun QuickBadge(text: String) {
+private fun QuickBadge(text: String, accent: Color = MaterialTheme.colorScheme.primary) {
     Surface(
         shape = RoundedCornerShape(6.dp),
         color = SurfaceVariantDark,
-        border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.35f))
+        border = BorderStroke(0.5.dp, accent.copy(alpha = 0.35f))
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(
-                color = NexusGoldLight,
+                color = accent,
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.Medium
             ),

@@ -1,5 +1,6 @@
 package com.example.ui.screens.details
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -9,6 +10,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,6 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -48,6 +54,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.R
@@ -150,6 +158,29 @@ fun DetailsScreen(
 ) {
     val manga = uiState.manga
     val context = LocalContext.current
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
+    // Side Popup / Toast for Favorite Toggle Notification
+    var showFavSidePopup by remember { mutableStateOf(false) }
+    var favPopupIsAdded by remember { mutableStateOf(false) }
+    var favPopupMessage by remember { mutableStateOf("") }
+    var hasFavInitialized by remember { mutableStateOf(false) }
+    var lastFavState by remember { mutableStateOf(uiState.isFavorite) }
+
+    LaunchedEffect(uiState.isFavorite) {
+        if (!hasFavInitialized) {
+            hasFavInitialized = true
+            lastFavState = uiState.isFavorite
+        } else if (lastFavState != uiState.isFavorite) {
+            lastFavState = uiState.isFavorite
+            favPopupIsAdded = uiState.isFavorite
+            favPopupMessage = if (uiState.isFavorite) "تمت الإضافة إلى المفضلة ❤️" else "تمت الإزالة من المفضلة 💔"
+            showFavSidePopup = true
+            delay(2200)
+            showFavSidePopup = false
+        }
+    }
 
     // Show Interstitial ad once every time DetailsScreen is opened
     LaunchedEffect(Unit) {
@@ -160,7 +191,7 @@ fun DetailsScreen(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(BackgroundDark),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -169,19 +200,19 @@ fun DetailsScreen(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = NexusGoldDark,
+                    color = accentPrimary.copy(alpha = 0.2f),
                     modifier = Modifier.size(54.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.MenuBook,
                             contentDescription = null,
-                            tint = NexusGold,
+                            tint = accentPrimary,
                             modifier = Modifier.size(28.dp)
                         )
                     }
                 }
-                Text("جاري تجهيز تفاصيل العمل...", color = TextSecondary)
+                Text("جاري تجهيز تفاصيل العمل...", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         return
@@ -190,7 +221,7 @@ fun DetailsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Atmospheric Top Background Glow
         Box(
@@ -200,9 +231,9 @@ fun DetailsScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            NexusGoldDark.copy(alpha = 0.45f),
-                            NexusOrangeDark.copy(alpha = 0.20f),
-                            BackgroundDark
+                            accentPrimary.copy(alpha = 0.35f),
+                            accentSecondary.copy(alpha = 0.15f),
+                            Color.Transparent
                         )
                     )
                 )
@@ -305,6 +336,84 @@ fun DetailsScreen(
                 )
             }
         }
+
+        // Side Favorite Popup Banner (بوب شعار صغير يظهر من الجانب عند الإضافة أو الإزالة من المفضلة)
+        AnimatedVisibility(
+            visible = showFavSidePopup,
+            enter = slideInHorizontally(
+                initialOffsetX = { it },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ) + fadeIn(),
+            exit = slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(280)
+            ) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 68.dp, end = 12.dp)
+                .zIndex(99f)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                border = BorderStroke(
+                    1.5.dp,
+                    if (favPopupIsAdded) Color(0xFFE53935) else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                ),
+                shadowElevation = 10.dp,
+                modifier = Modifier.clip(RoundedCornerShape(16.dp))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Small App/Heart Logo Badge
+                    Surface(
+                        shape = CircleShape,
+                        color = if (favPopupIsAdded) Color(0xFFE53935).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(
+                            1.dp,
+                            if (favPopupIsAdded) Color(0xFFE53935) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        ),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (favPopupIsAdded) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (favPopupIsAdded) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = favPopupMessage,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 12.sp
+                            )
+                        )
+                        Text(
+                            text = manga.titleAr,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 10.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 150.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -316,6 +425,8 @@ fun DetailsTopAppBar(
     onToggleFavorite: () -> Unit,
     onToggleReadLater: () -> Unit = {}
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,8 +437,8 @@ fun DetailsTopAppBar(
         // Return to Home Button (زر العودة للصفحة الرئيسية)
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = SurfaceCard.copy(alpha = 0.95f),
-            border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.35f)),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
             modifier = Modifier
                 .clip(RoundedCornerShape(14.dp))
                 .clickable { onNavigateHome() }
@@ -341,14 +452,14 @@ fun DetailsTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Home,
                     contentDescription = "العودة للرئيسية",
-                    tint = NexusGold,
+                    tint = accentPrimary,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = "الرئيسية",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = NexusGoldLight
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
@@ -357,14 +468,14 @@ fun DetailsTopAppBar(
         // Screen Title Pill
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = SurfaceVariantDark.copy(alpha = 0.7f),
-            border = BorderStroke(0.5.dp, SurfaceElevated)
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
         ) {
             Text(
                 text = "تفاصيل العمل",
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 ),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -382,11 +493,11 @@ fun DetailsTopAppBar(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(if (isReadLater) NexusGoldDark else SurfaceCard)
+                    .background(if (isReadLater) accentPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface)
                     .border(
                         BorderStroke(
                             1.dp,
-                            if (isReadLater) NexusGold else SurfaceElevated
+                            if (isReadLater) accentPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         ),
                         CircleShape
                     )
@@ -395,7 +506,7 @@ fun DetailsTopAppBar(
                 Icon(
                     imageVector = if (isReadLater) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                     contentDescription = "المشاهدة لاحقاً",
-                    tint = if (isReadLater) NexusGold else TextSecondary,
+                    tint = if (isReadLater) accentPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -406,11 +517,11 @@ fun DetailsTopAppBar(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(if (isFavorite) NexusOrangeDark else SurfaceCard)
+                    .background(if (isFavorite) Color(0xFFE53935).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface)
                     .border(
                         BorderStroke(
                             1.dp,
-                            if (isFavorite) NexusOrange else SurfaceElevated
+                            if (isFavorite) Color(0xFFE53935) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         ),
                         CircleShape
                     )
@@ -419,7 +530,7 @@ fun DetailsTopAppBar(
                 Icon(
                     imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "المفضلة",
-                    tint = if (isFavorite) NexusOrangeLight else TextSecondary,
+                    tint = if (isFavorite) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -429,148 +540,166 @@ fun DetailsTopAppBar(
 
 /**
  * 3D Rotating Manga Cover with Boxcover Aura on back
- * Rotates around itself every 3 seconds
- * Front face: Manga cover image with type badge
- * Back face: Boxcover halo aura (R.drawable.img_boxcover_bg) with cosmic emblem
+ * Highly optimized for 64-bit and all Android architectures.
+ * Uses a continuous 3D transform with hardware layer acceleration.
  */
 @Composable
 fun Rotating3DCoverCard(
     manga: MangaItem,
     modifier: Modifier = Modifier
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
+    var isPaused by remember { mutableStateOf(false) }
+
     val infiniteTransition = rememberInfiniteTransition(label = "manga_cover_flip_infinite")
-    val rotationY by infiniteTransition.animateFloat(
+    val animRotationY by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            animation = tween(durationMillis = 3500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation_y_anim"
     )
 
-    // Back face is visible between 90 and 270 degrees of Y rotation
-    val isBackFace = rotationY in 90f..270f
+    val currentRotation = if (isPaused) 0f else animRotationY
+    val normalizedRotation = (currentRotation % 360f + 360f) % 360f
+    val isBackFace = normalizedRotation in 90f..270f
 
     Box(
         modifier = modifier
             .width(120.dp)
             .aspectRatio(0.70f)
-            .graphicsLayer {
-                this.rotationY = rotationY
-                cameraDistance = 14f * density
-            }
             .clip(RoundedCornerShape(16.dp))
+            .clickable { isPaused = !isPaused }
+            .graphicsLayer {
+                rotationY = currentRotation
+                cameraDistance = 16f * density
+                shadowElevation = 12f
+                shape = RoundedCornerShape(16.dp)
+                clip = true
+            }
             .border(
                 BorderStroke(
                     1.6.dp,
                     Brush.verticalGradient(
-                        colors = listOf(NexusGold, NexusOrange, NexusGoldLight)
+                        colors = listOf(
+                            accentPrimary,
+                            accentSecondary,
+                            accentPrimary.copy(alpha = 0.6f)
+                        )
                     )
                 ),
                 RoundedCornerShape(16.dp)
             )
-            .shadow(14.dp, RoundedCornerShape(16.dp))
-            .background(BackgroundDark),
+            .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center
     ) {
-        if (!isBackFace) {
-            // FRONT FACE: Manga Cover
-            Box(modifier = Modifier.fillMaxSize()) {
-                NexusMangaImage(
-                    imageUrl = manga.coverUrl,
-                    fallbackRes = manga.coverRes,
-                    contentDescription = manga.titleAr,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+        // FRONT FACE: Manga Cover
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    alpha = if (isBackFace) 0f else 1f
+                }
+        ) {
+            NexusMangaImage(
+                imageUrl = manga.coverUrl,
+                fallbackRes = manga.coverRes,
+                contentDescription = manga.titleAr,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
 
-                // Bottom gradient shading
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Transparent,
-                                    BackgroundDark.copy(alpha = 0.5f)
-                                )
-                            )
-                        )
-                )
-            }
-        } else {
-            // BACK FACE: Boxcover Halo (R.drawable.img_boxcover_bg)
-            // Compensate with 180° rotation so content isn't mirrored horizontally
+            // Bottom gradient shading
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { this.rotationY = 180f }
-                    .background(BackgroundDark),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_boxcover_bg),
-                    contentDescription = "هالة العمل boxcover",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // Atmospheric radial aura glow overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    NexusGold.copy(alpha = 0.25f),
-                                    NexusOrangeDark.copy(alpha = 0.45f),
-                                    BackgroundDark.copy(alpha = 0.65f)
-                                )
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.6f)
                             )
                         )
-                )
+                    )
+            )
+        }
 
-                // Golden crest insignia in the center of the halo
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = BackgroundDark.copy(alpha = 0.85f),
-                        border = BorderStroke(1.2.dp, NexusGold),
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = "NEXUS",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Black,
-                            color = NexusGold,
-                            fontSize = 11.sp,
-                            letterSpacing = 1.sp
-                        )
-                    )
-                    Text(
-                        text = "هالة العمل",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NexusGoldLight,
-                            fontSize = 9.sp
-                        )
-                    )
+        // BACK FACE: Boxcover Halo
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    rotationY = 180f
+                    alpha = if (isBackFace) 1f else 0f
                 }
+                .background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.img_boxcover_bg),
+                contentDescription = "هالة العمل boxcover",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Atmospheric radial aura glow overlay with dynamic theme
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                accentPrimary.copy(alpha = 0.35f),
+                                accentSecondary.copy(alpha = 0.45f),
+                                Color.Black.copy(alpha = 0.75f)
+                            )
+                        )
+                    )
+            )
+
+            // Crest insignia in the center of the halo with theme accent
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.85f),
+                    border = BorderStroke(1.2.dp, accentPrimary),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = accentPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "NEXUS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Black,
+                        color = accentPrimary,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp
+                    )
+                )
+                Text(
+                    text = "هالة العمل",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = accentSecondary,
+                        fontSize = 9.sp
+                    )
+                )
             }
         }
     }
@@ -681,13 +810,16 @@ fun ActionButtonsSection(
     onContinueReading: () -> Unit,
     onFirstChapter: () -> Unit
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // "متابعة القراءة" Button (Primary Golden-Orange Gradient)
+        // "متابعة القراءة" Button
         Surface(
             modifier = Modifier
                 .weight(1.2f)
@@ -704,7 +836,7 @@ fun ActionButtonsSection(
                     .fillMaxSize()
                     .background(
                         brush = Brush.horizontalGradient(
-                            colors = listOf(NexusGold, NexusOrange)
+                            colors = listOf(accentPrimary, accentSecondary)
                         )
                     ),
                 contentAlignment = Alignment.Center
@@ -717,14 +849,14 @@ fun ActionButtonsSection(
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = null,
-                        tint = BackgroundDark,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
                         text = "متابعة القراءة (فصل $lastReadChapter)",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = BackgroundDark,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 12.sp
                         )
                     )
@@ -741,8 +873,8 @@ fun ActionButtonsSection(
                 .clickable { onFirstChapter() }
                 .testTag("first_chapter_button"),
             shape = RoundedCornerShape(14.dp),
-            color = SurfaceCard,
-            border = BorderStroke(1.5.dp, NexusOrange)
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.5.dp, accentSecondary)
         ) {
             Row(
                 modifier = Modifier
@@ -754,7 +886,7 @@ fun ActionButtonsSection(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = null,
-                    tint = NexusOrangeLight,
+                    tint = accentSecondary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
@@ -762,7 +894,7 @@ fun ActionButtonsSection(
                     text = "الفصل الأول",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = NexusOrangeLight,
+                        color = accentSecondary,
                         fontSize = 12.sp
                     )
                 )
@@ -777,6 +909,8 @@ fun ActionButtonsSection(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CategoriesSection(genres: List<String>) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -791,13 +925,13 @@ fun CategoriesSection(genres: List<String>) {
                 modifier = Modifier
                     .size(3.5.dp, 15.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(NexusGold)
+                    .background(accentPrimary)
             )
             Text(
                 text = "التصنيفات والأنواع",
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp
                 )
             )
@@ -811,14 +945,14 @@ fun CategoriesSection(genres: List<String>) {
             genres.forEach { genre ->
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = SurfaceCard,
-                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.25f))
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.25f))
                 ) {
                     Text(
                         text = genre,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 11.sp
                         )
@@ -835,6 +969,7 @@ fun CategoriesSection(genres: List<String>) {
 @Composable
 fun SynopsisSection(synopsis: String) {
     var expanded by remember { mutableStateOf(false) }
+    val accentPrimary = MaterialTheme.colorScheme.primary
 
     Card(
         modifier = Modifier
@@ -846,7 +981,7 @@ fun SynopsisSection(synopsis: String) {
             1.dp,
             Brush.verticalGradient(
                 listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    accentPrimary.copy(alpha = 0.4f),
                     MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
             )
@@ -872,13 +1007,13 @@ fun SynopsisSection(synopsis: String) {
                     modifier = Modifier
                         .size(3.5.dp, 15.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(NexusGold)
+                        .background(accentPrimary)
                 )
                 Text(
                     text = "نبذة عن القصة",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     )
                 )
@@ -887,7 +1022,7 @@ fun SynopsisSection(synopsis: String) {
             Text(
                 text = synopsis,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 22.sp,
                     fontSize = 13.sp
                 ),
@@ -903,7 +1038,8 @@ fun SynopsisSection(synopsis: String) {
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = NexusGoldDark,
+                    color = accentPrimary.copy(alpha = 0.15f),
+                    border = BorderStroke(0.5.dp, accentPrimary.copy(alpha = 0.4f)),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { expanded = !expanded }
@@ -911,7 +1047,7 @@ fun SynopsisSection(synopsis: String) {
                     Text(
                         text = if (expanded) "عرض أقل ▲" else "قراءة المزيد ▼",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = NexusGold,
+                            color = accentPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp
                         ),
@@ -928,6 +1064,8 @@ fun SynopsisSection(synopsis: String) {
  */
 @Composable
 fun StaffCreditsSection(manga: MangaItem) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -938,7 +1076,7 @@ fun StaffCreditsSection(manga: MangaItem) {
             1.dp,
             Brush.verticalGradient(
                 listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    accentPrimary.copy(alpha = 0.4f),
                     MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
             )
@@ -956,14 +1094,15 @@ fun StaffCreditsSection(manga: MangaItem) {
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = NexusGoldDark,
+                    color = accentPrimary.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                     modifier = Modifier.size(28.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.Groups,
                             contentDescription = null,
-                            tint = NexusGold,
+                            tint = accentPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -972,7 +1111,7 @@ fun StaffCreditsSection(manga: MangaItem) {
                     text = "فريق الإنتاج والترجمة",
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     )
                 )
@@ -995,10 +1134,12 @@ fun StaffInfoRow(
     label: String,
     value: String
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = SurfaceVariantDark,
-        border = BorderStroke(0.5.dp, SurfaceElevated),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -1015,13 +1156,13 @@ fun StaffInfoRow(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = NexusGold,
+                    tint = accentPrimary,
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = TextTertiary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 )
@@ -1031,7 +1172,7 @@ fun StaffInfoRow(
                 text = value,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp
                 )
             )
@@ -1052,6 +1193,9 @@ fun ChaptersHeaderSection(
     onDownloadBatch: () -> Unit = {},
     onStopBatchDownload: () -> Unit = {}
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+    val accentSecondary = MaterialTheme.colorScheme.secondary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1067,21 +1211,21 @@ fun ChaptersHeaderSection(
                 modifier = Modifier
                     .size(3.5.dp, 16.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(NexusGold)
+                    .background(accentPrimary)
             )
             Column {
                 Text(
                     text = "قائمة الفصول",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Black,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp
                     )
                 )
                 Text(
                     text = "عرض 30 فصلاً بالدفعة ($rangeText)",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = NexusGoldLight,
+                        color = accentPrimary,
                         fontSize = 11.sp
                     )
                 )
@@ -1092,13 +1236,13 @@ fun ChaptersHeaderSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Batch Download or Stop Button (تنزيل الدفعة المتعدد مع زر التوقيف)
+            // Batch Download or Stop Button
             if (isBatchDownloading) {
                 // Downloading Status Pill
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = NexusOrangeDark,
-                    border = BorderStroke(1.dp, NexusOrange),
+                    color = accentSecondary.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, accentSecondary),
                     modifier = Modifier.clip(RoundedCornerShape(10.dp))
                 ) {
                     Row(
@@ -1107,14 +1251,14 @@ fun ChaptersHeaderSection(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         CircularProgressIndicator(
-                            color = NexusOrangeLight,
+                            color = accentSecondary,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
                             text = "جاري التنزيل",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = NexusOrangeLight,
+                                color = accentSecondary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp
                             )
@@ -1122,7 +1266,7 @@ fun ChaptersHeaderSection(
                     }
                 }
 
-                // Stop Batch Download Button (زر إيقاف التنزيل المتعدد)
+                // Stop Batch Download Button
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = Color(0xFF3B1515),
@@ -1156,8 +1300,8 @@ fun ChaptersHeaderSection(
             } else {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = SurfaceCard,
-                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f)),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f)),
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .clickable { onDownloadBatch() }
@@ -1171,13 +1315,13 @@ fun ChaptersHeaderSection(
                         Icon(
                             imageVector = Icons.Default.CloudDownload,
                             contentDescription = "تنزيل الدفعة كاملة",
-                            tint = NexusGold,
+                            tint = accentPrimary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = "تنزيل الدفعة",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = NexusGold,
+                                color = accentPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp
                             )
@@ -1188,14 +1332,14 @@ fun ChaptersHeaderSection(
 
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = NexusGoldDark,
-                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.4f))
+                color = accentPrimary.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, accentPrimary.copy(alpha = 0.4f))
             ) {
                 Text(
                     text = "دفعة $currentBatch من $totalBatches",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = NexusGold,
+                        color = accentPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp
                     )
@@ -1218,6 +1362,8 @@ fun ChapterListItem(
     onDownload: () -> Unit = {},
     onDeleteDownload: () -> Unit = {}
 ) {
+    val accentPrimary = MaterialTheme.colorScheme.primary
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1231,7 +1377,7 @@ fun ChapterListItem(
         ),
         border = BorderStroke(
             0.8.dp,
-            if (isDownloaded) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            if (isDownloaded) accentPrimary.copy(alpha = 0.6f)
             else if (isRead) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         )
@@ -1254,15 +1400,15 @@ fun ChapterListItem(
                         .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(
-                            if (isDownloaded) NexusGoldDark
-                            else if (isRead) SurfaceElevated
-                            else NexusGoldDark
+                            if (isDownloaded) accentPrimary.copy(alpha = 0.15f)
+                            else if (isRead) MaterialTheme.colorScheme.surfaceVariant
+                            else accentPrimary.copy(alpha = 0.12f)
                         )
                         .border(
                             0.5.dp,
-                            if (isDownloaded) NexusGold
+                            if (isDownloaded) accentPrimary
                             else if (isRead) Color.Transparent
-                            else NexusGold.copy(alpha = 0.5f),
+                            else accentPrimary.copy(alpha = 0.5f),
                             RoundedCornerShape(10.dp)
                         ),
                     contentAlignment = Alignment.Center
@@ -1271,7 +1417,7 @@ fun ChapterListItem(
                         text = "${chapter.number}",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = if (isDownloaded) NexusGold else if (isRead) TextSecondary else NexusGold,
+                            color = if (isDownloaded) accentPrimary else if (isRead) MaterialTheme.colorScheme.onSurfaceVariant else accentPrimary,
                             fontSize = 13.sp
                         )
                     )
@@ -1286,7 +1432,7 @@ fun ChapterListItem(
                             text = chapter.title,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = if (isRead) FontWeight.Medium else FontWeight.Bold,
-                                color = if (isRead) TextSecondary else TextPrimary,
+                                color = if (isRead) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                 fontSize = 13.sp
                             ),
                             maxLines = 1,
@@ -1295,14 +1441,14 @@ fun ChapterListItem(
                         if (isDownloaded) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = NexusGoldDark,
-                                border = BorderStroke(0.5.dp, NexusGold.copy(alpha = 0.6f))
+                                color = accentPrimary.copy(alpha = 0.15f),
+                                border = BorderStroke(0.5.dp, accentPrimary.copy(alpha = 0.6f))
                             ) {
                                 Text(
                                     text = "محمّل 🔒",
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = NexusGold,
+                                        color = accentPrimary,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1317,13 +1463,13 @@ fun ChapterListItem(
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = null,
-                            tint = TextTertiary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
                             text = chapter.releaseDate,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = TextTertiary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 fontSize = 10.sp
                             )
                         )
@@ -1420,9 +1566,9 @@ fun ChapterListItem(
                         CircularProgressIndicator(
                             progress = { downloadProgress.progress },
                             modifier = Modifier.size(22.dp),
-                            color = NexusGold,
+                            color = accentPrimary,
                             strokeWidth = 2.5.dp,
-                            trackColor = SurfaceElevated
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     }
                 } else if (isDownloaded) {
@@ -1445,7 +1591,7 @@ fun ChapterListItem(
                         Icon(
                             imageVector = Icons.Default.CloudDownload,
                             contentDescription = "تحميل الفصل بدون إنترنت",
-                            tint = NexusGoldLight,
+                            tint = accentPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }

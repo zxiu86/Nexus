@@ -193,8 +193,18 @@ data class ChapterDownloadProgress(
 )
 
 // ----------------------------------------------------
-// Reading History & Progress Models
+// Favorite Notification Toast Model
 // ----------------------------------------------------
+
+data class FavoriteToastData(
+    val mangaId: String,
+    val title: String,
+    val coverUrl: String? = null,
+    val coverRes: Int? = null,
+    val isAdded: Boolean,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 
 @JsonClass(generateAdapter = true)
 data class ReadingHistoryEntry(
