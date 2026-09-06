@@ -757,6 +757,14 @@ class MangaRepository(private val context: Context) {
     suspend fun downloadChapter(manga: MangaItem, chapter: Chapter): Result<DownloadedChapter> = withContext(Dispatchers.IO) {
         val downloadKey = "${manga.id}_${chapter.number}"
         try {
+            val settings = com.example.data.settings.AppSettingsManager.getInstance(context).settingsFlow.value
+            if (settings.wifiOnlyDownloads) {
+                val netMon = com.example.util.NetworkMonitor(context)
+                if (!netMon.isWifiConnected()) {
+                    throw IllegalStateException("خيار التنزيل عبر Wi-Fi فقط مفعّل في الإعدادات. يرجى الاتصال بشبكة Wi-Fi.")
+                }
+            }
+
             // Update progress: starting
             updateDownloadProgress(manga.id, chapter.number, currentStep = 0, totalSteps = 1, progress = 0.05f)
 

@@ -11,7 +11,20 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import coil.Coil
+import kotlin.math.roundToInt
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -162,6 +175,75 @@ fun ReaderScreen(
         }
     }
 
+    // 🚀 منع التطبيق من إدخال الفصول في الكاش الثابت:
+    // مجرد القارئ يخرج من الفصل ينحذف كل صور الفصل من الكاش أو التخزين المؤقت فوراً
+    DisposableEffect(chapter?.number) {
+        onDispose {
+            try {
+                if (chapter != null && !uiState.isDownloaded) {
+                    val imageLoader = Coil.imageLoader(context)
+                    chapter.pages.forEach { page ->
+                        page.imageUrl?.let { url ->
+                            if (!url.startsWith("/")) {
+                                imageLoader.memoryCache?.remove(coil.memory.MemoryCache.Key(url))
+                                imageLoader.diskCache?.remove(url)
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    // 💡 إبقاء الشاشة مفعلة أثناء القراءة (Keep Screen On)
+    val keepScreenOn = uiState.appSettings.keepScreenOn
+    DisposableEffect(keepScreenOn) {
+        val window = (context as? Activity)?.window
+        if (keepScreenOn) {
+            window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    // 🔊 تقليب الصفحات بأزرار الصوت (Volume Scroll)
+    val volumeScroll = uiState.appSettings.volumeScroll
+    val localView = LocalView.current
+    val coroutineScope = rememberCoroutineScope()
+    DisposableEffect(volumeScroll) {
+        if (volumeScroll) {
+            localView.isFocusableInTouchMode = true
+            localView.requestFocus()
+            localView.setOnKeyListener { _, keyCode, event ->
+                if (event.action == android.view.KeyEvent.ACTION_DOWN) {
+                    when (keyCode) {
+                        android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                            coroutineScope.launch {
+                                listState.animateScrollBy(700f)
+                            }
+                            true
+                        }
+                        android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
+                            coroutineScope.launch {
+                                listState.animateScrollBy(-700f)
+                            }
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            }
+        } else {
+            localView.setOnKeyListener(null)
+        }
+        onDispose {
+            localView.setOnKeyListener(null)
+        }
+    }
+
     // Toggle system bars visibility alongside showControls
     LaunchedEffect(showControls) {
         val window = (context as? Activity)?.window
@@ -232,13 +314,19 @@ fun ReaderScreen(
         }
     }
 
+    val readerBg = when (uiState.appSettings.backgroundStyle) {
+        1 -> Color.Black
+        2 -> Color(0xFFF6F8FA)
+        else -> BackgroundDark
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .background(readerBg)
             .testTag("reader_screen_container")
     ) {
-        // Continuous Webtoon Vertical Reader with Native Smooth 120Hz Scrolling & Zoom
+        // Continuous Webtoon Vertical Reader or Horizontal Pager with Native Smooth 120Hz Scrolling & Pinch-to-Zoom
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -248,77 +336,151 @@ fun ReaderScreen(
                     translationX = offset.x
                     translationY = offset.y
                 }
-                .then(
-                    if (scale > 1f) {
-                        Modifier.pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                scale = (scale * zoom).coerceIn(1f, 3.5f)
-                                if (scale > 1f) {
-                                    val maxOffset = (scale - 1f) * 400f
-                                    offset = Offset(
-                                        x = (offset.x + pan.x).coerceIn(-maxOffset, maxOffset),
-                                        y = (offset.y + pan.y).coerceIn(-maxOffset, maxOffset)
-                                    )
-                                } else {
-                                    offset = Offset.Zero
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        do {
+                            val event = awaitPointerEvent()
+                            val canceled = event.changes.any { it.isConsumed }
+                            if (!canceled) {
+                                val pointerCount = event.changes.size
+                                // 🤏 السحب بإصبعين للتكبير والتصغير (Two-finger pinch to zoom)
+                                if (pointerCount >= 2 || scale > 1.05f) {
+                                    val zoomChange = event.calculateZoom()
+                                    val panChange = event.calculatePan()
+
+                                    val newScale = (scale * zoomChange).coerceIn(1f, 4f)
+                                    if (newScale > 1.01f) {
+                                        val maxOffsetX = (newScale - 1f) * size.width * 0.5f
+                                        val maxOffsetY = (newScale - 1f) * size.height * 0.5f
+                                        offset = Offset(
+                                            x = (offset.x + panChange.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                            y = (offset.y + panChange.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                        )
+                                    } else {
+                                        offset = Offset.Zero
+                                    }
+                                    scale = newScale
+                                    event.changes.forEach { it.consume() }
                                 }
                             }
+                        } while (!canceled && event.changes.any { it.pressed })
+
+                        if (scale <= 1.05f) {
+                            scale = 1f
+                            offset = Offset.Zero
                         }
-                    } else Modifier
-                )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    showControls = !showControls
-                }
-        ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .testTag("reader_lazy_column"),
-                contentPadding = PaddingValues(top = if (showControls) 70.dp else 16.dp, bottom = if (showControls) 90.dp else 24.dp)
-            ) {
-                // Chapter Start Banner
-                item {
-                    ChapterStartBanner(manga = manga, chapter = chapter, isDownloaded = uiState.isDownloaded)
-                }
-
-                // Webtoon Continuous Comic Pages with Start.io Fixed Banner Ads Between Images
-                itemsIndexed(
-                    items = chapter.pages,
-                    key = { index, page -> "${chapter.number}-${page.pageNumber}-$index" }
-                ) { index, page ->
-                    ComicPageItem(
-                        imageUrl = page.imageUrl,
-                        pageRes = page.imageRes,
-                        pageNumber = page.pageNumber,
-                        totalPages = totalPages
-                    )
-
-                    // Fixed Start.io Banner Ad between each comic page and the next (توسيط كامل بمساحة 15px مريحة ومنع خروج الحدود)
-                    if (index < chapter.pages.size - 1) {
-                        StartIoBannerAd(
-                            modifier = Modifier.fillMaxWidth(),
-                            adTag = "reader_page_${index + 1}",
-                            isInlineReader = true
-                        )
                     }
                 }
-
-                // End of Chapter Action Card
-                item {
-                    ChapterEndCard(
-                        manga = manga,
-                        currentChapter = chapter,
-                        hasNextChapter = uiState.hasNextChapter,
-                        hasPreviousChapter = uiState.hasPreviousChapter,
-                        onNextChapter = handleNextChapter,
-                        onPreviousChapter = onPreviousChapter,
-                        onOpenQuickJump = { onSetQuickJumpOpen(true) },
-                        onNavigateHome = onNavigateHome
+                .pointerInput(uiState.appSettings.doubleTapZoom) {
+                    detectTapGestures(
+                        onTap = {
+                            showControls = !showControls
+                        },
+                        onDoubleTap = if (uiState.appSettings.doubleTapZoom) {
+                            { tapOffset ->
+                                if (scale > 1.2f) {
+                                    scale = 1f
+                                    offset = Offset.Zero
+                                } else {
+                                    scale = 2.2f
+                                    val maxOffsetX = 1.2f * size.width * 0.5f
+                                    val maxOffsetY = 1.2f * size.height * 0.5f
+                                    offset = Offset(
+                                        x = ((size.width / 2f - tapOffset.x) * 1.2f).coerceIn(-maxOffsetX, maxOffsetX),
+                                        y = ((size.height / 2f - tapOffset.y) * 1.2f).coerceIn(-maxOffsetY, maxOffsetY)
+                                    )
+                                }
+                            }
+                        } else null
                     )
+                }
+        ) {
+            val readerMode = uiState.appSettings.readerMode
+            if (readerMode == 1 || readerMode == 2) {
+                // 📖 نمط القراءة الأفقي (تقليب الصفحات يميناً أو يساراً)
+                val pagerState = rememberPagerState(
+                    initialPage = (uiState.initialScrollPage - 1).coerceIn(0, (totalPages - 1).coerceAtLeast(0)),
+                    pageCount = { totalPages }
+                )
+                LaunchedEffect(pagerState.currentPage) {
+                    onRecordPageProgress(pagerState.currentPage + 1, totalPages)
+                }
+                HorizontalPager(
+                    state = pagerState,
+                    reverseLayout = (readerMode == 1),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("reader_horizontal_pager")
+                ) { pageIdx ->
+                    val page = chapter.pages.getOrNull(pageIdx)
+                    if (page != null) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ComicPageItem(
+                                imageUrl = page.imageUrl,
+                                pageRes = page.imageRes,
+                                pageNumber = page.pageNumber,
+                                totalPages = totalPages,
+                                isDownloaded = uiState.isDownloaded,
+                                imageQuality = uiState.appSettings.imageQuality
+                            )
+                        }
+                    }
+                }
+            } else {
+                // 📜 نمط ويب تون العمودي المستمر (Webtoon Continuous Scroll)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("reader_lazy_column"),
+                    contentPadding = PaddingValues(top = if (showControls) 70.dp else 16.dp, bottom = if (showControls) 90.dp else 24.dp)
+                ) {
+                    // Chapter Start Banner
+                    item {
+                        ChapterStartBanner(manga = manga, chapter = chapter, isDownloaded = uiState.isDownloaded)
+                    }
+
+                    // Webtoon Continuous Comic Pages with Start.io Fixed Banner Ads Between Images
+                    itemsIndexed(
+                        items = chapter.pages,
+                        key = { index, page -> "${chapter.number}-${page.pageNumber}-$index" }
+                    ) { index, page ->
+                        ComicPageItem(
+                            imageUrl = page.imageUrl,
+                            pageRes = page.imageRes,
+                            pageNumber = page.pageNumber,
+                            totalPages = totalPages,
+                            isDownloaded = uiState.isDownloaded,
+                            imageQuality = uiState.appSettings.imageQuality
+                        )
+
+                        // Fixed Start.io Banner Ad between each comic page and the next
+                        if (index < chapter.pages.size - 1) {
+                            StartIoBannerAd(
+                                modifier = Modifier.fillMaxWidth(),
+                                adTag = "reader_page_${index + 1}",
+                                isInlineReader = true
+                            )
+                        }
+                    }
+
+                    // End of Chapter Action Card
+                    item {
+                        ChapterEndCard(
+                            manga = manga,
+                            currentChapter = chapter,
+                            hasNextChapter = uiState.hasNextChapter,
+                            hasPreviousChapter = uiState.hasPreviousChapter,
+                            onNextChapter = handleNextChapter,
+                            onPreviousChapter = onPreviousChapter,
+                            onOpenQuickJump = { onSetQuickJumpOpen(true) },
+                            onNavigateHome = onNavigateHome
+                        )
+                    }
                 }
             }
         }
@@ -781,7 +943,9 @@ fun ComicPageItem(
     imageUrl: String?,
     pageRes: Int?,
     pageNumber: Int,
-    totalPages: Int
+    totalPages: Int,
+    isDownloaded: Boolean = false,
+    imageQuality: Int = 0
 ) {
     var reloadKey by remember(imageUrl) { mutableIntStateOf(0) }
     var isLoaded by remember(imageUrl, reloadKey) { mutableStateOf(false) }
@@ -813,7 +977,16 @@ fun ComicPageItem(
                         .data(imageUrl)
                         .crossfade(true)
                         .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
+                        // 🚀 منع التطبيق من إدخال الفصول في الكاش الثابت للقرص:
+                        .diskCachePolicy(if (isDownloaded) CachePolicy.ENABLED else CachePolicy.DISABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .apply {
+                            if (imageQuality == 2) {
+                                bitmapConfig(android.graphics.Bitmap.Config.RGB_565)
+                            } else if (imageQuality == 0) {
+                                bitmapConfig(android.graphics.Bitmap.Config.ARGB_8888)
+                            }
+                        }
                         .listener(
                             onSuccess = { _, _ ->
                                 isLoaded = true

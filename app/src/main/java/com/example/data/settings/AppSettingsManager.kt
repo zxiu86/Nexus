@@ -16,7 +16,11 @@ data class AppSettings(
     val volumeScroll: Boolean = false,
     val doubleTapZoom: Boolean = true,
     val wifiOnlyDownloads: Boolean = false,
-    val autoSyncUpdates: Boolean = true
+    val autoSyncUpdates: Boolean = true,
+    val themeMode: Int = 0, // 0: System, 1: Dark, 2: Light
+    val backgroundStyle: Int = 0, // 0: Default, 1: AMOLED Pure Black, 2: Pure White
+    val accentColor: Int = 0, // 0: Default (Gold/Orange), 1: Blue, 2: Red
+    val preventChapterCache: Boolean = true // Don't persist chapter images in disk cache, auto-clear on exit
 )
 
 class AppSettingsManager private constructor(context: Context) {
@@ -33,7 +37,11 @@ class AppSettingsManager private constructor(context: Context) {
             volumeScroll = prefs.getBoolean(KEY_VOLUME_SCROLL, false),
             doubleTapZoom = prefs.getBoolean(KEY_DOUBLE_TAP_ZOOM, true),
             wifiOnlyDownloads = prefs.getBoolean(KEY_WIFI_ONLY, false),
-            autoSyncUpdates = prefs.getBoolean(KEY_AUTO_SYNC, true)
+            autoSyncUpdates = prefs.getBoolean(KEY_AUTO_SYNC, true),
+            themeMode = prefs.getInt(KEY_THEME_MODE, 0),
+            backgroundStyle = prefs.getInt(KEY_BACKGROUND_STYLE, 0),
+            accentColor = prefs.getInt(KEY_ACCENT_COLOR, 0),
+            preventChapterCache = prefs.getBoolean(KEY_PREVENT_CHAPTER_CACHE, true)
         )
     }
 
@@ -72,10 +80,30 @@ class AppSettingsManager private constructor(context: Context) {
         _settingsFlow.value = _settingsFlow.value.copy(autoSyncUpdates = enabled)
     }
 
+    fun updateThemeMode(mode: Int) {
+        prefs.edit().putInt(KEY_THEME_MODE, mode).apply()
+        _settingsFlow.value = _settingsFlow.value.copy(themeMode = mode)
+    }
+
+    fun updateBackgroundStyle(style: Int) {
+        prefs.edit().putInt(KEY_BACKGROUND_STYLE, style).apply()
+        _settingsFlow.value = _settingsFlow.value.copy(backgroundStyle = style)
+    }
+
+    fun updateAccentColor(color: Int) {
+        prefs.edit().putInt(KEY_ACCENT_COLOR, color).apply()
+        _settingsFlow.value = _settingsFlow.value.copy(accentColor = color)
+    }
+
+    fun updatePreventChapterCache(prevent: Boolean) {
+        prefs.edit().putBoolean(KEY_PREVENT_CHAPTER_CACHE, prevent).apply()
+        _settingsFlow.value = _settingsFlow.value.copy(preventChapterCache = prevent)
+    }
+
     fun getCalculatedCacheSize(context: Context): String {
         val bytes = calculateDirSize(context.cacheDir) + calculateDirSize(context.externalCacheDir)
         val mb = bytes.toDouble() / (1024 * 1024)
-        return if (mb < 0.1) "2.4 MB" else "${DecimalFormat("#.#").format(mb)} MB"
+        return if (mb < 0.1) "0.5 MB" else "${DecimalFormat("#.#").format(mb)} MB"
     }
 
     fun clearAllCache(context: Context): String {
@@ -90,6 +118,16 @@ class AppSettingsManager private constructor(context: Context) {
         } catch (_: Exception) {}
         val mb = beforeBytes.toDouble() / (1024 * 1024)
         return if (mb < 0.1) "تم تنظيف الذاكرة المؤقتة بنجاح" else "تم تحرير ${DecimalFormat("#.#").format(mb)} MB بنجاح"
+    }
+
+    fun clearChapterImages(context: Context, urls: List<String>) {
+        try {
+            val loader = Coil.imageLoader(context)
+            urls.forEach { url ->
+                loader.memoryCache?.remove(coil.memory.MemoryCache.Key(url))
+                loader.diskCache?.remove(url)
+            }
+        } catch (_: Exception) {}
     }
 
     private fun calculateDirSize(dir: File?): Long {
@@ -110,6 +148,10 @@ class AppSettingsManager private constructor(context: Context) {
         private const val KEY_DOUBLE_TAP_ZOOM = "pref_double_tap_zoom"
         private const val KEY_WIFI_ONLY = "pref_wifi_only"
         private const val KEY_AUTO_SYNC = "pref_auto_sync"
+        private const val KEY_THEME_MODE = "pref_theme_mode"
+        private const val KEY_BACKGROUND_STYLE = "pref_background_style"
+        private const val KEY_ACCENT_COLOR = "pref_accent_color"
+        private const val KEY_PREVENT_CHAPTER_CACHE = "pref_prevent_chapter_cache"
 
         @Volatile
         private var INSTANCE: AppSettingsManager? = null

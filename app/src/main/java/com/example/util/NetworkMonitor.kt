@@ -39,6 +39,16 @@ class NetworkMonitor(context: Context) {
         }
     }
 
+    fun isWifiConnected(): Boolean {
+        return try {
+            val activeNetwork = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     init {
         try {
             val request = NetworkRequest.Builder()

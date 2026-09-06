@@ -150,12 +150,16 @@ fun HomeScreen(
     onUpdateDoubleTapZoom: (Boolean) -> Unit = {},
     onUpdateWifiOnlyDownloads: (Boolean) -> Unit = {},
     onUpdateAutoSyncUpdates: (Boolean) -> Unit = {},
+    onUpdateThemeMode: (Int) -> Unit = {},
+    onUpdateBackgroundStyle: (Int) -> Unit = {},
+    onUpdateAccentColor: (Int) -> Unit = {},
+    onUpdatePreventChapterCache: (Boolean) -> Unit = {},
     onDeleteAllDownloads: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Offline Status Indicator Banner (Professional layout at top of screen)
             AnimatedVisibility(
@@ -477,6 +481,10 @@ fun HomeScreen(
                             onUpdateDoubleTapZoom = onUpdateDoubleTapZoom,
                             onUpdateWifiOnlyDownloads = onUpdateWifiOnlyDownloads,
                             onUpdateAutoSyncUpdates = onUpdateAutoSyncUpdates,
+                            onUpdateThemeMode = onUpdateThemeMode,
+                            onUpdateBackgroundStyle = onUpdateBackgroundStyle,
+                            onUpdateAccentColor = onUpdateAccentColor,
+                            onUpdatePreventChapterCache = onUpdatePreventChapterCache,
                             onDeleteAllDownloads = onDeleteAllDownloads
                         )
                     }

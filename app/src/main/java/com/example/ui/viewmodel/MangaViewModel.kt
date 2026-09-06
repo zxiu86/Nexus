@@ -156,7 +156,8 @@ data class ReaderUiState(
     val initialScrollPage: Int = 1,
     val readingProgressText: String = "",
     val hasPreviousChapter: Boolean = false,
-    val hasNextChapter: Boolean = false
+    val hasNextChapter: Boolean = false,
+    val appSettings: AppSettings = AppSettings()
 )
 
 class MangaViewModel(application: Application) : AndroidViewModel(application) {
@@ -339,6 +340,12 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         checkForUpdates()
 
         // Reactively observe repo changes to keep active details screen updated silently
+        viewModelScope.launch {
+            settingsManager.settingsFlow.collect { newSettings ->
+                _readerUiState.value = _readerUiState.value.copy(appSettings = newSettings)
+            }
+        }
+
         viewModelScope.launch {
             combine(
                 repository.allMangaFlow,
@@ -639,7 +646,8 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             isQuickJumpSheetOpen = false,
             initialScrollPage = lastSavedPage,
             hasPreviousChapter = chapterNumber > 1,
-            hasNextChapter = chapterNumber < manga.totalChaptersCount
+            hasNextChapter = chapterNumber < manga.totalChaptersCount,
+            appSettings = settingsManager.settingsFlow.value
         )
 
         viewModelScope.launch {
@@ -710,6 +718,22 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateAutoSyncUpdates(enabled: Boolean) {
         settingsManager.updateAutoSyncUpdates(enabled)
+    }
+
+    fun updateThemeMode(mode: Int) {
+        settingsManager.updateThemeMode(mode)
+    }
+
+    fun updateBackgroundStyle(style: Int) {
+        settingsManager.updateBackgroundStyle(style)
+    }
+
+    fun updateAccentColor(color: Int) {
+        settingsManager.updateAccentColor(color)
+    }
+
+    fun updatePreventChapterCache(prevent: Boolean) {
+        settingsManager.updatePreventChapterCache(prevent)
     }
 
     fun clearAppCache(context: Context): String {

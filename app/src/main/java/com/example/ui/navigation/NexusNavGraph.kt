@@ -155,6 +155,18 @@ fun NexusNavGraph(
                     onUpdateAutoSyncUpdates = { enabled ->
                         viewModel.updateAutoSyncUpdates(enabled)
                     },
+                    onUpdateThemeMode = { mode ->
+                        viewModel.updateThemeMode(mode)
+                    },
+                    onUpdateBackgroundStyle = { style ->
+                        viewModel.updateBackgroundStyle(style)
+                    },
+                    onUpdateAccentColor = { color ->
+                        viewModel.updateAccentColor(color)
+                    },
+                    onUpdatePreventChapterCache = { prevent ->
+                        viewModel.updatePreventChapterCache(prevent)
+                    },
                     onDeleteAllDownloads = {
                         viewModel.deleteAllDownloads()
                     }
