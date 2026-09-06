@@ -585,14 +585,14 @@ fun MangaHeaderCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(
             1.2.dp,
             Brush.linearGradient(
                 colors = listOf(
-                    NexusGold.copy(alpha = 0.5f),
-                    NexusOrange.copy(alpha = 0.2f),
-                    SurfaceElevated
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
                 )
             )
         )
@@ -841,8 +841,16 @@ fun SynopsisSection(synopsis: String) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceElevated)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            )
+        )
     ) {
         Column(
             modifier = Modifier
@@ -925,8 +933,16 @@ fun StaffCreditsSection(manga: MangaItem) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceElevated)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            )
+        )
     ) {
         Column(
             modifier = Modifier
@@ -1211,13 +1227,13 @@ fun ChapterListItem(
             .testTag("details_chapter_${chapter.number}"),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isRead) SurfaceDark.copy(alpha = 0.8f) else SurfaceCard
+            containerColor = if (isRead) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
             0.8.dp,
-            if (isDownloaded) NexusGold.copy(alpha = 0.6f)
-            else if (isRead) SurfaceElevated.copy(alpha = 0.4f)
-            else SurfaceElevated
+            if (isDownloaded) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            else if (isRead) MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         )
     ) {
         Row(
@@ -1481,14 +1497,14 @@ fun BatchPaginationControl(
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(
             1.2.dp,
             Brush.linearGradient(
                 colors = listOf(
-                    NexusGold.copy(alpha = 0.45f),
-                    SurfaceElevated,
-                    NexusOrange.copy(alpha = 0.25f)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                 )
             )
         )

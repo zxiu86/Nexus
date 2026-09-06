@@ -102,6 +102,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -112,6 +113,8 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -126,6 +129,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -136,6 +140,8 @@ import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
 import com.example.data.model.ReadingHistoryEntry
 import com.example.ui.components.NexusMangaImage
+import com.example.ui.theme.HarmattanFontFamily
+import com.example.ui.theme.HarmattanTypography
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BackgroundAmoled
 import com.example.ui.theme.BackgroundLight
@@ -1699,6 +1705,14 @@ fun SearchTabContent(
     modifier: Modifier = Modifier
 ) {
     var isGridView by remember { mutableStateOf(true) }
+    var sideToastMessage by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+
+    LaunchedEffect(sideToastMessage) {
+        if (sideToastMessage != null) {
+            kotlinx.coroutines.delay(2000L)
+            sideToastMessage = null
+        }
+    }
 
     // When no search or category filter is active, display the top 5 newest works.
     // When searching or filtering by category, display all matching results.
@@ -1710,494 +1724,571 @@ fun SearchTabContent(
         }
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        // Modern Floating Search Card
-        item {
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, SurfaceElevated),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = NexusOrangeDark,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = null,
-                                        tint = NexusOrange,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "البحث والاستكشاف الذكي",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Black,
-                                    color = TextPrimary,
-                                    fontSize = 16.sp
-                                )
-                            )
-                        }
-
-                        // Grid / List Toggle
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(SurfaceDark)
-                                .border(1.dp, SurfaceElevated, RoundedCornerShape(10.dp))
-                                .padding(2.dp),
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (isGridView) NexusOrange else Color.Transparent,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clickable { isGridView = true }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.GridView,
-                                        contentDescription = "عرض شبكي",
-                                        tint = if (isGridView) BackgroundDark else TextSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (!isGridView) NexusOrange else Color.Transparent,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clickable { isGridView = false }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.List,
-                                        contentDescription = "عرض قائمة",
-                                        tint = if (!isGridView) BackgroundDark else TextSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Search input
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        placeholder = {
-                            Text(
-                                text = "ابحث بالاسم، المؤلف، أو التصنيف...",
-                                color = TextTertiary,
-                                fontSize = 13.sp
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                tint = if (searchQuery.isNotBlank()) NexusOrange else TextSecondary
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotBlank()) {
-                                IconButton(onClick = { onSearchQueryChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = "مسح البحث",
-                                        tint = NexusOrange
-                                    )
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = NexusOrange,
-                            unfocusedBorderColor = SurfaceElevated,
-                            focusedContainerColor = SurfaceDark,
-                            unfocusedContainerColor = SurfaceDark,
-                            cursorColor = NexusOrange,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-
-        // Filter Section: Categories
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "التصنيفات والأنواع",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextSecondary,
-                        fontSize = 12.sp
-                    )
-                )
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(categories) { category ->
-                        val isSelected = category == selectedCategory
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onCategorySelect(category) },
-                            label = {
-                                Text(
-                                    text = category,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) BackgroundDark else TextSecondary
-                                    )
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = NexusOrange,
-                                containerColor = SurfaceCard
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = if (isSelected) NexusOrange else SurfaceElevated,
-                                selectedBorderColor = NexusOrange,
-                                enabled = true,
-                                selected = isSelected
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        // Results Section Header (Without matching count number)
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (searchQuery.isNotBlank() || selectedCategory != "الكل") "نتائج البحث" else "أحدث الأعمال المضافة",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        fontSize = 14.sp
-                    )
-                )
-
-                if (selectedCategory != "الكل" || searchQuery.isNotBlank()) {
-                    TextButton(
-                        onClick = {
-                            onCategorySelect("الكل")
-                            onSearchQueryChange("")
-                        }
-                    ) {
-                        Text(
-                            text = "إعادة ضبط البحث",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = NexusOrange,
-                                fontSize = 11.sp
-                            )
-                        )
-                    }
-                }
-            }
-        }
-
-        if (displayedResults.isEmpty()) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 90.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Modern Floating Search Card
             item {
                 Card(
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    border = BorderStroke(1.dp, SurfaceElevated),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(
+                        1.2.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                            )
+                        )
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = SurfaceElevated,
-                            modifier = Modifier.size(60.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    tint = TextTertiary,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                                     modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "البحث والاستكشاف الذكي",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 16.sp
+                                    )
                                 )
                             }
-                        }
-                        Text(
-                            text = "لم يتم العثور على أي نتائج مطابقة",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextSecondary
-                            )
-                        )
-                        Text(
-                            text = "جرب البحث باسم مختلف أو قم باختيار تصنيف آخر",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = TextTertiary,
-                                fontSize = 12.sp
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        } else {
-            if (isGridView) {
-                // GRID VIEW (2-column cards) without rating badges
-                val chunkedResults = displayedResults.chunked(2)
-                items(chunkedResults, key = { it.joinToString("-") { m -> m.id } }) { pair ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        for (manga in pair) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                Card(
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                                    border = BorderStroke(1.dp, SurfaceElevated),
+
+                            // Grid / List Toggle
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isGridView) MaterialTheme.colorScheme.primary else Color.Transparent,
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onMangaClick(manga.id) }
+                                        .size(30.dp)
+                                        .clickable { isGridView = true }
                                 ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(190.dp)
-                                        ) {
-                                            NexusMangaImage(
-                                                imageUrl = manga.coverUrl,
-                                                fallbackRes = manga.coverRes,
-                                                contentDescription = manga.titleAr,
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.Crop
-                                            )
-
-                                            // Favorite button
-                                            val isFav = favorites.contains(manga.id)
-                                            IconButton(
-                                                onClick = { onToggleFavorite(manga.id) },
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(6.dp)
-                                                    .size(32.dp)
-                                                    .background(Color.Black.copy(alpha = 0.65f), CircleShape)
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                                    contentDescription = "المفضلة",
-                                                    tint = if (isFav) NexusOrange else Color.White,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-
-                                            // Type badge
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = NexusOrangeDark.copy(alpha = 0.9f),
-                                                modifier = Modifier
-                                                    .align(Alignment.TopStart)
-                                                    .padding(6.dp)
-                                            ) {
-                                                Text(
-                                                    text = manga.type.labelAr,
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        color = NexusOrange,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 9.sp
-                                                    ),
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(10.dp),
-                                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            Text(
-                                                text = manga.titleAr.ifEmpty { manga.titleEn },
-                                                style = MaterialTheme.typography.titleSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = TextPrimary,
-                                                    fontSize = 13.sp
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-
-                                            Text(
-                                                text = "${manga.totalChaptersCount} فصلاً • ${manga.genres.firstOrNull() ?: manga.type.labelAr}",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    color = TextSecondary,
-                                                    fontSize = 11.sp
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.GridView,
+                                            contentDescription = "عرض شبكي",
+                                            tint = if (isGridView) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (!isGridView) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .clickable { isGridView = false }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.List,
+                                            contentDescription = "عرض قائمة",
+                                            tint = if (!isGridView) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
                                     }
                                 }
                             }
                         }
-                        if (pair.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
+
+                        // Search input
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            placeholder = {
+                                Text(
+                                    text = "ابحث بالاسم، المؤلف، أو التصنيف...",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    fontSize = 13.sp
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = if (searchQuery.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotBlank()) {
+                                    IconButton(onClick = { onSearchQueryChange("") }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "مسح البحث",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            // Filter Section: Categories
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "التصنيفات والأنواع",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(categories) { category ->
+                            val isSelected = category == selectedCategory
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { onCategorySelect(category) },
+                                label = {
+                                    Text(
+                                        text = category,
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                    enabled = true,
+                                    selected = isSelected
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Results Section Header
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (searchQuery.isNotBlank() || selectedCategory != "الكل") "نتائج البحث" else "أحدث الأعمال المضافة",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 14.sp
+                        )
+                    )
+
+                    if (selectedCategory != "الكل" || searchQuery.isNotBlank()) {
+                        TextButton(
+                            onClick = {
+                                onCategorySelect("الكل")
+                                onSearchQueryChange("")
+                            }
+                        ) {
+                            Text(
+                                text = "إعادة ضبط البحث",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (displayedResults.isEmpty()) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(60.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "لم يتم العثور على أي نتائج مطابقة",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                            Text(
+                                text = "جرب البحث باسم مختلف أو قم باختيار تصنيف آخر",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp
+                                ),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
             } else {
-                // LIST VIEW (Detailed rows without rating badge)
-                items(displayedResults, key = { it.id }) { manga ->
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                        border = BorderStroke(1.dp, SurfaceElevated),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onMangaClick(manga.id) }
-                    ) {
+                if (isGridView) {
+                    // GRID VIEW (2-column cards) - Without work type labels, with aesthetic gradient border & small favorite button
+                    val chunkedResults = displayedResults.chunked(2)
+                    items(chunkedResults, key = { it.joinToString("-") { m -> m.id } }) { pair ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            // Cover Image
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 75.dp, height = 100.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                            ) {
-                                NexusMangaImage(
-                                    imageUrl = manga.coverUrl,
-                                    fallbackRes = manga.coverRes,
-                                    contentDescription = manga.titleAr,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-
-                            // Details column
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = NexusOrange.copy(alpha = 0.15f)
-                                ) {
-                                    Text(
-                                        text = manga.type.labelAr,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusOrange,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp
+                            for (manga in pair) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = BorderStroke(
+                                            1.2.dp,
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                                )
+                                            )
                                         ),
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                    )
-                                }
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { onMangaClick(manga.id) }
+                                    ) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(190.dp)
+                                            ) {
+                                                NexusMangaImage(
+                                                    imageUrl = manga.coverUrl,
+                                                    fallbackRes = manga.coverRes,
+                                                    contentDescription = manga.titleAr,
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentScale = ContentScale.Crop
+                                                )
 
-                                Text(
-                                    text = manga.titleAr.ifEmpty { manga.titleEn },
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary,
-                                        fontSize = 14.sp
-                                    ),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                                                // Compact Favorite Button with Side Toast
+                                                val isFav = favorites.contains(manga.id)
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = if (isFav) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.60f),
+                                                    border = BorderStroke(
+                                                        0.8.dp,
+                                                        if (isFav) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.35f)
+                                                    ),
+                                                    modifier = Modifier
+                                                        .align(Alignment.TopEnd)
+                                                        .padding(6.dp)
+                                                        .size(24.dp)
+                                                        .clip(CircleShape)
+                                                        .clickable {
+                                                            val willBeFav = !isFav
+                                                            onToggleFavorite(manga.id)
+                                                            sideToastMessage = Pair(
+                                                                if (willBeFav) "تمت الإضافة إلى المفضلة" else "تمت الإزالة من المفضلة",
+                                                                willBeFav
+                                                            )
+                                                        }
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                            contentDescription = "المفضلة",
+                                                            tint = if (isFav) MaterialTheme.colorScheme.primary else Color.White,
+                                                            modifier = Modifier.size(13.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
 
-                                Text(
-                                    text = manga.synopsis,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        color = TextTertiary,
-                                        fontSize = 11.sp
-                                    ),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(10.dp),
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = manga.titleAr.ifEmpty { manga.titleEn },
+                                                    style = MaterialTheme.typography.titleSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        fontSize = 13.sp
+                                                    ),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
 
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "${manga.totalChaptersCount} فصلاً",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = TextSecondary,
-                                            fontSize = 10.sp
-                                        )
-                                    )
-                                    Text(
-                                        text = "•",
-                                        style = MaterialTheme.typography.labelSmall.copy(color = TextTertiary)
-                                    )
-                                    Text(
-                                        text = manga.genres.take(2).joinToString("، "),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = NexusGoldLight,
-                                            fontSize = 10.sp
-                                        )
-                                    )
+                                                val extraInfo = if (manga.genres.isNotEmpty()) " • ${manga.genres.first()}" else ""
+                                                Text(
+                                                    text = "${manga.totalChaptersCount} فصلاً$extraInfo",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontSize = 11.sp
+                                                    ),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
-
-                            // Favorite Icon button
-                            val isFav = favorites.contains(manga.id)
-                            IconButton(onClick = { onToggleFavorite(manga.id) }) {
-                                Icon(
-                                    imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = "المفضلة",
-                                    tint = if (isFav) NexusOrange else TextSecondary
-                                )
+                            if (pair.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
+                    }
+                } else {
+                    // LIST VIEW (Detailed rows) - Without work type labels, with aesthetic gradient border & small favorite button
+                    items(displayedResults, key = { it.id }) { manga ->
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(
+                                1.2.dp,
+                                Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                    )
+                                )
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onMangaClick(manga.id) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Cover Image
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 75.dp, height = 100.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                ) {
+                                    NexusMangaImage(
+                                        imageUrl = manga.coverUrl,
+                                        fallbackRes = manga.coverRes,
+                                        contentDescription = manga.titleAr,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                                // Details column (Work type removed completely)
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = manga.titleAr.ifEmpty { manga.titleEn },
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 14.sp
+                                        ),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
+                                    Text(
+                                        text = manga.synopsis,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 11.sp
+                                        ),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "${manga.totalChaptersCount} فصلاً",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 10.sp
+                                            )
+                                        )
+                                        if (manga.genres.isNotEmpty()) {
+                                            Text(
+                                                text = "•",
+                                                style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.outline)
+                                            )
+                                            Text(
+                                                text = manga.genres.take(2).joinToString("، "),
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontSize = 10.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Compact Favorite Icon Button with Side Toast
+                                val isFav = favorites.contains(manga.id)
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isFav) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                    border = BorderStroke(
+                                        0.8.dp,
+                                        if (isFav) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                    ),
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            val willBeFav = !isFav
+                                            onToggleFavorite(manga.id)
+                                            sideToastMessage = Pair(
+                                                if (willBeFav) "تمت الإضافة إلى المفضلة" else "تمت الإزالة من المفضلة",
+                                                willBeFav
+                                            )
+                                        }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                            contentDescription = "المفضلة",
+                                            tint = if (isFav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sleek side popup / toast on add & remove from favorites
+        AnimatedVisibility(
+            visible = sideToastMessage != null,
+            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp)
+        ) {
+            sideToastMessage?.let { (msg, isAdded) ->
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isAdded) Color(0xFF1B3022) else Color(0xFF331E23),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isAdded) Color(0xFF4CAF50).copy(alpha = 0.75f) else Color(0xFFE57373).copy(alpha = 0.75f)
+                    ),
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isAdded) Icons.Default.Favorite else Icons.Default.DeleteOutline,
+                            contentDescription = null,
+                            tint = if (isAdded) Color(0xFF81C784) else Color(0xFFFF8A80),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = msg,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 11.5.sp
+                            )
+                        )
                     }
                 }
             }
@@ -2261,14 +2352,16 @@ fun SettingsTabContent(
         else -> NexusGold
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .testTag("settings_tab_content"),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    MaterialTheme(typography = HarmattanTypography) {
+        CompositionLocalProvider(LocalTextStyle provides TextStyle(fontFamily = HarmattanFontFamily)) {
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .testTag("settings_tab_content"),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
         // =========================================================================
         // HEADER: App Identity Card (v1.9.3)
         // =========================================================================
@@ -3299,6 +3392,8 @@ fun SettingsTabContent(
                     }
                 }
             }
+        }
+    }
         }
     }
 

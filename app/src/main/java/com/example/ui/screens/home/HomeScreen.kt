@@ -1091,9 +1091,19 @@ fun LatestMangaGridCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, SurfaceElevated, RoundedCornerShape(14.dp))
+            .border(
+                1.2.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                ),
+                RoundedCornerShape(14.dp)
+            )
             .testTag("manga_grid_card_${manga.id}"),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
@@ -1114,7 +1124,7 @@ fun LatestMangaGridCard(
                     text = manga.titleAr,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1130,7 +1140,7 @@ fun LatestMangaGridCard(
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "المفضلة",
-                        tint = if (isFavorite) NexusOrange else TextTertiary,
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 }
