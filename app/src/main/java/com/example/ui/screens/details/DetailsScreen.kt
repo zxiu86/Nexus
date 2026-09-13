@@ -2,11 +2,13 @@ package com.example.ui.screens.details
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -558,7 +560,12 @@ fun Rotating3DCoverCard(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3500, easing = LinearEasing),
+            animation = keyframes {
+                durationMillis = 5000 // 2 seconds spin + 3 seconds pause on face = 5 seconds total
+                0f at 0 using FastOutSlowInEasing
+                360f at 2000 using FastOutSlowInEasing
+                360f at 5000
+            },
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation_y_anim"
@@ -1674,15 +1681,15 @@ fun BatchPaginationControl(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = NexusGoldDark,
-                        modifier = Modifier.size(30.dp)
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Layers,
                                 contentDescription = null,
-                                tint = NexusGold,
-                                modifier = Modifier.size(16.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }
@@ -1691,14 +1698,14 @@ fun BatchPaginationControl(
                             text = "مجموعات الفصول",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Black,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp
                             )
                         )
                         Text(
                             text = "الدفعة ${currentBatchIndex + 1} من $totalBatches (30 فصلاً لكل دفعة)",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = TextTertiary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
                             )
                         )
@@ -1708,8 +1715,8 @@ fun BatchPaginationControl(
                 // Quick Jump Trigger Button (الانتقال السريع)
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = SurfaceVariantDark,
-                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .clickable { showQuickJumpDialog = true }
@@ -1723,14 +1730,14 @@ fun BatchPaginationControl(
                         Icon(
                             imageVector = Icons.Default.GridView,
                             contentDescription = "عرض كل الدفعات",
-                            tint = NexusGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = "تصفح الدفعات",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = NexusGoldLight,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                         )
@@ -1752,10 +1759,10 @@ fun BatchPaginationControl(
 
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) NexusGold else SurfaceVariantDark,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(
                             if (isSelected) 1.5.dp else 1.dp,
-                            if (isSelected) NexusOrange else SurfaceElevated
+                            if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
@@ -1771,7 +1778,7 @@ fun BatchPaginationControl(
                                 text = "مجموعة ${batchIdx + 1}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                                    color = if (isSelected) BackgroundDark.copy(alpha = 0.8f) else NexusGold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary,
                                     fontSize = 10.sp
                                 )
                             )
@@ -1779,7 +1786,7 @@ fun BatchPaginationControl(
                                 text = "$startNum - $endNum",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Black,
-                                    color = if (isSelected) BackgroundDark else TextPrimary,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 13.sp
                                 )
                             )
@@ -1787,7 +1794,7 @@ fun BatchPaginationControl(
                                 text = "$chaptersCount فصلاً",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
-                                    color = if (isSelected) BackgroundDark.copy(alpha = 0.7f) else TextTertiary,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 9.sp
                                 )
                             )
@@ -1799,8 +1806,8 @@ fun BatchPaginationControl(
             // Direct Chapter Search & Instant Jump Row (انتقل لأي فصل برقم الفصل)
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = SurfaceVariantDark.copy(alpha = 0.6f),
-                border = BorderStroke(1.dp, SurfaceElevated),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -1813,14 +1820,14 @@ fun BatchPaginationControl(
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
-                        tint = NexusGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = "انتقال لفصل محدد:",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                     )
@@ -1834,7 +1841,7 @@ fun BatchPaginationControl(
                         placeholder = {
                             Text(
                                 text = "مثال: 45",
-                                color = TextTertiary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                 fontSize = 11.sp
                             )
                         },
@@ -1858,13 +1865,13 @@ fun BatchPaginationControl(
                             .height(44.dp)
                             .testTag("direct_chapter_input"),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = NexusGold,
-                            unfocusedBorderColor = SurfaceElevated,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary,
-                            cursorColor = NexusGold,
-                            focusedContainerColor = SurfaceDark,
-                            unfocusedContainerColor = SurfaceDark
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(8.dp)
                     )
@@ -1881,10 +1888,10 @@ fun BatchPaginationControl(
                         enabled = chapterInputText.isNotBlank(),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = NexusGold,
-                            contentColor = BackgroundDark,
-                            disabledContainerColor = SurfaceElevated,
-                            disabledContentColor = TextTertiary
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         ),
                         modifier = Modifier
                             .height(38.dp)
@@ -1915,8 +1922,8 @@ fun BatchPaginationControl(
                         .fillMaxWidth()
                         .height(5.dp)
                         .clip(RoundedCornerShape(3.dp)),
-                    color = NexusGold,
-                    trackColor = SurfaceElevated
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
@@ -1935,12 +1942,12 @@ fun BatchPaginationControl(
                         .testTag("prev_batch_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = SurfaceVariantDark,
-                        contentColor = TextPrimary,
-                        disabledContainerColor = SurfaceDark,
-                        disabledContentColor = TextTertiary
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     ),
-                    border = BorderStroke(1.dp, if (currentBatchIndex > 0) NexusGold.copy(alpha = 0.4f) else SurfaceElevated)
+                    border = BorderStroke(1.dp, if (currentBatchIndex > 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -1952,7 +1959,7 @@ fun BatchPaginationControl(
                             Text(
                                 text = "($prevBatchStart - $prevBatchEnd)",
                                 fontSize = 9.sp,
-                                color = NexusGoldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -1968,10 +1975,10 @@ fun BatchPaginationControl(
                         .testTag("next_batch_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = NexusGold,
-                        contentColor = BackgroundDark,
-                        disabledContainerColor = SurfaceDark,
-                        disabledContentColor = TextTertiary
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     )
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1984,7 +1991,7 @@ fun BatchPaginationControl(
                             Text(
                                 text = "($nextBatchStart - $nextBatchEnd)",
                                 fontSize = 9.sp,
-                                color = BackgroundDark.copy(alpha = 0.8f)
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                             )
                         }
                     }
@@ -1993,7 +2000,7 @@ fun BatchPaginationControl(
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 2.dp),
-                color = SurfaceElevated
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
             )
 
             // Return to Home Button (زر العودة للصفحة الرئيسية)
@@ -2004,9 +2011,9 @@ fun BatchPaginationControl(
                     .height(44.dp)
                     .testTag("details_footer_home_button"),
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.6f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = NexusGoldLight
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Row(
@@ -2016,7 +2023,7 @@ fun BatchPaginationControl(
                     Icon(
                         imageVector = Icons.Default.Home,
                         contentDescription = null,
-                        tint = NexusGold,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
@@ -2033,7 +2040,7 @@ fun BatchPaginationControl(
     if (showQuickJumpDialog) {
         AlertDialog(
             onDismissRequest = { showQuickJumpDialog = false },
-            containerColor = SurfaceCard,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(20.dp),
             title = {
                 Row(
@@ -2048,14 +2055,14 @@ fun BatchPaginationControl(
                         Icon(
                             imageVector = Icons.Default.GridView,
                             contentDescription = null,
-                            tint = NexusGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "الانتقال السريع لمجموعة فصول",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 15.sp
                             )
                         )
@@ -2067,7 +2074,7 @@ fun BatchPaginationControl(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "إغلاق",
-                            tint = TextTertiary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -2081,7 +2088,7 @@ fun BatchPaginationControl(
                     Text(
                         text = "اختر الدفعة المطلوبة للقفز إليها مباشرة:",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     )
@@ -2100,10 +2107,10 @@ fun BatchPaginationControl(
 
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) NexusGoldDark else SurfaceVariantDark,
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isSelected) NexusGold else SurfaceElevated
+                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2125,14 +2132,14 @@ fun BatchPaginationControl(
                                             text = "مجموعة ${idx + 1}",
                                             style = MaterialTheme.typography.labelMedium.copy(
                                                 fontWeight = FontWeight.Bold,
-                                                color = if (isSelected) NexusGold else TextPrimary,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                                 fontSize = 13.sp
                                             )
                                         )
                                         Text(
                                             text = "الفصول من $startNum إلى $endNum",
                                             style = MaterialTheme.typography.bodySmall.copy(
-                                                color = TextSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 11.sp
                                             )
                                         )
@@ -2141,14 +2148,14 @@ fun BatchPaginationControl(
                                     if (isSelected) {
                                         Surface(
                                             shape = RoundedCornerShape(6.dp),
-                                            color = NexusGold
+                                            color = MaterialTheme.colorScheme.primary
                                         ) {
                                             Text(
                                                 text = "النشطة حالياً",
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                                 style = MaterialTheme.typography.labelSmall.copy(
                                                     fontWeight = FontWeight.Black,
-                                                    color = BackgroundDark,
+                                                    color = MaterialTheme.colorScheme.onPrimary,
                                                     fontSize = 10.sp
                                                 )
                                             )
@@ -2163,9 +2170,9 @@ fun BatchPaginationControl(
             confirmButton = {
                 Button(
                     onClick = { showQuickJumpDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Text("إغلاق", color = TextPrimary)
+                    Text("إغلاق", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         )

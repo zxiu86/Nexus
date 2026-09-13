@@ -118,20 +118,7 @@ import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.ui.components.StartIoBannerAd
 import com.example.util.StartIoAdManager
-import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
-import com.example.ui.theme.NexusGold
-import com.example.ui.theme.NexusGoldDark
-import com.example.ui.theme.NexusGoldLight
-import com.example.ui.theme.NexusOrange
-import com.example.ui.theme.NexusOrangeLight
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.SurfaceDark
-import com.example.ui.theme.SurfaceElevated
-import com.example.ui.theme.SurfaceVariantDark
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 import com.example.ui.viewmodel.ReaderUiState
 import kotlin.math.roundToInt
 
@@ -260,15 +247,15 @@ fun ReaderScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     if (manga == null || chapter == null || uiState.isLoadingPages) {
-        Box(modifier = modifier.fillMaxSize().background(BackgroundDark), contentAlignment = Alignment.Center) {
+        Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CircularProgressIndicator(color = NexusGold)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Text(
                     text = "جاري تجهيز صفحات الفصل...",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
             }
         }
@@ -314,11 +301,7 @@ fun ReaderScreen(
         }
     }
 
-    val readerBg = when (uiState.appSettings.backgroundStyle) {
-        1 -> Color.Black
-        2 -> Color(0xFFF6F8FA)
-        else -> BackgroundDark
-    }
+    val readerBg = MaterialTheme.colorScheme.background
 
     Box(
         modifier = modifier
@@ -489,8 +472,8 @@ fun ReaderScreen(
         if (scale > 1f) {
             Surface(
                 shape = CircleShape,
-                color = SurfaceDark.copy(alpha = 0.9f),
-                border = BorderStroke(1.dp, NexusGold),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 80.dp, end = 16.dp)
@@ -508,12 +491,12 @@ fun ReaderScreen(
                     Icon(
                         imageVector = Icons.Default.ZoomOut,
                         contentDescription = "إعادة ضبط التكبير",
-                        tint = NexusGoldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = "${(scale * 100).roundToInt()}%",
-                        style = MaterialTheme.typography.labelSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     )
                 }
             }
@@ -593,8 +576,8 @@ fun ReaderTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("reader_top_bar"),
-        color = SurfaceDark.copy(alpha = 0.96f),
-        border = BorderStroke(0.5.dp, SurfaceElevated),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         shadowElevation = 8.dp
     ) {
         Row(
@@ -607,8 +590,8 @@ fun ReaderTopBar(
             // Return to Home Button
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = SurfaceVariantDark,
-                border = BorderStroke(1.dp, SurfaceElevated),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
                     .clickable { onNavigateHome() }
@@ -622,14 +605,14 @@ fun ReaderTopBar(
                     Icon(
                         imageVector = Icons.Default.Home,
                         contentDescription = "الرئيسية",
-                        tint = NexusGoldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = "الرئيسية",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -650,7 +633,7 @@ fun ReaderTopBar(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "محفوظ أوفلاين",
-                            tint = NexusGold,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(12.dp)
                         )
                     }
@@ -658,7 +641,7 @@ fun ReaderTopBar(
                         text = chapterTitle,
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = NexusGoldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 13.sp
                         ),
                         maxLines = 1,
@@ -668,7 +651,7 @@ fun ReaderTopBar(
                 Text(
                     text = mangaTitle,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     ),
                     maxLines = 1,
@@ -685,7 +668,7 @@ fun ReaderTopBar(
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "المفضلة",
-                        tint = if (isFavorite) NexusOrange else TextSecondary,
+                        tint = if (isFavorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -700,7 +683,7 @@ fun ReaderTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "رجوع للتفاصيل",
-                        tint = TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -731,8 +714,8 @@ fun ReaderBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("reader_bottom_bar"),
-        color = SurfaceDark.copy(alpha = 0.96f),
-        border = BorderStroke(0.5.dp, SurfaceElevated),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         shadowElevation = 8.dp
     ) {
         Column(
@@ -751,7 +734,7 @@ fun ReaderBottomBar(
                 Text(
                     text = "فصل $currentChapterNumber من $totalChapters",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = NexusGoldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp
                     )
@@ -760,7 +743,7 @@ fun ReaderBottomBar(
                 Text(
                     text = "صفحة $currentPage / $totalPages",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = TextTertiary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 )
@@ -782,10 +765,10 @@ fun ReaderBottomBar(
                         .testTag("reader_prev_chapter_btn"),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = SurfaceVariantDark,
-                        contentColor = TextPrimary,
-                        disabledContainerColor = SurfaceElevated.copy(alpha = 0.4f),
-                        disabledContentColor = TextTertiary
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     ),
                     contentPadding = PaddingValues(horizontal = 6.dp)
                 ) {
@@ -799,8 +782,8 @@ fun ReaderBottomBar(
                 // "قائمة الفصول السريعة"
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = NexusGoldDark,
-                    border = BorderStroke(1.dp, NexusGold),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
@@ -815,14 +798,14 @@ fun ReaderBottomBar(
                         Icon(
                             imageVector = Icons.Default.FormatListNumbered,
                             contentDescription = "قائمة الفصول",
-                            tint = BackgroundDark,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "الفصول",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = BackgroundDark,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                         )
@@ -839,10 +822,10 @@ fun ReaderBottomBar(
                         .testTag("reader_next_chapter_btn"),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = NexusGold,
-                        contentColor = BackgroundDark,
-                        disabledContainerColor = SurfaceElevated.copy(alpha = 0.4f),
-                        disabledContentColor = TextTertiary
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     ),
                     contentPadding = PaddingValues(horizontal = 6.dp)
                 ) {
@@ -867,8 +850,8 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
             .fillMaxWidth()
             .padding(14.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceElevated)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
     ) {
         Column(
             modifier = Modifier
@@ -879,8 +862,8 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
             if (isDownloaded) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = NexusGold.copy(alpha = 0.15f),
-                    border = BorderStroke(0.5.dp, NexusGold),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary),
                     modifier = Modifier.padding(bottom = 6.dp)
                 ) {
                     Row(
@@ -891,13 +874,13 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = NexusGoldLight,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
                             text = "قراءة بدون اتصال (محفوظ محلياً)",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = NexusGoldLight,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -910,7 +893,7 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
                 text = manga.titleAr,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Black,
-                    color = NexusGoldLight
+                    color = MaterialTheme.colorScheme.primary
                 ),
                 textAlign = TextAlign.Center
             )
@@ -919,14 +902,14 @@ fun ChapterStartBanner(manga: MangaItem, chapter: Chapter, isDownloaded: Boolean
                 text = chapter.title,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 textAlign = TextAlign.Center
             )
             Text(
                 text = "ترجمة: ${manga.scanlationTeam}",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    color = TextTertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 ),
                 modifier = Modifier.padding(top = 4.dp)
@@ -1010,7 +993,7 @@ fun ComicPageItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(260.dp)
-                        .background(SurfaceCard),
+                        .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -1020,14 +1003,14 @@ fun ComicPageItem(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = NexusOrange.copy(alpha = 0.15f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             modifier = Modifier.size(54.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = null,
-                                    tint = NexusOrange,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -1037,7 +1020,7 @@ fun ComicPageItem(
                             text = if (isError) "تعذر تحميل الصفحة $pageNumber" else "استغرق تحميل الصفحة $pageNumber أكثر من 5 ثوانٍ",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             ),
                             textAlign = TextAlign.Center
                         )
@@ -1045,7 +1028,7 @@ fun ComicPageItem(
                         Text(
                             text = "تحقق من اتصالك بالإنترنت ثم اضغط على زر إعادة المحاولة",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = TextTertiary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
                             ),
                             textAlign = TextAlign.Center
@@ -1059,8 +1042,8 @@ fun ComicPageItem(
                                 reloadKey++
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = NexusOrange,
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -1090,13 +1073,13 @@ fun ComicPageItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .background(SurfaceCard),
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.MenuBook,
                     contentDescription = null,
-                    tint = TextTertiary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -1143,8 +1126,8 @@ fun ChapterEndCard(
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, SurfaceElevated)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
     ) {
         Column(
             modifier = Modifier
@@ -1158,14 +1141,14 @@ fun ChapterEndCard(
                     text = "🔒 الفصل ${currentChapter.number} قيد الصيانة والإعداد",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFFB74D)
+                        color = MaterialTheme.colorScheme.error
                     )
                 )
 
                 Text(
                     text = "هذا الفصل قيد الصيانة أو إعادة التدقيق والرفع حالياً وسيتاح بأفضل جودة قريباً. يمكنك الانتقال للفصول الأخرى أدناه.",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 )
@@ -1174,14 +1157,14 @@ fun ChapterEndCard(
                     text = "✨ نهاية الفصل ${currentChapter.number}",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = NexusGoldLight
+                        color = MaterialTheme.colorScheme.primary
                     )
                 )
 
                 Text(
                     text = "نتمنى لك قراءة ممتعة! لا تنسَ متابعة الفصول القادمة أولاً بأول.",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 )
@@ -1189,7 +1172,7 @@ fun ChapterEndCard(
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 4.dp),
-                color = SurfaceElevated
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
             )
 
             if (hasNextChapter) {
@@ -1200,8 +1183,8 @@ fun ChapterEndCard(
                         .height(44.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = NexusGold,
-                        contentColor = BackgroundDark
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(
@@ -1223,8 +1206,8 @@ fun ChapterEndCard(
                             .weight(1f)
                             .height(40.dp),
                         shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, SurfaceElevated),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
                     ) {
                         Text("◄ الفصل السابق", fontSize = 11.sp)
                     }
@@ -1236,8 +1219,8 @@ fun ChapterEndCard(
                         .weight(1f)
                         .height(40.dp),
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, NexusOrange),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NexusOrangeLight)
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("قائمة الفصول", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
@@ -1251,8 +1234,8 @@ fun ChapterEndCard(
                     .height(40.dp)
                     .testTag("reader_end_home_button"),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, SurfaceElevated),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1294,7 +1277,7 @@ fun QuickJumpBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceDark,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 10.dp
     ) {
         Column(
@@ -1312,14 +1295,14 @@ fun QuickJumpBottomSheet(
                     text = "التنقل السريع بين الفصول",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "إغلاق",
-                        tint = TextSecondary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -1327,7 +1310,7 @@ fun QuickJumpBottomSheet(
             Text(
                 text = "${manga.titleAr} (${manga.totalChaptersCount} فصل متاح)",
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color = NexusGoldLight,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 12.sp
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -1338,24 +1321,24 @@ fun QuickJumpBottomSheet(
                 value = filterQuery,
                 onValueChange = { filterQuery = it },
                 placeholder = {
-                    Text("اكتب رقم الفصل أو عنوانه...", color = TextTertiary, fontSize = 12.sp)
+                    Text("اكتب رقم الفصل أو عنوانه...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontSize = 12.sp)
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
-                        tint = NexusGoldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
                 },
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = SurfaceCard,
-                    unfocusedContainerColor = SurfaceCard,
-                    focusedBorderColor = NexusGold,
-                    unfocusedBorderColor = SurfaceElevated,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
                 singleLine = true,
                 modifier = Modifier
@@ -1380,8 +1363,8 @@ fun QuickJumpBottomSheet(
                     val isCurrent = ch.number == currentChapterNumber
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isCurrent) NexusGold else SurfaceCard,
-                        border = BorderStroke(1.dp, if (isCurrent) NexusOrange else SurfaceElevated),
+                        color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, if (isCurrent) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onSelectChapter(ch.number) }
@@ -1395,7 +1378,7 @@ fun QuickJumpBottomSheet(
                                 text = "${ch.number}",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isCurrent) BackgroundDark else TextPrimary,
+                                    color = if (isCurrent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 13.sp
                                 )
                             )
@@ -1405,7 +1388,7 @@ fun QuickJumpBottomSheet(
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Black,
-                                        color = if (isCurrent) BackgroundDark else BadgeNew
+                                        color = if (isCurrent) MaterialTheme.colorScheme.onPrimary else BadgeNew
                                     )
                                 )
                             }

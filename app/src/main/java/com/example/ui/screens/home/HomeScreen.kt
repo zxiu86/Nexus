@@ -761,7 +761,7 @@ fun HeroCarouselSection(
             pageSpacing = 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(290.dp)
+                .height(315.dp)
                 .testTag("hero_carousel_pager")
         ) { page ->
             val manga = heroList[page]
