@@ -344,6 +344,59 @@ class MangaRepository(private val context: Context) {
         return null
     }
 
+    /**
+     * يرتب قائمة الأعمال بحيث:
+     * 1. أي عمل جديد مضاف لأول مرة أو يمتلك فصلاً جديداً مباشر (isNew = true أو رقم فصل أعلى) يأتي في البداية (القسم الأول / الصفحة الأولى).
+     * 2. الأعمال الأحدث نشاطاً تأتي أولاً والأقدم تنحدر لأسفل تدريجياً للصفحات التالية.
+     */
+    fun sortMangaByRecency(list: List<MangaItem>): List<MangaItem> {
+        val now = System.currentTimeMillis()
+        val editor = prefs.edit()
+        var hasChanges = false
+
+        for (item in list) {
+            val slug = item.id
+            val isKnown = prefs.getBoolean("is_known_work_$slug", false)
+            val lastMaxCh = prefs.getInt("last_known_max_ch_$slug", -1)
+            val currentMaxCh = item.chapters.maxOfOrNull { it.number } ?: 0
+            val hasNewChapter = item.chapters.any { it.isNew }
+
+            if (!isKnown) {
+                // عمل جديد كلياً
+                editor.putBoolean("is_known_work_$slug", true)
+                editor.putInt("last_known_max_ch_$slug", currentMaxCh)
+                editor.putLong("last_activity_ts_$slug", now)
+                hasChanges = true
+            } else if (lastMaxCh != -1 && currentMaxCh > lastMaxCh) {
+                // فصل جديد وصل لهذا العمل
+                editor.putInt("last_known_max_ch_$slug", currentMaxCh)
+                editor.putLong("last_activity_ts_$slug", now)
+                hasChanges = true
+            } else if (hasNewChapter) {
+                val existingTs = prefs.getLong("last_activity_ts_$slug", 0L)
+                if (now - existingTs > 86_400_000L) {
+                    editor.putLong("last_activity_ts_$slug", now)
+                    hasChanges = true
+                }
+            }
+        }
+        if (hasChanges) {
+            editor.apply()
+        }
+
+        return list.sortedWith(
+            compareByDescending<MangaItem> { item ->
+                if (item.chapters.any { it.isNew }) 1 else 0
+            }.thenByDescending { item ->
+                prefs.getLong("last_activity_ts_${item.id}", 0L)
+            }.thenByDescending { item ->
+                item.chapters.maxOfOrNull { it.number } ?: 0
+            }.thenByDescending { item ->
+                item.totalChaptersCount
+            }
+        )
+    }
+
     private fun loadMangaFromDiskCache() {
         try {
             val cacheFile = java.io.File(cacheDir, "nexus_works_cache.json")
@@ -357,8 +410,9 @@ class MangaRepository(private val context: Context) {
                         convertToMangaItem(slug, workDto, info)
                     }
                     if (restoredList.isNotEmpty()) {
-                        _allMangaFlow.value = restoredList
-                        Log.d(TAG, "Restored ${restoredList.size} works from disk cache.")
+                        val sortedList = sortMangaByRecency(restoredList)
+                        _allMangaFlow.value = sortedList
+                        Log.d(TAG, "Restored and sorted ${sortedList.size} works from disk cache.")
                     }
                 }
             }
@@ -1105,10 +1159,13 @@ class MangaRepository(private val context: Context) {
             }
 
             if (fullMangaList.isNotEmpty()) {
-                _allMangaFlow.value = fullMangaList
-                Log.d(TAG, "Successfully loaded and updated ${fullMangaList.size} works from GitHub!")
+                val sortedList = sortMangaByRecency(fullMangaList)
+                _allMangaFlow.value = sortedList
+                Log.d(TAG, "Successfully loaded and sorted ${sortedList.size} works from GitHub!")
+                Result.success(sortedList)
+            } else {
+                Result.success(emptyList())
             }
-            Result.success(fullMangaList)
         } catch (e: Exception) {
             Log.e(TAG, "Error refreshing data from GitHub", e)
             Result.failure(e)

@@ -7,8 +7,8 @@ package com.example.util
  * Update Cards, Badges, Diagnostics, Footer).
  */
 object AppVersionConfig {
-    const val VERSION_NAME = "1.9.5"
-    const val VERSION_CODE = 35
+    const val VERSION_NAME = "1.9.6"
+    const val VERSION_CODE = 36
     const val BUILD_CODENAME = "Nexus Nova"
     const val RELEASE_CHANNEL = "النسخة الرسمية المستقرة"
     const val RELEASE_DATE = "سبتمبر 2026"

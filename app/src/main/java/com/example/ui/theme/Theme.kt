@@ -25,7 +25,7 @@ private data class AccentColors(
 fun getAppColorScheme(
     isDark: Boolean,
     backgroundStyle: Int, // 0: Default, 1: AMOLED Pure Black, 2: Pure White
-    accentColor: Int // 0: Default (Gold/Orange), 1: Blue, 2: Red
+    accentColor: Int // 0: Default (Gold/Orange), 1: Blue, 2: Red, 3: Marine Blue (#0000B3), 4: Cherry Blossom (#FF77E1)
 ): ColorScheme {
     val (primary, onPrimary, primaryContainer, onPrimaryContainer, secondary, secondaryContainer) = when (accentColor) {
         1 -> AccentColors(
@@ -35,6 +35,14 @@ fun getAppColorScheme(
         2 -> AccentColors(
             NexusRedLight, Color.White, NexusRedDark, Color.White,
             NexusRedPrimary, NexusRedContainer
+        )
+        3 -> AccentColors(
+            NexusMarineBlueLight, Color.White, NexusMarineBlueDark, Color.White,
+            NexusMarineBluePrimary, NexusMarineBlueContainer
+        )
+        4 -> AccentColors(
+            NexusCherryBlossomPrimary, Color.Black, NexusCherryBlossomDark, Color.White,
+            NexusCherryBlossomLight, NexusCherryBlossomContainer
         )
         else -> AccentColors(
             NexusGoldLight, BackgroundDark, NexusGoldDark, TextPrimary,

@@ -553,17 +553,15 @@ fun Rotating3DCoverCard(
     val accentPrimary = MaterialTheme.colorScheme.primary
     val accentSecondary = MaterialTheme.colorScheme.secondary
 
-    var isPaused by remember { mutableStateOf(false) }
-
     val infiniteTransition = rememberInfiniteTransition(label = "manga_cover_flip_infinite")
     val animRotationY by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
-                durationMillis = 5000 // 2 seconds spin + 3 seconds pause on face = 5 seconds total
+                durationMillis = 5000 // 2 seconds (0 to 2000ms) full 360 spin + 3 seconds (2000 to 5000ms) pause on front face = 5s cycle
                 0f at 0 using FastOutSlowInEasing
-                360f at 2000 using FastOutSlowInEasing
+                360f at 2000 using LinearEasing
                 360f at 5000
             },
             repeatMode = RepeatMode.Restart
@@ -571,7 +569,7 @@ fun Rotating3DCoverCard(
         label = "rotation_y_anim"
     )
 
-    val currentRotation = if (isPaused) 0f else animRotationY
+    val currentRotation = animRotationY
     val normalizedRotation = (currentRotation % 360f + 360f) % 360f
     val isBackFace = normalizedRotation in 90f..270f
 
@@ -580,7 +578,6 @@ fun Rotating3DCoverCard(
             .width(120.dp)
             .aspectRatio(0.70f)
             .clip(RoundedCornerShape(16.dp))
-            .clickable { isPaused = !isPaused }
             .graphicsLayer {
                 rotationY = currentRotation
                 cameraDistance = 16f * density
@@ -1650,14 +1647,16 @@ fun BatchPaginationControl(
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        ),
         border = BorderStroke(
-            1.2.dp,
-            Brush.linearGradient(
+            1.5.dp,
+            Brush.horizontalGradient(
                 colors = listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                 )
             )
         )
@@ -1759,10 +1758,11 @@ fun BatchPaginationControl(
 
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                        shadowElevation = if (isSelected) 6.dp else 1.dp,
                         border = BorderStroke(
                             if (isSelected) 1.5.dp else 1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                            if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
@@ -1806,8 +1806,8 @@ fun BatchPaginationControl(
             // Direct Chapter Search & Instant Jump Row (انتقل لأي فصل برقم الفصل)
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(

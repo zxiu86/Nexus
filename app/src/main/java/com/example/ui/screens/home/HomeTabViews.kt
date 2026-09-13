@@ -2,6 +2,8 @@ package com.example.ui.screens.home
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
@@ -157,8 +159,12 @@ import com.example.ui.theme.NexusGoldLight
 import com.example.ui.theme.NexusOrange
 import com.example.ui.theme.NexusOrangeDark
 import com.example.ui.theme.NexusOrangeLight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import com.example.ui.theme.NexusBluePrimary
 import com.example.ui.theme.NexusRedPrimary
+import com.example.ui.theme.NexusMarineBluePrimary
+import com.example.ui.theme.NexusCherryBlossomPrimary
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceElevated
@@ -2470,8 +2476,6 @@ fun SettingsTabContent(
     onUpdateReaderMode: (Int) -> Unit = {},
     onUpdateImageQuality: (Int) -> Unit = {},
     onUpdateKeepScreenOn: (Boolean) -> Unit = {},
-    onUpdateVolumeScroll: (Boolean) -> Unit = {},
-    onUpdateDoubleTapZoom: (Boolean) -> Unit = {},
     onUpdateWifiOnlyDownloads: (Boolean) -> Unit = {},
     onUpdateAutoSyncUpdates: (Boolean) -> Unit = {},
     onUpdateThemeMode: (Int) -> Unit = {},
@@ -2484,14 +2488,13 @@ fun SettingsTabContent(
     var showClearDownloadsDialog by remember { mutableStateOf(false) }
     var cacheCleanedSuccess by remember { mutableStateOf(false) }
     var expandedDownloadsList by remember { mutableStateOf(false) }
+    var showMoreAccentOptions by remember { mutableStateOf(false) }
 
     // Read real user settings from AppSettings
     val appSettings = uiState.appSettings
     val readerMode = appSettings.readerMode
     val imageQuality = appSettings.imageQuality
     val keepScreenOn = appSettings.keepScreenOn
-    val volumeScroll = appSettings.volumeScroll
-    val doubleTapZoom = appSettings.doubleTapZoom
     val wifiOnlyDownloads = appSettings.wifiOnlyDownloads
     val autoSyncUpdates = appSettings.autoSyncUpdates
     val themeMode = appSettings.themeMode
@@ -2502,6 +2505,8 @@ fun SettingsTabContent(
     val accentPrimary = when (accentColor) {
         1 -> NexusBluePrimary
         2 -> NexusRedPrimary
+        3 -> NexusMarineBluePrimary
+        4 -> NexusCherryBlossomPrimary
         else -> NexusGold
     }
 
@@ -2838,6 +2843,110 @@ fun SettingsTabContent(
                                 }
                             }
                         }
+
+                        // زر "> المزيد من الخيارات" لإظهار الألوان الإضافية دون تكبير القائمة وتخريب الواجهة
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showMoreAccentOptions = !showMoreAccentOptions }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (showMoreAccentOptions) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = if (showMoreAccentOptions) "خيارات أقل" else "> المزيد من الخيارات",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 12.sp
+                                    )
+                                )
+                            }
+                            if (!showMoreAccentOptions && accentColor > 2) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = accentPrimary,
+                                    modifier = Modifier.size(12.dp)
+                                ) {}
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = showMoreAccentOptions || accentColor > 2,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val additionalAccents = listOf(
+                                    Triple(3, "أزرق بحري", NexusMarineBluePrimary),
+                                    Triple(4, "أزهار الكرز", NexusCherryBlossomPrimary)
+                                )
+
+                                additionalAccents.forEach { (colorId, colorTitle, colorVal) ->
+                                    val isSelected = accentColor == colorId
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isSelected) colorVal.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                        border = BorderStroke(
+                                            if (isSelected) 1.5.dp else 0.5.dp,
+                                            if (isSelected) colorVal else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { onUpdateAccentColor(colorId) }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = colorVal,
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                if (isSelected) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Check,
+                                                            contentDescription = null,
+                                                            tint = if (colorId == 4) Color.Black else Color.White,
+                                                            modifier = Modifier.size(14.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Text(
+                                                text = colorTitle,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = if (isSelected) colorVal else MaterialTheme.colorScheme.onSurface,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    fontSize = 10.5.sp
+                                                ),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3047,27 +3156,7 @@ fun SettingsTabContent(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-                    // 3. مفاتيح التبديل السريعة (Switches)
-                    SettingsSwitchRow(
-                        title = "تكبير سريع بالنقر المزدوج (Double-Tap)",
-                        subtitle = "تكبير وتصغير صفحات المانجا بنقرتين متتاليتين في القارئ",
-                        checked = doubleTapZoom,
-                        onCheckedChange = onUpdateDoubleTapZoom,
-                        accent = accentPrimary
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
-                    SettingsSwitchRow(
-                        title = "تقليب الصفحات بأزرار الصوت",
-                        subtitle = "استخدام أزرار رفع وخفض الصوت للتمرير السلس بين الصفحات",
-                        checked = volumeScroll,
-                        onCheckedChange = onUpdateVolumeScroll,
-                        accent = accentPrimary
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
+                    // 3. مفتاح إبقاء الشاشة مفعلة أثناء القراءة
                     SettingsSwitchRow(
                         title = "إبقاء الشاشة مفعلة أثناء القراءة",
                         subtitle = "منع إغلاق الشاشة تلقائياً أثناء تصفح فصول المانجا والمانهوا",

@@ -114,20 +114,13 @@ val Typography = Typography(
     )
 )
 
-// Google Font Provider for Harmattan Font
-val googleFontProvider = androidx.compose.ui.text.googlefonts.GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
-val HarmattanGoogleFont = androidx.compose.ui.text.googlefonts.GoogleFont("Harmattan")
-
+// Embedded Harmattan Font Family (100% Offline & Instant Render)
 val HarmattanFontFamily = FontFamily(
-    androidx.compose.ui.text.googlefonts.Font(googleFont = HarmattanGoogleFont, fontProvider = googleFontProvider, weight = FontWeight.Normal),
-    androidx.compose.ui.text.googlefonts.Font(googleFont = HarmattanGoogleFont, fontProvider = googleFontProvider, weight = FontWeight.Medium),
-    androidx.compose.ui.text.googlefonts.Font(googleFont = HarmattanGoogleFont, fontProvider = googleFontProvider, weight = FontWeight.SemiBold),
-    androidx.compose.ui.text.googlefonts.Font(googleFont = HarmattanGoogleFont, fontProvider = googleFontProvider, weight = FontWeight.Bold)
+    Font(resId = R.font.harmattan_regular, weight = FontWeight.Normal),
+    Font(resId = R.font.harmattan_regular, weight = FontWeight.Medium),
+    Font(resId = R.font.harmattan_bold, weight = FontWeight.SemiBold),
+    Font(resId = R.font.harmattan_bold, weight = FontWeight.Bold),
+    Font(resId = R.font.harmattan_bold, weight = FontWeight.Black)
 )
 
 // Specialized typography for Settings page using Harmattan font

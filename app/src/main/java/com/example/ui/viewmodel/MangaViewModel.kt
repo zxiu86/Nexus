@@ -434,7 +434,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshDataFromGitHub(showIndicator: Boolean = false) {
         viewModelScope.launch {
             if (showIndicator) _isRefreshing.value = true
-            repository.refreshMangaFromGitHub(forceFresh = true)
+            val result = repository.refreshMangaFromGitHub(forceFresh = true)
+            if (result.isSuccess) {
+                _currentPage.value = 1
+            }
             checkForUpdates()
             if (showIndicator) _isRefreshing.value = false
         }
@@ -724,14 +727,6 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateKeepScreenOn(enabled: Boolean) {
         settingsManager.updateKeepScreenOn(enabled)
-    }
-
-    fun updateVolumeScroll(enabled: Boolean) {
-        settingsManager.updateVolumeScroll(enabled)
-    }
-
-    fun updateDoubleTapZoom(enabled: Boolean) {
-        settingsManager.updateDoubleTapZoom(enabled)
     }
 
     fun updateWifiOnlyDownloads(enabled: Boolean) {

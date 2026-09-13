@@ -10,6 +10,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -196,41 +197,6 @@ fun ReaderScreen(
         }
     }
 
-    // 🔊 تقليب الصفحات بأزرار الصوت (Volume Scroll)
-    val volumeScroll = uiState.appSettings.volumeScroll
-    val localView = LocalView.current
-    val coroutineScope = rememberCoroutineScope()
-    DisposableEffect(volumeScroll) {
-        if (volumeScroll) {
-            localView.isFocusableInTouchMode = true
-            localView.requestFocus()
-            localView.setOnKeyListener { _, keyCode, event ->
-                if (event.action == android.view.KeyEvent.ACTION_DOWN) {
-                    when (keyCode) {
-                        android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                            coroutineScope.launch {
-                                listState.animateScrollBy(700f)
-                            }
-                            true
-                        }
-                        android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
-                            coroutineScope.launch {
-                                listState.animateScrollBy(-700f)
-                            }
-                            true
-                        }
-                        else -> false
-                    }
-                } else false
-            }
-        } else {
-            localView.setOnKeyListener(null)
-        }
-        onDispose {
-            localView.setOnKeyListener(null)
-        }
-    }
-
     // Toggle system bars visibility alongside showControls
     LaunchedEffect(showControls) {
         val window = (context as? Activity)?.window
@@ -355,27 +321,11 @@ fun ReaderScreen(
                         }
                     }
                 }
-                .pointerInput(uiState.appSettings.doubleTapZoom) {
+                .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
                             showControls = !showControls
-                        },
-                        onDoubleTap = if (uiState.appSettings.doubleTapZoom) {
-                            { tapOffset ->
-                                if (scale > 1.2f) {
-                                    scale = 1f
-                                    offset = Offset.Zero
-                                } else {
-                                    scale = 2.2f
-                                    val maxOffsetX = 1.2f * size.width * 0.5f
-                                    val maxOffsetY = 1.2f * size.height * 0.5f
-                                    offset = Offset(
-                                        x = ((size.width / 2f - tapOffset.x) * 1.2f).coerceIn(-maxOffsetX, maxOffsetX),
-                                        y = ((size.height / 2f - tapOffset.y) * 1.2f).coerceIn(-maxOffsetY, maxOffsetY)
-                                    )
-                                }
-                            }
-                        } else null
+                        }
                     )
                 }
         ) {
@@ -576,8 +526,16 @@ fun ReaderTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("reader_top_bar"),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+        border = BorderStroke(
+            1.dp,
+            Brush.horizontalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f)
+                )
+            )
+        ),
         shadowElevation = 8.dp
     ) {
         Row(
@@ -590,8 +548,8 @@ fun ReaderTopBar(
             // Return to Home Button
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)),
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
                     .clickable { onNavigateHome() }
@@ -612,7 +570,7 @@ fun ReaderTopBar(
                         text = "الرئيسية",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -714,8 +672,16 @@ fun ReaderBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("reader_bottom_bar"),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+        border = BorderStroke(
+            1.dp,
+            Brush.horizontalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+                )
+            )
+        ),
         shadowElevation = 8.dp
     ) {
         Column(
@@ -950,7 +916,7 @@ fun ComicPageItem(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         if (!imageUrl.isNullOrBlank()) {
@@ -1087,18 +1053,19 @@ fun ComicPageItem(
 
         // Subtle Page Number Stamp
         Surface(
-            shape = RoundedCornerShape(topStart = 6.dp),
-            color = Color.Black.copy(alpha = 0.65f),
+            shape = RoundedCornerShape(topStart = 8.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(4.dp)
+                .padding(6.dp)
         ) {
             Text(
                 text = "$pageNumber / $totalPages",
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
-                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             )

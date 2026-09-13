@@ -58,6 +58,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -120,6 +123,7 @@ import com.example.ui.viewmodel.HomeUiState
 import com.example.util.AppVersionConfig
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
@@ -147,8 +151,6 @@ fun HomeScreen(
     onUpdateReaderMode: (Int) -> Unit = {},
     onUpdateImageQuality: (Int) -> Unit = {},
     onUpdateKeepScreenOn: (Boolean) -> Unit = {},
-    onUpdateVolumeScroll: (Boolean) -> Unit = {},
-    onUpdateDoubleTapZoom: (Boolean) -> Unit = {},
     onUpdateWifiOnlyDownloads: (Boolean) -> Unit = {},
     onUpdateAutoSyncUpdates: (Boolean) -> Unit = {},
     onUpdateThemeMode: (Int) -> Unit = {},
@@ -223,13 +225,18 @@ fun HomeScreen(
                 ) { currentTab ->
                     when (currentTab) {
                         0 -> {
-                        // Home Tab Content
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .testTag("home_screen_lazy_column"),
-                            contentPadding = PaddingValues(bottom = 90.dp)
-                        ) {
+                            // Home Tab Content with Swipe-to-Refresh
+                            PullToRefreshBox(
+                                isRefreshing = uiState.isRefreshing,
+                                onRefresh = onRefresh,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .testTag("home_screen_lazy_column"),
+                                    contentPadding = PaddingValues(bottom = 90.dp)
+                                ) {
                             // High-Visibility In-App Update Alert Banner
                             if (uiState.updateInfo.updateAvailable) {
                                 item(key = "in_app_update_alert_banner") {
@@ -424,6 +431,7 @@ fun HomeScreen(
                             }
                         }
                     }
+                }
                     1 -> {
                         // Search & Discovery Tab Content
                         SearchTabContent(
@@ -476,8 +484,6 @@ fun HomeScreen(
                             onUpdateReaderMode = onUpdateReaderMode,
                             onUpdateImageQuality = onUpdateImageQuality,
                             onUpdateKeepScreenOn = onUpdateKeepScreenOn,
-                            onUpdateVolumeScroll = onUpdateVolumeScroll,
-                            onUpdateDoubleTapZoom = onUpdateDoubleTapZoom,
                             onUpdateWifiOnlyDownloads = onUpdateWifiOnlyDownloads,
                             onUpdateAutoSyncUpdates = onUpdateAutoSyncUpdates,
                             onUpdateThemeMode = onUpdateThemeMode,
@@ -761,7 +767,7 @@ fun HeroCarouselSection(
             pageSpacing = 12.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(315.dp)
+                .height(340.dp)
                 .testTag("hero_carousel_pager")
         ) { page ->
             val manga = heroList[page]

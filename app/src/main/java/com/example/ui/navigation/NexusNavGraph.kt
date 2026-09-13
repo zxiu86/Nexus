@@ -148,12 +148,6 @@ fun NexusNavGraph(
                     onUpdateKeepScreenOn = { enabled ->
                         viewModel.updateKeepScreenOn(enabled)
                     },
-                    onUpdateVolumeScroll = { enabled ->
-                        viewModel.updateVolumeScroll(enabled)
-                    },
-                    onUpdateDoubleTapZoom = { enabled ->
-                        viewModel.updateDoubleTapZoom(enabled)
-                    },
                     onUpdateWifiOnlyDownloads = { enabled ->
                         viewModel.updateWifiOnlyDownloads(enabled)
                     },

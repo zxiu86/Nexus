@@ -13,13 +13,11 @@ data class AppSettings(
     val readerMode: Int = 0, // 0: Webtoon Vertical, 1: Horizontal RTL, 2: Horizontal LTR
     val imageQuality: Int = 0, // 0: HD, 1: Balanced, 2: Data Saver
     val keepScreenOn: Boolean = true,
-    val volumeScroll: Boolean = false,
-    val doubleTapZoom: Boolean = true,
     val wifiOnlyDownloads: Boolean = false,
     val autoSyncUpdates: Boolean = true,
     val themeMode: Int = 0, // 0: System, 1: Dark, 2: Light
     val backgroundStyle: Int = 0, // 0: Default, 1: AMOLED Pure Black, 2: Pure White
-    val accentColor: Int = 0, // 0: Default (Gold/Orange), 1: Blue, 2: Red
+    val accentColor: Int = 0, // 0: Gold, 1: Royal Blue, 2: Crimson Red, 3: Marine Blue, 4: Cherry Blossom
     val preventChapterCache: Boolean = true // Don't persist chapter images in disk cache, auto-clear on exit
 )
 
@@ -34,8 +32,6 @@ class AppSettingsManager private constructor(context: Context) {
             readerMode = prefs.getInt(KEY_READER_MODE, 0),
             imageQuality = prefs.getInt(KEY_IMAGE_QUALITY, 0),
             keepScreenOn = prefs.getBoolean(KEY_KEEP_SCREEN_ON, true),
-            volumeScroll = prefs.getBoolean(KEY_VOLUME_SCROLL, false),
-            doubleTapZoom = prefs.getBoolean(KEY_DOUBLE_TAP_ZOOM, true),
             wifiOnlyDownloads = prefs.getBoolean(KEY_WIFI_ONLY, false),
             autoSyncUpdates = prefs.getBoolean(KEY_AUTO_SYNC, true),
             themeMode = prefs.getInt(KEY_THEME_MODE, 0),
@@ -58,16 +54,6 @@ class AppSettingsManager private constructor(context: Context) {
     fun updateKeepScreenOn(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_KEEP_SCREEN_ON, enabled).apply()
         _settingsFlow.value = _settingsFlow.value.copy(keepScreenOn = enabled)
-    }
-
-    fun updateVolumeScroll(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_VOLUME_SCROLL, enabled).apply()
-        _settingsFlow.value = _settingsFlow.value.copy(volumeScroll = enabled)
-    }
-
-    fun updateDoubleTapZoom(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_DOUBLE_TAP_ZOOM, enabled).apply()
-        _settingsFlow.value = _settingsFlow.value.copy(doubleTapZoom = enabled)
     }
 
     fun updateWifiOnlyDownloads(enabled: Boolean) {
@@ -144,8 +130,6 @@ class AppSettingsManager private constructor(context: Context) {
         private const val KEY_READER_MODE = "pref_reader_mode"
         private const val KEY_IMAGE_QUALITY = "pref_image_quality"
         private const val KEY_KEEP_SCREEN_ON = "pref_keep_screen_on"
-        private const val KEY_VOLUME_SCROLL = "pref_volume_scroll"
-        private const val KEY_DOUBLE_TAP_ZOOM = "pref_double_tap_zoom"
         private const val KEY_WIFI_ONLY = "pref_wifi_only"
         private const val KEY_AUTO_SYNC = "pref_auto_sync"
         private const val KEY_THEME_MODE = "pref_theme_mode"

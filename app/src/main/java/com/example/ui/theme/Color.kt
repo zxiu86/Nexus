@@ -23,6 +23,18 @@ val NexusRedLight = Color(0xFFFF6B6B)
 val NexusRedDark = Color(0xFFB71C1C)
 val NexusRedContainer = Color(0xFF8E0000)
 
+// Accent: Marine Blue (أزرق بحري = #0000B3)
+val NexusMarineBluePrimary = Color(0xFF0000B3)
+val NexusMarineBlueLight = Color(0xFF3333FF)
+val NexusMarineBlueDark = Color(0xFF000080)
+val NexusMarineBlueContainer = Color(0xFF000066)
+
+// Accent: Cherry Blossom (أزهار الكرز = #FF77E1)
+val NexusCherryBlossomPrimary = Color(0xFFFF77E1)
+val NexusCherryBlossomLight = Color(0xFFFF9BEB)
+val NexusCherryBlossomDark = Color(0xFFD644B4)
+val NexusCherryBlossomContainer = Color(0xFF991F7C)
+
 // Aliases for seamless backward compatibility
 val NexusPurple = NexusGold
 val NexusPurpleLight = NexusGoldLight
