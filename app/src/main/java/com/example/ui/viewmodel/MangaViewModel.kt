@@ -148,6 +148,7 @@ data class DetailsUiState(
 data class ReaderUiState(
     val manga: MangaItem? = null,
     val currentChapter: Chapter? = null,
+    val coordinates: com.example.data.model.ChapterCoordinatesDto? = null,
     val isLoadingPages: Boolean = false,
     val isFavorite: Boolean = false,
     val isDownloaded: Boolean = false,
@@ -345,6 +346,15 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         // Automatically start silent background auto-sync and periodic update checker
         startSilentAutoSyncLoop()
         checkForUpdates()
+
+        // Trigger smart watermark cleaner bot as soon as manga list is loaded
+        viewModelScope.launch {
+            repository.allMangaFlow.collect { list ->
+                if (list.isNotEmpty()) {
+                    com.example.util.WatermarkCleanerBot.startBackgroundBot(getApplication(), list)
+                }
+            }
+        }
 
         // Reactively observe repo changes to keep active details screen updated silently
         viewModelScope.launch {
@@ -676,12 +686,30 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         viewModelScope.launch {
+            val coordsRepo = com.example.data.repository.CoordinatesRepository.getInstance(getApplication())
+            val existingCoords = coordsRepo.getCoordinates(mangaId, chapterNumber)
+
             val fullChapter = repository.getChapterWithPages(mangaId, chapterNumber, forceFresh = forceFresh)
             _readerUiState.value = _readerUiState.value.copy(
                 currentChapter = fullChapter,
+                coordinates = existingCoords,
                 isLoadingPages = false,
                 isDownloaded = repository.isChapterDownloaded(mangaId, chapterNumber)
             )
+
+            // If coordinates were not found on GitHub or cache, process on-demand in background
+            if (existingCoords == null && fullChapter != null && fullChapter.pages.isNotEmpty()) {
+                launch(Dispatchers.IO) {
+                    val computed = com.example.util.WatermarkCleanerBot.processSingleChapterOnDemand(
+                        getApplication(),
+                        mangaId,
+                        fullChapter
+                    )
+                    if (computed != null && _readerUiState.value.currentChapter?.number == chapterNumber) {
+                        _readerUiState.value = _readerUiState.value.copy(coordinates = computed)
+                    }
+                }
+            }
 
             if (fullChapter != null && !fullChapter.isClosed) {
                 repository.recordReadingProgress(

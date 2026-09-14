@@ -7,8 +7,8 @@ package com.example.util
  * Update Cards, Badges, Diagnostics, Footer).
  */
 object AppVersionConfig {
-    const val VERSION_NAME = "1.9.6"
-    const val VERSION_CODE = 36
+    const val VERSION_NAME = "1.9.7"
+    const val VERSION_CODE = 37
     const val BUILD_CODENAME = "Nexus Nova"
     const val RELEASE_CHANNEL = "النسخة الرسمية المستقرة"
     const val RELEASE_DATE = "سبتمبر 2026"
@@ -55,9 +55,9 @@ object AppVersionConfig {
      * Highlights of this release
      */
     val CURRENT_CHANGELOG_FEATURES = listOf(
+        "بوت ذكي وتلقائي لتنظيف الفصول واكتشاف العلامات المائية واستبدالها بشعار تطبيق Nexus.",
+        "نظام إحداثيات سحابي موحد يتم رفعه ومزامنته مع مستودع جيت هوب تلقائياً لتسريع القراءة لجميع المستخدمين.",
         "تلوين ديناميكي شامل لكل أزرار التطبيق، التحديدات، الإشارات، النصوص التمييزية، والفوتر وفق اللون التجميلي المختار.",
-        "تصميم عصري وفخم بالكامل للشريط السفلي (الفوتر) بمؤشرات ضوئية تفاعلية وتأثير عائم متناسق.",
-        "إزالة حقل البحث من الواجهة الرئيسية لتبسيط الشاشة والاعتماد على تبويب الاستكشاف المتخصص.",
-        "ملف موحد ودوال مركزية للتحكم برقم وتفاصيل إصدار التطبيق في كافة أجزاء النظام تلقائياً."
+        "تصميم عصري وفخم بالكامل للشريط السفلي (الفوتر) بمؤشرات ضوئية تفاعلية وتأثير عائم متناسق."
     )
 }

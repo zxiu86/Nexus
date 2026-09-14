@@ -100,13 +100,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -117,6 +120,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
+import com.example.data.model.PageWatermarkData
 import com.example.ui.components.StartIoBannerAd
 import com.example.util.StartIoAdManager
 import com.example.ui.theme.BadgeNew
@@ -348,6 +352,8 @@ fun ReaderScreen(
                 ) { pageIdx ->
                     val page = chapter.pages.getOrNull(pageIdx)
                     if (page != null) {
+                        val pNum = page.pageNumber.takeIf { it > 0 } ?: (pageIdx + 1)
+                        val pageWatermark = uiState.coordinates?.getPageData(pNum)
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -358,7 +364,8 @@ fun ReaderScreen(
                                 pageNumber = page.pageNumber,
                                 totalPages = totalPages,
                                 isDownloaded = uiState.isDownloaded,
-                                imageQuality = uiState.appSettings.imageQuality
+                                imageQuality = uiState.appSettings.imageQuality,
+                                watermarkData = pageWatermark
                             )
                         }
                     }
@@ -382,13 +389,16 @@ fun ReaderScreen(
                         items = chapter.pages,
                         key = { index, page -> "${chapter.number}-${page.pageNumber}-$index" }
                     ) { index, page ->
+                        val pNum = page.pageNumber.takeIf { it > 0 } ?: (index + 1)
+                        val pageWatermark = uiState.coordinates?.getPageData(pNum)
                         ComicPageItem(
                             imageUrl = page.imageUrl,
                             pageRes = page.imageRes,
                             pageNumber = page.pageNumber,
                             totalPages = totalPages,
                             isDownloaded = uiState.isDownloaded,
-                            imageQuality = uiState.appSettings.imageQuality
+                            imageQuality = uiState.appSettings.imageQuality,
+                            watermarkData = pageWatermark
                         )
 
                         // Fixed Start.io Banner Ad between each comic page and the next
@@ -894,12 +904,14 @@ fun ComicPageItem(
     pageNumber: Int,
     totalPages: Int,
     isDownloaded: Boolean = false,
-    imageQuality: Int = 0
+    imageQuality: Int = 0,
+    watermarkData: PageWatermarkData? = null
 ) {
     var reloadKey by remember(imageUrl) { mutableIntStateOf(0) }
     var isLoaded by remember(imageUrl, reloadKey) { mutableStateOf(false) }
     var isError by remember(imageUrl, reloadKey) { mutableStateOf(false) }
     var isTimeout by remember(imageUrl, reloadKey) { mutableStateOf(false) }
+    var imageSize by remember(imageUrl, reloadKey) { mutableStateOf(IntSize.Zero) }
 
     LaunchedEffect(imageUrl, reloadKey) {
         if (!imageUrl.isNullOrBlank()) {
@@ -949,8 +961,49 @@ fun ComicPageItem(
                         .build(),
                     contentDescription = "صفحة $pageNumber من $totalPages",
                     contentScale = ContentScale.FillWidth,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { imageSize = it }
                 )
+            }
+
+            // 🎯 Smart Watermark Clean Overlays (White box + "تطبيق Nexus")
+            if (isLoaded && watermarkData != null && watermarkData.boxes.isNotEmpty() && imageSize.width > 0 && imageSize.height > 0) {
+                val density = LocalDensity.current
+                watermarkData.boxes.forEach { box ->
+                    val leftDp = with(density) { (box.x * imageSize.width).toDp() }
+                    val topDp = with(density) { (box.y * imageSize.height).toDp() }
+                    val widthDp = with(density) { (box.width * imageSize.width).toDp() }
+                    val heightDp = with(density) { (box.height * imageSize.height).toDp() }
+
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .offset(x = leftDp, y = topDp)
+                            .size(width = widthDp, height = heightDp),
+                        color = Color.White,
+                        shape = RoundedCornerShape(1.dp),
+                        shadowElevation = 0.dp
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.White)
+                                .padding(horizontal = 2.dp, vertical = 1.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = watermarkData.replacementText.ifBlank { "تطبيق Nexus" },
+                                color = Color(0xFF0F172A),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
             }
 
             // If image fails to load or exceeds 5 seconds, show retry card
