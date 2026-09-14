@@ -111,67 +111,95 @@ object ThemePalettes {
         )
     )
 
-    // Multi-Color Aesthetic Gradient Themes (تدرجات ألوان تجميلية متعددة)
+    // Multi-Color Card Gradient Themes (تدرجات متعددة متناسقة مخصصة لأنيميشن بطاقات أحدث الأعمال فقط - 2 إلى 3 ألوان)
     val GRADIENT_PRESETS = listOf(
         ThemePalettePreset(
             id = 10,
-            name = "الشفق القطبي (Aurora)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج ذهبي دافئ",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = AuroraCyan,
-            secondaryColor = AuroraViolet,
-            gradientColors = listOf(AuroraCyan, AuroraViolet, AuroraEmerald),
-            onPrimary = Color.Black
+            primaryColor = NexusGold,
+            secondaryColor = NexusOrange,
+            gradientColors = listOf(NexusGold, NexusOrange, NexusGoldLight),
+            onPrimary = BackgroundDark,
+            badgeLabel = "تدرج للبطاقات"
         ),
         ThemePalettePreset(
             id = 11,
-            name = "غروب الشمس (Sunset)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج أزرق ملكي",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = SunsetOrange,
-            secondaryColor = SunsetPink,
-            gradientColors = listOf(SunsetOrange, SunsetPink, SunsetGold),
-            onPrimary = Color.White
+            primaryColor = NexusBluePrimary,
+            secondaryColor = NexusBlueDark,
+            gradientColors = listOf(NexusBluePrimary, NexusBlueLight, NexusBlueDark),
+            onPrimary = Color.White,
+            badgeLabel = "تدرج للبطاقات"
         ),
         ThemePalettePreset(
             id = 12,
-            name = "نيون سايبربانك (Cyberpunk)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج أحمر قرمزي",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = CyberpunkPink,
-            secondaryColor = CyberpunkCyan,
-            gradientColors = listOf(CyberpunkPink, CyberpunkPurple, CyberpunkCyan),
-            onPrimary = Color.White
+            primaryColor = NexusRedPrimary,
+            secondaryColor = NexusRedDark,
+            gradientColors = listOf(NexusRedPrimary, NexusRedLight, NexusRedDark),
+            onPrimary = Color.White,
+            badgeLabel = "تدرج للبطاقات"
         ),
         ThemePalettePreset(
             id = 13,
-            name = "أمواج المحيط (Ocean Wave)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج أزرق بحري",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = OceanSky,
-            secondaryColor = OceanTeal,
-            gradientColors = listOf(OceanSky, OceanTeal, OceanBlue),
-            onPrimary = Color.White
+            primaryColor = NexusMarineBluePrimary,
+            secondaryColor = NexusMarineBlueLight,
+            gradientColors = listOf(NexusMarineBluePrimary, NexusMarineBlueLight, NexusMarineBlueDark),
+            onPrimary = Color.White,
+            badgeLabel = "تدرج للبطاقات"
         ),
         ThemePalettePreset(
             id = 14,
-            name = "لهب التنين (Dragon Fire)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج أزهار الكرز",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = DragonRed,
-            secondaryColor = DragonGold,
-            gradientColors = listOf(DragonRed, DragonOrange, DragonGold),
-            onPrimary = Color.White
+            primaryColor = NexusCherryBlossomPrimary,
+            secondaryColor = NexusCherryBlossomLight,
+            gradientColors = listOf(NexusCherryBlossomPrimary, NexusCherryBlossomLight, NexusCherryBlossomDark),
+            onPrimary = Color.Black,
+            badgeLabel = "تدرج للبطاقات"
         ),
         ThemePalettePreset(
             id = 15,
-            name = "سديم الفضاء (Cosmic Nebula)",
-            categoryName = "تدرجات تجميلية",
+            name = "تدرج زمردي نقي",
+            categoryName = "تدرجات أحدث الأعمال",
             isMultiColor = true,
-            primaryColor = NebulaIndigo,
-            secondaryColor = NebulaFuchsia,
-            gradientColors = listOf(NebulaIndigo, NebulaFuchsia, NebulaStarlight),
-            onPrimary = Color.White
+            primaryColor = NexusEmeraldPrimary,
+            secondaryColor = NexusEmeraldDark,
+            gradientColors = listOf(NexusEmeraldPrimary, NexusEmeraldLight, NexusEmeraldDark),
+            onPrimary = Color.White,
+            badgeLabel = "تدرج للبطاقات"
+        ),
+        ThemePalettePreset(
+            id = 16,
+            name = "تدرج بنفسجي ملكي",
+            categoryName = "تدرجات أحدث الأعمال",
+            isMultiColor = true,
+            primaryColor = NexusVioletPrimary,
+            secondaryColor = NexusVioletDark,
+            gradientColors = listOf(NexusVioletPrimary, NexusVioletLight, NexusVioletDark),
+            onPrimary = Color.White,
+            badgeLabel = "تدرج للبطاقات"
+        ),
+        ThemePalettePreset(
+            id = 17,
+            name = "تدرج كهرماني مشرق",
+            categoryName = "تدرجات أحدث الأعمال",
+            isMultiColor = true,
+            primaryColor = NexusAmberPrimary,
+            secondaryColor = NexusAmberDark,
+            gradientColors = listOf(NexusAmberPrimary, NexusAmberLight, NexusAmberDark),
+            onPrimary = Color.Black,
+            badgeLabel = "تدرج للبطاقات"
         )
     )
 

@@ -2859,23 +2859,23 @@ fun SettingsTabContent(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-                    // 4. تدرجات الألوان التجميلية المتعددة (Multi-Color Gradient Presets)
+                    // 4. تدرجات الألوان لأنيميشن بطاقات أحدث الأعمال (Multi-Color Card Gradient Presets)
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "تدرجات الألوان التجميلية المتعددة",
+                                    text = "تدرجات الألوان لأنيميشن بطاقات أحدث الأعمال",
                                     style = MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 )
                                 Text(
-                                    text = "تدرجات ساحرة متدرجة ومتناغمة في كامل أرجاء التطبيق",
+                                    text = "تدرجات متناسقة (2 إلى 3 ألوان) مخصصة لأنيميشن بطاقات أحدث عملين، مع الحفاظ على اللون الفردي الموحد للتطبيق",
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp
@@ -2887,7 +2887,7 @@ fun SettingsTabContent(
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                             ) {
                                 Text(
-                                    text = "✨ جديد 1.9.9",
+                                    text = "أنيميشن للبطاقات",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
@@ -2898,7 +2898,7 @@ fun SettingsTabContent(
                             }
                         }
 
-                        val gradientPresets = ThemePalettes.GRADIENT_PRESETS.chunked(3)
+                        val gradientPresets = ThemePalettes.GRADIENT_PRESETS.chunked(4)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             gradientPresets.forEach { rowPresets ->
                                 Row(
@@ -2921,14 +2921,14 @@ fun SettingsTabContent(
                                                 .clickable { onUpdateAccentColor(preset.id) }
                                         ) {
                                             Column(
-                                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
                                                 Box(
                                                     modifier = Modifier
-                                                        .size(32.dp, 22.dp)
-                                                        .clip(RoundedCornerShape(11.dp))
+                                                        .size(28.dp, 20.dp)
+                                                        .clip(RoundedCornerShape(10.dp))
                                                         .background(gradBrush),
                                                     contentAlignment = Alignment.Center
                                                 ) {
@@ -2937,7 +2937,7 @@ fun SettingsTabContent(
                                                             imageVector = Icons.Default.Check,
                                                             contentDescription = null,
                                                             tint = Color.White,
-                                                            modifier = Modifier.size(14.dp)
+                                                            modifier = Modifier.size(12.dp)
                                                         )
                                                     }
                                                 }

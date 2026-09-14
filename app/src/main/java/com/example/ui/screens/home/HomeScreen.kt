@@ -85,7 +85,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -1052,7 +1055,7 @@ fun SectionHeaderTitle(
  * - Under cover image: Last 3 chapters with a "NEW" badge next to each
  * - Clicking work image navigates to Details Page
  * - Clicking directly on a chapter navigates to Reader Page
- * - Conditioned Animated Color Wave effect for the first two items ONLY when using multi-color gradient themes.
+ * - Full-card continuous animated color wave & living ripples across the entire card for the top two items when multi-color gradient theme is active (runs 24/7 without user scrolling).
  */
 @Composable
 fun LatestMangaGridCard(
@@ -1065,22 +1068,57 @@ fun LatestMangaGridCard(
     gradientColors: List<Color> = emptyList(),
     modifier: Modifier = Modifier
 ) {
-    // 🌊 Active Animated Wave Gradient for the top 2 works ONLY on Multi-Color Gradient Themes
-    val animatedBorderBrush = if (isTopAnimated && gradientColors.size >= 2) {
-        val infiniteTransition = rememberInfiniteTransition(label = "top_card_gradient_wave")
-        val offsetAnimation by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1000f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 3500, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "wave_offset"
-        )
+    val isAnimatedMode = isTopAnimated && gradientColors.size >= 2
+
+    // 🌊 Full-Card Infinite Smooth Transitions for ripples & ambient color wave (runs constantly 24/7 without requiring user scrolling)
+    val infiniteTransition = rememberInfiniteTransition(label = "top_card_full_animation")
+
+    // 1. Continuous revolving wave angle for omnidirectional liquid color flow (0 -> 360 degrees)
+    val continuousWaveAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "continuous_wave_angle"
+    )
+
+    // 2. Continuous sweeping luminous ripple beam across the entire card surface (0 -> 1)
+    val rippleBeamProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ripple_beam_progress"
+    )
+
+    // 3. Gentle breathing pulse for luminous gradient depth and saturation
+    val pulseGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.16f,
+        targetValue = 0.34f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_glow_alpha"
+    )
+
+    val baseSurfaceColor = MaterialTheme.colorScheme.surface
+
+    // Border Brush
+    val cardBorderBrush = if (isAnimatedMode) {
+        val rad = Math.toRadians(continuousWaveAngle.toDouble())
+        val cosA = cos(rad).toFloat()
+        val sinA = sin(rad).toFloat()
+        val cx = 250f
+        val cy = 350f
         Brush.linearGradient(
             colors = gradientColors + gradientColors.first(),
-            start = Offset(offsetAnimation, 0f),
-            end = Offset(offsetAnimation + 600f, 600f)
+            start = Offset(cx + cosA * 250f, cy + sinA * 250f),
+            end = Offset(cx - cosA * 250f, cy - sinA * 250f)
         )
     } else {
         Brush.verticalGradient(
@@ -1092,21 +1130,73 @@ fun LatestMangaGridCard(
         )
     }
 
-    val borderWidth = if (isTopAnimated && gradientColors.size >= 2) 2.dp else 1.2.dp
+    val borderWidth = if (isAnimatedMode) 2.dp else 1.2.dp
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (isAnimatedMode) {
+                    Modifier.drawBehind {
+                        // 1. Base card surface
+                        drawRect(color = baseSurfaceColor)
+
+                        // 2. Full-Card continuous ambient color wave flowing across the entire body of the card
+                        val rad = Math.toRadians(continuousWaveAngle.toDouble())
+                        val cosA = cos(rad).toFloat()
+                        val sinA = sin(rad).toFloat()
+                        val cx = size.width * 0.5f
+                        val cy = size.height * 0.5f
+                        val startWave = Offset(cx + cosA * cx * 1.1f, cy + sinA * cy * 1.1f)
+                        val endWave = Offset(cx - cosA * cx * 1.1f, cy - sinA * cy * 1.1f)
+
+                        val wavePalette = gradientColors.map { it.copy(alpha = pulseGlowAlpha) } +
+                            listOf(gradientColors.first().copy(alpha = pulseGlowAlpha * 0.75f))
+
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                colors = wavePalette,
+                                start = startWave,
+                                end = endWave
+                            )
+                        )
+
+                        // 3. Diagonal continuous luminous ripple wave sweeping across the entire card
+                        val totalDist = size.width + size.height
+                        val beamWidth = size.width * 0.85f
+                        val beamPos = (rippleBeamProgress * (totalDist + beamWidth)) - beamWidth
+
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    gradientColors[0].copy(alpha = pulseGlowAlpha * 0.4f),
+                                    (gradientColors.getOrNull(1) ?: gradientColors[0]).copy(alpha = pulseGlowAlpha * 0.95f),
+                                    Color.White.copy(alpha = pulseGlowAlpha * 0.65f),
+                                    (gradientColors.getOrNull(2) ?: gradientColors[0]).copy(alpha = pulseGlowAlpha * 0.75f),
+                                    Color.Transparent
+                                ),
+                                start = Offset(beamPos, beamPos * 0.8f),
+                                end = Offset(beamPos + beamWidth, (beamPos + beamWidth) * 0.8f)
+                            )
+                        )
+                    }
+                } else {
+                    Modifier
+                }
+            )
             .border(
                 borderWidth,
-                animatedBorderBrush,
-                RoundedCornerShape(14.dp)
+                cardBorderBrush,
+                RoundedCornerShape(16.dp)
             )
             .testTag("manga_grid_card_${manga.id}"),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTopAnimated) 5.dp else 2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAnimatedMode) Color.Transparent else MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isAnimatedMode) 6.dp else 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1121,33 +1211,16 @@ fun LatestMangaGridCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (isTopAnimated && gradientColors.size >= 2) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                        ) {
-                            Text(
-                                text = "🔥",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = manga.titleAr,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = manga.titleAr,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
 
                 IconButton(
                     onClick = onToggleFavorite,
@@ -1170,7 +1243,27 @@ fun LatestMangaGridCard(
                     .fillMaxWidth()
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .then(
+                        if (isAnimatedMode) {
+                            val rad = Math.toRadians((continuousWaveAngle + 90f).toDouble())
+                            val cosA = cos(rad).toFloat()
+                            val sinA = sin(rad).toFloat()
+                            Modifier.border(
+                                1.dp,
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        gradientColors[0].copy(alpha = 0.65f),
+                                        (gradientColors.getOrNull(1) ?: gradientColors[0]).copy(alpha = 0.35f),
+                                        gradientColors.last().copy(alpha = 0.65f)
+                                    ),
+                                    start = Offset(150f + cosA * 150f, 200f + sinA * 200f),
+                                    end = Offset(150f - cosA * 150f, 200f - sinA * 200f)
+                                ),
+                                RoundedCornerShape(10.dp)
+                            )
+                        } else Modifier
+                    )
                     .clickable { onMangaClick() }
                     .testTag("cover_image_${manga.id}")
             ) {
@@ -1202,7 +1295,9 @@ fun LatestMangaGridCard(
                 latest3.forEach { chapter ->
                     LatestChapterItemRow(
                         chapter = chapter,
-                        onChapterClick = { onChapterClick(chapter.number) }
+                        onChapterClick = { onChapterClick(chapter.number) },
+                        isCardAnimated = isAnimatedMode,
+                        accentColor = gradientColors.firstOrNull() ?: MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -1216,12 +1311,26 @@ fun LatestMangaGridCard(
 @Composable
 fun LatestChapterItemRow(
     chapter: Chapter,
-    onChapterClick: () -> Unit
+    onChapterClick: () -> Unit,
+    isCardAnimated: Boolean = false,
+    accentColor: Color = MaterialTheme.colorScheme.primary
 ) {
+    val rowSurfaceColor = if (isCardAnimated) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.58f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    }
+
+    val rowBorder = if (isCardAnimated) {
+        BorderStroke(0.6.dp, accentColor.copy(alpha = 0.35f))
+    } else {
+        BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+    }
+
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+        color = rowSurfaceColor,
+        border = rowBorder,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
