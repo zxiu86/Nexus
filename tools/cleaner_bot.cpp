@@ -282,22 +282,48 @@ int main(int argc, char* argv[]) {
     if (const char* env_limit = std::getenv("BATCH_LIMIT")) {
         try { max_chapters = std::stoi(env_limit); } catch (...) {}
     }
+
+    std::string data_path_str = "data";
+    std::string coords_path_str = "coordinates";
+
+    if (const char* env_data = std::getenv("DATA_DIR")) {
+        data_path_str = env_data;
+    }
+    if (const char* env_coords = std::getenv("COORDS_DIR")) {
+        coords_path_str = env_coords;
+    }
+
     if (argc > 1) {
         try { max_chapters = std::stoi(argv[1]); } catch (...) {}
     }
+    if (argc > 2) {
+        data_path_str = argv[2];
+    }
+    if (argc > 3) {
+        coords_path_str = argv[3];
+    }
+
+    fs::path data_dir = data_path_str;
+    fs::path coords_dir = coords_path_str;
 
     std::cout << "========================================\n";
     std::cout << "🚀 Nexus Watermark Cleaner Bot (C++ High-Speed)\n";
     std::cout << "📦 Target Batch Limit: " << max_chapters << " chapters\n";
+    std::cout << "📂 Source Data Dir:    " << fs::absolute(data_dir).string() << "\n";
+    std::cout << "📁 Output Coords Dir:  " << fs::absolute(coords_dir).string() << "\n";
     std::cout << "========================================\n";
 
-    fs::path data_dir = "data";
-    fs::path coords_dir = "coordinates";
-
     if (!fs::exists(data_dir)) {
-        std::cout << "⚠️ 'data' directory not found in current workspace. Exiting.\n";
-        curl_global_cleanup();
-        return 0;
+        // Check fallback if running from root with subfolder
+        if (fs::exists(fs::path("data_repo") / "data")) {
+            data_dir = fs::path("data_repo") / "data";
+            coords_dir = fs::path("data_repo") / "coordinates";
+            std::cout << "💡 Auto-detected data in: " << fs::absolute(data_dir).string() << "\n";
+        } else {
+            std::cerr << "⚠️ 'data' directory not found at: " << data_dir.string() << " (Exiting)\n";
+            curl_global_cleanup();
+            return 1;
+        }
     }
 
     fs::create_directories(coords_dir);
