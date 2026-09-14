@@ -672,11 +672,12 @@ fun FavoritesTabContent(
                                     modifier = Modifier.fillMaxSize()
                                 )
 
-                                // New Chapter Notification Badge on Favorites
-                                if (isFavoritesTab) {
+                                 // New Chapter Notification Badge on Favorites (only if it has recent new chapters)
+                                val hasRecentChapter = manga.chapters.any { com.example.util.ChapterDateUtils.isChapterNew(it.releaseDate, it.isNew) }
+                                if (isFavoritesTab && hasRecentChapter) {
                                     Surface(
                                         shape = RoundedCornerShape(bottomStart = 8.dp),
-                                        color = BadgeNew,
+                                        color = accentPrimary,
                                         modifier = Modifier.align(Alignment.TopEnd)
                                     ) {
                                         Text(
@@ -684,7 +685,7 @@ fun FavoritesTabContent(
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontWeight = FontWeight.Black,
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onPrimary,
                                                 fontSize = 8.sp
                                             )
                                         )

@@ -1198,21 +1198,23 @@ fun LatestChapterItemRow(
                 )
             }
 
-            // "NEW" / "جديد" Radiant Badge
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = BadgeNew,
-                modifier = Modifier.padding(start = 4.dp)
-            ) {
-                Text(
-                    text = "NEW",
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
+            // "NEW" / "جديد" Radiant Badge (only shown if under 3 days old and adapts to theme)
+            if (com.example.util.ChapterDateUtils.isChapterNew(chapter.releaseDate, chapter.isNew)) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    Text(
+                        text = "NEW",
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     )
-                )
+                }
             }
         }
     }

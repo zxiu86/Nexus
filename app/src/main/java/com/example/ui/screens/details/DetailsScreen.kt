@@ -1512,10 +1512,10 @@ fun ChapterListItem(
                             )
                         }
                     }
-                } else if (chapter.isNew) {
+                } else if (com.example.util.ChapterDateUtils.isChapterNew(chapter.releaseDate, chapter.isNew)) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = BadgeNew
+                        color = accentPrimary
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -1525,7 +1525,7 @@ fun ChapterListItem(
                             Icon(
                                 imageVector = Icons.Default.LocalFireDepartment,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(10.dp)
                             )
                             Text(
@@ -1533,7 +1533,7 @@ fun ChapterListItem(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = Color.White
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
                             )
                         }
