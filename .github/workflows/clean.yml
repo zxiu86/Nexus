@@ -1,0 +1,79 @@
+name: Nexus Watermark Cleaner Bot (C++)
+
+on:
+  schedule:
+    # Run automatically every 1 hour (at minute 0)
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      batch_limit:
+        description: 'Number of chapters to clean per run'
+        required: false
+        default: '120'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleaner-bot
+  cancel-in-progress: false
+
+jobs:
+  clean_and_sync:
+    name: Clean Watermarks & Sync Coordinates
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.DATA_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Install C++ Build Tools, Leptonica & Tesseract OCR
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential \
+            g++ \
+            libcurl4-openssl-dev \
+            tesseract-ocr \
+            tesseract-ocr-eng \
+            libtesseract-dev \
+            libleptonica-dev
+
+      - name: Compile C++ Cleaner Bot
+        run: |
+          mkdir -p bin
+          g++ -O3 -std=c++17 tools/cleaner_bot.cpp \
+            -lcurl \
+            -ltesseract \
+            -llept \
+            -lpthread \
+            -o bin/cleaner_bot
+          chmod +x bin/cleaner_bot
+
+      - name: Run Watermark Cleaner (Batch 120 Chapters)
+        env:
+          BATCH_LIMIT: ${{ github.event.inputs.batch_limit || '120' }}
+        run: |
+          ./bin/cleaner_bot "$BATCH_LIMIT"
+
+      - name: Commit and Push Coordinates
+        run: |
+          git config user.name "Nexus Watermark Bot"
+          git config user.email "bot@nexus.app"
+          
+          # Add coordinates folder (placed next to data/ in root)
+          if [ -d "coordinates" ]; then
+            git add coordinates/
+          fi
+          
+          if git diff --staged --quiet; then
+            echo "✅ No new coordinates to commit. Everything is up to date."
+          else
+            git commit -m "🤖 [Bot] Cleaned & synced watermarks for chapters (Batch limit: ${{ github.event.inputs.batch_limit || '120' }})"
+            git push origin HEAD:${{ github.ref_name || 'main' }}
+            echo "🚀 Coordinates pushed successfully to repository!"
+          fi
