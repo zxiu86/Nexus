@@ -163,6 +163,9 @@ fun NexusNavGraph(
                     onUpdateAccentColor = { color ->
                         viewModel.updateAccentColor(color)
                     },
+                    onUpdateCardAnimationEnabled = { enabled ->
+                        viewModel.updateCardAnimationEnabled(enabled)
+                    },
                     onUpdatePreventChapterCache = { prevent ->
                         viewModel.updatePreventChapterCache(prevent)
                     },

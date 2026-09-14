@@ -147,6 +147,7 @@ import com.example.data.model.MangaType
 import com.example.data.model.ReadingHistoryEntry
 import com.example.ui.components.NexusMangaImage
 import com.example.ui.theme.HarmattanFontFamily
+import com.example.ui.theme.ThemePalettes
 import com.example.ui.theme.HarmattanTypography
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BackgroundAmoled
@@ -2482,6 +2483,7 @@ fun SettingsTabContent(
     onUpdateThemeMode: (Int) -> Unit = {},
     onUpdateBackgroundStyle: (Int) -> Unit = {},
     onUpdateAccentColor: (Int) -> Unit = {},
+    onUpdateCardAnimationEnabled: (Boolean) -> Unit = {},
     onUpdatePreventChapterCache: (Boolean) -> Unit = {},
     onDeleteAllDownloads: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -2501,15 +2503,11 @@ fun SettingsTabContent(
     val themeMode = appSettings.themeMode
     val backgroundStyle = appSettings.backgroundStyle
     val accentColor = appSettings.accentColor
+    val cardAnimationEnabled = appSettings.cardAnimationEnabled
     val preventChapterCache = appSettings.preventChapterCache
 
-    val accentPrimary = when (accentColor) {
-        1 -> NexusBluePrimary
-        2 -> NexusRedPrimary
-        3 -> NexusMarineBluePrimary
-        4 -> NexusCherryBlossomPrimary
-        else -> NexusGold
-    }
+    val currentThemePreset = ThemePalettes.getPresetById(accentColor)
+    val accentPrimary = currentThemePreset.primaryColor
 
     MaterialTheme(typography = HarmattanTypography) {
         CompositionLocalProvider(LocalTextStyle provides TextStyle(fontFamily = HarmattanFontFamily)) {
@@ -2769,185 +2767,278 @@ fun SettingsTabContent(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-                    // 3. اللون التجميلي البارز (ذهبي / أزرق / أحمر)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "اللون التجميلي البارز (Accent)",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        )
-                        Text(
-                            text = "لون الأزرار، الإشارات، والحدود التفاعلية",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp
-                            )
-                        )
-
+                    // 3. الألوان الأساسية الفاخرة (Solid Color Palettes)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val accents = listOf(
-                                Triple(0, "ذهبي (الافتراضي)", NexusGold),
-                                Triple(1, "أزرق ملكي", NexusBluePrimary),
-                                Triple(2, "أحمر قرمزي", NexusRedPrimary)
+                            Text(
+                                text = "الألوان الأساسية الفاخرة",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             )
-
-                            accents.forEach { (colorId, colorTitle, colorVal) ->
-                                val isSelected = accentColor == colorId
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected) colorVal.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    border = BorderStroke(
-                                        if (isSelected) 1.5.dp else 0.5.dp,
-                                        if (isSelected) colorVal else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = "لون أساسي موحد",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 10.sp
                                     ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable { onUpdateAccentColor(colorId) }
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        val solidPresets = ThemePalettes.SOLID_PRESETS.chunked(4)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            solidPresets.forEach { rowPresets ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
+                                    rowPresets.forEach { preset ->
+                                        val isSelected = accentColor == preset.id
                                         Surface(
-                                            shape = CircleShape,
-                                            color = colorVal,
-                                            modifier = Modifier.size(24.dp)
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = if (isSelected) preset.primaryColor.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                            border = BorderStroke(
+                                                if (isSelected) 1.6.dp else 0.5.dp,
+                                                if (isSelected) preset.primaryColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                            ),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .clickable { onUpdateAccentColor(preset.id) }
                                         ) {
-                                            if (isSelected) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Check,
-                                                        contentDescription = null,
-                                                        tint = Color.White,
-                                                        modifier = Modifier.size(14.dp)
-                                                    )
+                                            Column(
+                                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = preset.primaryColor,
+                                                    modifier = Modifier.size(24.dp)
+                                                ) {
+                                                    if (isSelected) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Check,
+                                                                contentDescription = null,
+                                                                tint = if (preset.id == 4) Color.Black else Color.White,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 }
+                                                Text(
+                                                    text = preset.name,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = if (isSelected) preset.primaryColor else MaterialTheme.colorScheme.onSurface,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    textAlign = TextAlign.Center,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
                                         }
-                                        Text(
-                                            text = colorTitle,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                color = if (isSelected) colorVal else MaterialTheme.colorScheme.onSurface,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                fontSize = 10.5.sp
-                                            ),
-                                            textAlign = TextAlign.Center
-                                        )
                                     }
                                 }
                             }
                         }
+                    }
 
-                        // زر "> المزيد من الخيارات" لإظهار الألوان الإضافية دون تكبير القائمة وتخريب الواجهة
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+                    // 4. تدرجات الألوان التجميلية المتعددة (Multi-Color Gradient Presets)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { showMoreAccentOptions = !showMoreAccentOptions }
-                                .padding(vertical = 6.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (showMoreAccentOptions) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
+                            Column {
+                                Text(
+                                    text = "تدرجات الألوان التجميلية المتعددة",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                                 Text(
-                                    text = if (showMoreAccentOptions) "خيارات أقل" else "> المزيد من الخيارات",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 12.sp
+                                    text = "تدرجات ساحرة متدرجة ومتناغمة في كامل أرجاء التطبيق",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 11.sp
                                     )
                                 )
                             }
-                            if (!showMoreAccentOptions && accentColor > 2) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = accentPrimary,
-                                    modifier = Modifier.size(12.dp)
-                                ) {}
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "✨ جديد 1.9.9",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
                         }
 
-                        AnimatedVisibility(
-                            visible = showMoreAccentOptions || accentColor > 2,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 2.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                val additionalAccents = listOf(
-                                    Triple(3, "أزرق بحري", NexusMarineBluePrimary),
-                                    Triple(4, "أزهار الكرز", NexusCherryBlossomPrimary)
-                                )
-
-                                additionalAccents.forEach { (colorId, colorTitle, colorVal) ->
-                                    val isSelected = accentColor == colorId
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (isSelected) colorVal.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                        border = BorderStroke(
-                                            if (isSelected) 1.5.dp else 0.5.dp,
-                                            if (isSelected) colorVal else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-                                        ),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .clickable { onUpdateAccentColor(colorId) }
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        val gradientPresets = ThemePalettes.GRADIENT_PRESETS.chunked(3)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            gradientPresets.forEach { rowPresets ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    rowPresets.forEach { preset ->
+                                        val isSelected = accentColor == preset.id
+                                        val gradBrush = Brush.linearGradient(preset.gradientColors)
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                            border = BorderStroke(
+                                                if (isSelected) 2.dp else 0.8.dp,
+                                                if (isSelected) gradBrush else Brush.linearGradient(listOf(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)))
+                                            ),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .clickable { onUpdateAccentColor(preset.id) }
                                         ) {
-                                            Surface(
-                                                shape = CircleShape,
-                                                color = colorVal,
-                                                modifier = Modifier.size(24.dp)
+                                            Column(
+                                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
-                                                if (isSelected) {
-                                                    Box(contentAlignment = Alignment.Center) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(32.dp, 22.dp)
+                                                        .clip(RoundedCornerShape(11.dp))
+                                                        .background(gradBrush),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (isSelected) {
                                                         Icon(
                                                             imageVector = Icons.Default.Check,
                                                             contentDescription = null,
-                                                            tint = if (colorId == 4) Color.Black else Color.White,
+                                                            tint = Color.White,
                                                             modifier = Modifier.size(14.dp)
                                                         )
                                                     }
                                                 }
+                                                Text(
+                                                    text = preset.name,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    textAlign = TextAlign.Center,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
-                                            Text(
-                                                text = colorTitle,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    color = if (isSelected) colorVal else MaterialTheme.colorScheme.onSurface,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    fontSize = 10.5.sp
-                                                ),
-                                                textAlign = TextAlign.Center
-                                            )
                                         }
                                     }
                                 }
                             }
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+                    // 5. ميزة أنيميشن وتموجات الألوان لبطاقات أحدث عملين فقط (للثيمات متعددة الألوان)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (ThemePalettes.isMultiColorTheme(accentColor))
+                                    accentPrimary.copy(alpha = 0.08f)
+                                else
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = if (ThemePalettes.isMultiColorTheme(accentColor)) accentPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = if (ThemePalettes.isMultiColorTheme(accentColor)) accentPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "تموجات ألوان أحدث عملين",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 13.sp
+                                    )
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = if (ThemePalettes.isMultiColorTheme(accentColor)) accentPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                ) {
+                                    Text(
+                                        text = if (ThemePalettes.isMultiColorTheme(accentColor)) "نشط للثيم الحالي" else "للثيمات المتعددة فقط",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = if (ThemePalettes.isMultiColorTheme(accentColor)) accentPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "تأثير تموجات ألوان حية ومتحركة على بطاقات أول عملين فقط في القائمة عند اختيار ثيم متعدد الألوان.",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 10.5.sp,
+                                    lineHeight = 15.sp
+                                )
+                            )
+                        }
+
+                        Switch(
+                            checked = cardAnimationEnabled,
+                            onCheckedChange = { onUpdateCardAnimationEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = accentPrimary
+                            )
+                        )
                     }
                 }
             }

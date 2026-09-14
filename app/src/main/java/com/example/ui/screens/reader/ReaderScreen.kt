@@ -139,6 +139,7 @@ fun ReaderScreen(
     onToggleFavorite: () -> Unit,
     onSetQuickJumpOpen: (Boolean) -> Unit,
     onRecordPageProgress: (page: Int, total: Int) -> Unit = { _, _ -> },
+    onChapterReadingThresholdReached: (mangaId: String, chapterNumber: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -147,6 +148,15 @@ fun ReaderScreen(
     val listState = rememberLazyListState()
 
     var showControls by remember { mutableStateOf(false) }
+
+    // ⏱️ Silent 6-Second Background Reading Timer (مؤقت قراءة صامت في الخلفية):
+    // القراءة للفصل لا تحتسب إلا بعد البقاء لمدة 6 ثوانٍ بدون إزعاج للمستخدمين
+    LaunchedEffect(chapter?.number) {
+        if (chapter != null && manga != null && !chapter.isClosed) {
+            delay(6000L)
+            onChapterReadingThresholdReached(manga.id, chapter.number)
+        }
+    }
 
     // 🔒 SCREEN SECURITY (FLAG_SECURE) & IMMERSIVE FULL-SCREEN
     DisposableEffect(Unit) {

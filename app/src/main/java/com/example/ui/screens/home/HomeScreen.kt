@@ -104,6 +104,8 @@ import com.example.ui.components.AppUpdateDialog
 import com.example.ui.components.FavoritesPopupDialog
 import com.example.ui.components.NexusMangaImage
 import com.example.ui.components.StartIoBannerAd
+import androidx.compose.ui.geometry.Offset
+import com.example.ui.theme.ThemePalettes
 import com.example.ui.theme.BackgroundDark
 import com.example.ui.theme.BadgeNew
 import com.example.ui.theme.NexusGold
@@ -156,6 +158,7 @@ fun HomeScreen(
     onUpdateThemeMode: (Int) -> Unit = {},
     onUpdateBackgroundStyle: (Int) -> Unit = {},
     onUpdateAccentColor: (Int) -> Unit = {},
+    onUpdateCardAnimationEnabled: (Boolean) -> Unit = {},
     onUpdatePreventChapterCache: (Boolean) -> Unit = {},
     onDeleteAllDownloads: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -389,22 +392,31 @@ fun HomeScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
+                                        val isMultiColorTheme = ThemePalettes.isMultiColorTheme(uiState.appSettings.accentColor)
+                                        val isAnimationActive = isMultiColorTheme && uiState.appSettings.cardAnimationEnabled && uiState.currentPage == 1
+                                        val multiThemeGradients = if (isMultiColorTheme) ThemePalettes.getGradientColors(uiState.appSettings.accentColor) else emptyList()
+
                                         val chunkedPairs = paginatedList.chunked(2)
-                                        for (pair in chunkedPairs) {
+                                        for ((rowIndex, pair) in chunkedPairs.withIndex()) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .padding(horizontal = 16.dp),
                                                 horizontalArrangement = Arrangement.spacedBy(14.dp)
                                             ) {
-                                                for (manga in pair) {
+                                                for ((colIndex, manga) in pair.withIndex()) {
+                                                    val itemOverallIndex = rowIndex * 2 + colIndex
+                                                    val isTopTwoCard = isAnimationActive && (itemOverallIndex == 0 || itemOverallIndex == 1)
+
                                                     Box(modifier = Modifier.weight(1f)) {
                                                         LatestMangaGridCard(
                                                             manga = manga,
                                                             isFavorite = uiState.favorites.contains(manga.id),
                                                             onMangaClick = { onMangaClick(manga.id) },
                                                             onChapterClick = { chNum -> onChapterClick(manga.id, chNum) },
-                                                            onToggleFavorite = { onToggleFavorite(manga.id) }
+                                                            onToggleFavorite = { onToggleFavorite(manga.id) },
+                                                            isTopAnimated = isTopTwoCard,
+                                                            gradientColors = multiThemeGradients
                                                         )
                                                     }
                                                 }
@@ -489,6 +501,7 @@ fun HomeScreen(
                             onUpdateThemeMode = onUpdateThemeMode,
                             onUpdateBackgroundStyle = onUpdateBackgroundStyle,
                             onUpdateAccentColor = onUpdateAccentColor,
+                            onUpdateCardAnimationEnabled = onUpdateCardAnimationEnabled,
                             onUpdatePreventChapterCache = onUpdatePreventChapterCache,
                             onDeleteAllDownloads = onDeleteAllDownloads
                         )
@@ -1015,14 +1028,14 @@ fun SectionHeaderTitle(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color = TextTertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 ),
                 modifier = Modifier.padding(start = 10.dp, top = 2.dp)
@@ -1039,6 +1052,7 @@ fun SectionHeaderTitle(
  * - Under cover image: Last 3 chapters with a "NEW" badge next to each
  * - Clicking work image navigates to Details Page
  * - Clicking directly on a chapter navigates to Reader Page
+ * - Conditioned Animated Color Wave effect for the first two items ONLY when using multi-color gradient themes.
  */
 @Composable
 fun LatestMangaGridCard(
@@ -1047,27 +1061,52 @@ fun LatestMangaGridCard(
     onMangaClick: () -> Unit,
     onChapterClick: (Int) -> Unit,
     onToggleFavorite: () -> Unit,
+    isTopAnimated: Boolean = false,
+    gradientColors: List<Color> = emptyList(),
     modifier: Modifier = Modifier
 ) {
+    // 🌊 Active Animated Wave Gradient for the top 2 works ONLY on Multi-Color Gradient Themes
+    val animatedBorderBrush = if (isTopAnimated && gradientColors.size >= 2) {
+        val infiniteTransition = rememberInfiniteTransition(label = "top_card_gradient_wave")
+        val offsetAnimation by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 3500, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wave_offset"
+        )
+        Brush.linearGradient(
+            colors = gradientColors + gradientColors.first(),
+            start = Offset(offsetAnimation, 0f),
+            end = Offset(offsetAnimation + 600f, 600f)
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        )
+    }
+
+    val borderWidth = if (isTopAnimated && gradientColors.size >= 2) 2.dp else 1.2.dp
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .border(
-                1.2.dp,
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    )
-                ),
+                borderWidth,
+                animatedBorderBrush,
                 RoundedCornerShape(14.dp)
             )
             .testTag("manga_grid_card_${manga.id}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTopAnimated) 5.dp else 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1082,16 +1121,33 @@ fun LatestMangaGridCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = manga.titleAr,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isTopAnimated && gradientColors.size >= 2) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = "🔥",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = manga.titleAr,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 IconButton(
                     onClick = onToggleFavorite,
@@ -1114,7 +1170,7 @@ fun LatestMangaGridCard(
                     .fillMaxWidth()
                     .aspectRatio(0.72f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(SurfaceDark)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     .clickable { onMangaClick() }
                     .testTag("cover_image_${manga.id}")
             ) {
@@ -1133,8 +1189,6 @@ fun LatestMangaGridCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-
-
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1166,8 +1220,8 @@ fun LatestChapterItemRow(
 ) {
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = SurfaceVariantDark,
-        border = BorderStroke(0.5.dp, SurfaceElevated),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
@@ -1190,7 +1244,7 @@ fun LatestChapterItemRow(
                     text = "فصل ${chapter.number}",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 11.sp
                     ),
                     maxLines = 1,

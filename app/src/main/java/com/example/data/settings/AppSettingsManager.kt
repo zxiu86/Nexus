@@ -17,8 +17,9 @@ data class AppSettings(
     val autoSyncUpdates: Boolean = true,
     val themeMode: Int = 0, // 0: System, 1: Dark, 2: Light
     val backgroundStyle: Int = 0, // 0: Default, 1: AMOLED Pure Black, 2: Pure White
-    val accentColor: Int = 0, // 0: Gold, 1: Royal Blue, 2: Crimson Red, 3: Marine Blue, 4: Cherry Blossom
-    val preventChapterCache: Boolean = true // Don't persist chapter images in disk cache, auto-clear on exit
+    val accentColor: Int = 0, // 0..7: Solid, 10..15: Multi-Color Gradients
+    val preventChapterCache: Boolean = true, // Don't persist chapter images in disk cache, auto-clear on exit
+    val cardAnimationEnabled: Boolean = true // Enable animated gradient aura for the top 2 newest works in multi-color themes
 )
 
 class AppSettingsManager private constructor(context: Context) {
@@ -37,7 +38,8 @@ class AppSettingsManager private constructor(context: Context) {
             themeMode = prefs.getInt(KEY_THEME_MODE, 0),
             backgroundStyle = prefs.getInt(KEY_BACKGROUND_STYLE, 0),
             accentColor = prefs.getInt(KEY_ACCENT_COLOR, 0),
-            preventChapterCache = prefs.getBoolean(KEY_PREVENT_CHAPTER_CACHE, true)
+            preventChapterCache = prefs.getBoolean(KEY_PREVENT_CHAPTER_CACHE, true),
+            cardAnimationEnabled = prefs.getBoolean(KEY_CARD_ANIMATION_ENABLED, true)
         )
     }
 
@@ -84,6 +86,11 @@ class AppSettingsManager private constructor(context: Context) {
     fun updatePreventChapterCache(prevent: Boolean) {
         prefs.edit().putBoolean(KEY_PREVENT_CHAPTER_CACHE, prevent).apply()
         _settingsFlow.value = _settingsFlow.value.copy(preventChapterCache = prevent)
+    }
+
+    fun updateCardAnimationEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_CARD_ANIMATION_ENABLED, enabled).apply()
+        _settingsFlow.value = _settingsFlow.value.copy(cardAnimationEnabled = enabled)
     }
 
     fun getCalculatedCacheSize(context: Context): String {
@@ -136,6 +143,7 @@ class AppSettingsManager private constructor(context: Context) {
         private const val KEY_BACKGROUND_STYLE = "pref_background_style"
         private const val KEY_ACCENT_COLOR = "pref_accent_color"
         private const val KEY_PREVENT_CHAPTER_CACHE = "pref_prevent_chapter_cache"
+        private const val KEY_CARD_ANIMATION_ENABLED = "pref_card_animation_enabled"
 
         @Volatile
         private var INSTANCE: AppSettingsManager? = null

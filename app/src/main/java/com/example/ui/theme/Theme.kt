@@ -25,30 +25,17 @@ private data class AccentColors(
 fun getAppColorScheme(
     isDark: Boolean,
     backgroundStyle: Int, // 0: Default, 1: AMOLED Pure Black, 2: Pure White
-    accentColor: Int // 0: Default (Gold/Orange), 1: Blue, 2: Red, 3: Marine Blue (#0000B3), 4: Cherry Blossom (#FF77E1)
+    accentColor: Int // 0..7: Solid, 10..15: Multi-Color Gradients
 ): ColorScheme {
-    val (primary, onPrimary, primaryContainer, onPrimaryContainer, secondary, secondaryContainer) = when (accentColor) {
-        1 -> AccentColors(
-            NexusBlueLight, Color.White, NexusBlueDark, Color.White,
-            NexusBluePrimary, NexusBlueContainer
-        )
-        2 -> AccentColors(
-            NexusRedLight, Color.White, NexusRedDark, Color.White,
-            NexusRedPrimary, NexusRedContainer
-        )
-        3 -> AccentColors(
-            NexusMarineBlueLight, Color.White, NexusMarineBlueDark, Color.White,
-            NexusMarineBluePrimary, NexusMarineBlueContainer
-        )
-        4 -> AccentColors(
-            NexusCherryBlossomPrimary, Color.Black, NexusCherryBlossomDark, Color.White,
-            NexusCherryBlossomLight, NexusCherryBlossomContainer
-        )
-        else -> AccentColors(
-            NexusGoldLight, BackgroundDark, NexusGoldDark, TextPrimary,
-            NexusOrange, NexusOrangeDark
-        )
-    }
+    val preset = ThemePalettes.getPresetById(accentColor)
+    val (primary, onPrimary, primaryContainer, onPrimaryContainer, secondary, secondaryContainer) = AccentColors(
+        primary = preset.primaryColor,
+        onPrimary = preset.onPrimary,
+        primaryContainer = preset.primaryColor.copy(alpha = 0.25f),
+        onPrimaryContainer = if (isDark) TextPrimary else TextPrimaryLight,
+        secondary = preset.secondaryColor,
+        secondaryContainer = preset.secondaryColor.copy(alpha = 0.2f)
+    )
 
     return if (isDark) {
         val (bg, surf, surfVar, surfElev) = when (backgroundStyle) {
@@ -77,13 +64,13 @@ fun getAppColorScheme(
         )
     } else {
         lightColorScheme(
-            primary = if (accentColor == 0) NexusOrange else primary,
-            onPrimary = Color.White,
-            primaryContainer = if (accentColor == 0) NexusGold.copy(alpha = 0.25f) else primaryContainer.copy(alpha = 0.2f),
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
             onPrimaryContainer = TextPrimaryLight,
             secondary = secondary,
             onSecondary = Color.White,
-            secondaryContainer = secondaryContainer.copy(alpha = 0.2f),
+            secondaryContainer = secondaryContainer,
             onSecondaryContainer = TextPrimaryLight,
             tertiary = NexusOrange,
             onTertiary = Color.White,
@@ -102,7 +89,7 @@ fun getAppColorScheme(
 fun NexusTheme(
     themeMode: Int = 0, // 0: System, 1: Dark, 2: Light
     backgroundStyle: Int = 0, // 0: Default, 1: AMOLED Black, 2: Pure White
-    accentColor: Int = 0, // 0: Default, 1: Blue, 2: Red
+    accentColor: Int = 0, // 0..7: Solid, 10..15: Multi-Color Gradients
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -137,3 +124,4 @@ fun NexusTheme(
         content = content
     )
 }
+

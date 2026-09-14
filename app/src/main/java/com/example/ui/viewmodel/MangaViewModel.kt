@@ -711,17 +711,30 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            if (fullChapter != null && !fullChapter.isClosed) {
-                repository.recordReadingProgress(
-                    mangaId = manga.id,
-                    mangaTitle = manga.titleAr,
-                    mangaCover = manga.coverUrl,
-                    chapterNumber = chapterNumber,
-                    chapterTitle = fullChapter.title,
-                    pageNumber = lastSavedPage,
-                    totalPages = fullChapter.pages.size.coerceAtLeast(1)
-                )
-            }
+            // Note: Chapter is marked as read and registered to history only after 6 seconds of reading
+        }
+    }
+
+    /**
+     * ⏱️ Silent background reading timer callback:
+     * Only after staying inside the chapter for >= 6 seconds, this registers the chapter as read
+     * and updates reading history without annoying the user.
+     */
+    fun onChapterReadingThresholdReached(mangaId: String, chapterNumber: Int) {
+        val manga = _readerUiState.value.manga ?: repository.getMangaById(mangaId) ?: return
+        val currentChapter = _readerUiState.value.currentChapter ?: return
+        if (currentChapter.number == chapterNumber && !currentChapter.isClosed) {
+            val page = _readerUiState.value.initialScrollPage.coerceAtLeast(1)
+            repository.recordReadingProgress(
+                mangaId = manga.id,
+                mangaTitle = manga.titleAr,
+                mangaCover = manga.coverUrl,
+                chapterNumber = chapterNumber,
+                chapterTitle = currentChapter.title,
+                pageNumber = page,
+                totalPages = currentChapter.pages.size.coerceAtLeast(1)
+            )
+            repository.markChapterAsRead(manga.id, chapterNumber)
         }
     }
 
@@ -775,6 +788,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateAccentColor(color: Int) {
         settingsManager.updateAccentColor(color)
+    }
+
+    fun updateCardAnimationEnabled(enabled: Boolean) {
+        settingsManager.updateCardAnimationEnabled(enabled)
     }
 
     fun updatePreventChapterCache(prevent: Boolean) {
