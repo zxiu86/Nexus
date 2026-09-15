@@ -1,13 +1,23 @@
 [
   {
-    "name": "demonic-emperor",
+    "name": "Demonic Emperor",
     "cavar": "https://olympustaff.com/images/manga/11809d13c563e62b8f74fea18dbe2417.jpg",
-    "last_chapter": 906
+    "last_chapter": 909
+  },
+  {
+    "name": "Against The Gods",
+    "cavar": "https://olympustaff.com/images/manga/aba9a61d37bbb82c4d2ee4ece9b8d731.png",
+    "last_chapter": 796
   },
   {
     "name": "Lookism",
     "cavar": "https://olympustaff.com/images/manga/ac6983c01f70cf27bc7b09c3bfa3cc48.png",
-    "last_chapter": 623
+    "last_chapter": 624
+  },
+  {
+    "name": "The Eternal Supreme",
+    "cavar": "https://olympustaff.com/images/manga/2321381201483814727.webp",
+    "last_chapter": 566
   },
   {
     "name": "All Hail The Sect Leader",
@@ -17,12 +27,12 @@
   {
     "name": "Evolution Begins With A Big Tree",
     "cavar": "https://olympustaff.com/images/manga/4950266841188729110.jpeg",
-    "last_chapter": 532
+    "last_chapter": 533
   },
   {
     "name": "Tales of Demons and Gods",
     "cavar": "https://olympustaff.com/images/manga/6f181e4d0b39d55869722f090889760f.jpg",
-    "last_chapter": 529
+    "last_chapter": 530
   },
   {
     "name": "battle through the heavens",
@@ -37,7 +47,12 @@
   {
     "name": "Eleceed",
     "cavar": "https://olympustaff.com/images/manga/17666987771409026756.jpg",
-    "last_chapter": 416
+    "last_chapter": 417
+  },
+  {
+    "name": "Mortal Cultivation: biography",
+    "cavar": "https://olympustaff.com/images/manga/0a01b5ad6506dc25d228cafdd1c98d18.png",
+    "last_chapter": 377
   },
   {
     "name": "Legend of Star General",
@@ -52,11 +67,21 @@
   {
     "name": "Villain Is Here",
     "cavar": "https://olympustaff.com/images/manga/e2f00d25b7f992ab0a0b7b2dde3f5ac3.jpg",
-    "last_chapter": 353
+    "last_chapter": 355
+  },
+  {
+    "name": "The Game That I Came From",
+    "cavar": "https://olympustaff.com/images/manga/548773515791389091.webp",
+    "last_chapter": 310
   },
   {
     "name": "Survival Story Of A Sword King In A Fantasy World",
     "cavar": "https://olympustaff.com/images/manga/a93f1bd8089135f30a2768d377299711.jpg",
+    "last_chapter": 302
+  },
+  {
+    "name": "The Board Of Lanke",
+    "cavar": "https://olympustaff.com/images/manga/1526639766970296059.webp",
     "last_chapter": 302
   },
   {
@@ -72,22 +97,32 @@
   {
     "name": "The Tutorial Is Too Hard",
     "cavar": "https://olympustaff.com/images/manga/4cb705fe236a4aa34a57c65458595e3a.png",
-    "last_chapter": 286
+    "last_chapter": 287
+  },
+  {
+    "name": "Above ten thousand people",
+    "cavar": "https://olympustaff.com/images/manga/16653181151781766910.png",
+    "last_chapter": 279
   },
   {
     "name": "Top Tier Providence-Secretly Cultivate for a Thousand Years",
     "cavar": "https://olympustaff.com/images/manga/2142023765442784537.jpg",
-    "last_chapter": 277
+    "last_chapter": 278
   },
   {
     "name": "Solo Max-Level Newbie",
     "cavar": "https://olympustaff.com/images/manga/916781106128831400.jpeg",
-    "last_chapter": 275
+    "last_chapter": 276
   },
   {
     "name": "The Undefeatable Swordsman",
     "cavar": "https://olympustaff.com/images/manga/c0daab0e4fef5c6b6e19a104d80311a1.png",
-    "last_chapter": 268
+    "last_chapter": 269
+  },
+  {
+    "name": "The Beginning After The End",
+    "cavar": "https://olympustaff.com/images/manga/db3bc466501c2c0fca948454cc6c63b0.jpg",
+    "last_chapter": 252
   },
   {
     "name": "Chronicles Of Heavenly Demon",
@@ -95,14 +130,29 @@
     "last_chapter": 252
   },
   {
-    "name": "BATE",
-    "cavar": "https://olympustaff.com/images/manga/db3bc466501c2c0fca948454cc6c63b0.jpg",
+    "name": "The World After The End",
+    "cavar": "https://olympustaff.com/images/manga/18491722871367697367.jpg",
     "last_chapter": 251
   },
   {
-    "name": "The World After The End",
-    "cavar": "https://olympustaff.com/images/manga/18491722871367697367.jpg",
+    "name": "I Have 999 Types of Supernatural Powers",
+    "cavar": "https://olympustaff.com/images/manga/af1221ad9b06350e4f79b30a46a5aa72.jpg",
     "last_chapter": 250
+  },
+  {
+    "name": "The Ember Knight",
+    "cavar": "https://olympustaff.com/images/manga/8563399981908392088.jpg",
+    "last_chapter": 246
+  },
+  {
+    "name": "Hunter Age",
+    "cavar": "https://olympustaff.com/images/manga/fce88314beb73faa8bb5a7c210f83ace.png",
+    "last_chapter": 240
+  },
+  {
+    "name": "Ranker Who Lives A Second Time",
+    "cavar": "https://olympustaff.com/images/manga/19681367051815363387.jpg",
+    "last_chapter": 232
   },
   {
     "name": "gosu",
@@ -115,11 +165,6 @@
     "last_chapter": 231
   },
   {
-    "name": "Ranker Who Lives A Second Time",
-    "cavar": "https://olympustaff.com/images/manga/19681367051815363387.jpg",
-    "last_chapter": 231
-  },
-  {
     "name": "The World's Best Engineer",
     "cavar": "https://olympustaff.com/images/manga/9027864822073070314.webp",
     "last_chapter": 222
@@ -127,7 +172,12 @@
   {
     "name": "Pick Me Up!",
     "cavar": "https://olympustaff.com/images/manga/15326405871502340369.jpeg",
-    "last_chapter": 217
+    "last_chapter": 218
+  },
+  {
+    "name": "The Return Of The Crazy Demon",
+    "cavar": "https://olympustaff.com/images/manga/ccc16c772db398e464c2a7684756b0b2.png",
+    "last_chapter": 213
   },
   {
     "name": "Transcension Academy",
@@ -135,14 +185,14 @@
     "last_chapter": 212
   },
   {
-    "name": "The Return Of The Crazy Demon",
-    "cavar": "https://olympustaff.com/images/manga/ccc16c772db398e464c2a7684756b0b2.png",
+    "name": "Swordmaster’S Youngest Son",
+    "cavar": "https://olympustaff.com/images/manga/02ef7b4388c9ce84dae27df148846dad.png",
     "last_chapter": 211
   },
   {
-    "name": "Swordmaster’S Youngest Son",
-    "cavar": "https://olympustaff.com/images/manga/02ef7b4388c9ce84dae27df148846dad.png",
-    "last_chapter": 210
+    "name": "The Heavenly Demon Can't Live A Normal Life",
+    "cavar": "https://olympustaff.com/images/manga/b4e7ee579ca48e94543c958c299c74c7.png",
+    "last_chapter": 209
   },
   {
     "name": "The Mythical Realm",
@@ -157,11 +207,31 @@
   {
     "name": "Absolute Sword Sense",
     "cavar": "https://olympustaff.com/images/manga/14664104591255311449.jpg",
+    "last_chapter": 200
+  },
+  {
+    "name": "Return Of The Sss-Class Ranker",
+    "cavar": "https://olympustaff.com/images/manga/3c184836ba49b681a31c1f8a4f09a4d5.jpg",
+    "last_chapter": 200
+  },
+  {
+    "name": "How to live as a Villain",
+    "cavar": "https://olympustaff.com/images/manga/a3375d74deee4757258a0850bab5799b.png",
     "last_chapter": 199
+  },
+  {
+    "name": "Heavenly Demon Cultivation Simulation",
+    "cavar": "https://olympustaff.com/images/manga/3218675701665404248.jpeg",
+    "last_chapter": 198
   },
   {
     "name": "Ancient Teacher",
     "cavar": "https://olympustaff.com/images/manga/1843261555.jpg",
+    "last_chapter": 198
+  },
+  {
+    "name": "Standard of the Reincarnation",
+    "cavar": "https://olympustaff.com/images/manga/0432f445e1a74472e89c02a5fa68eb99.png",
     "last_chapter": 198
   },
   {
@@ -170,29 +240,24 @@
     "last_chapter": 197
   },
   {
-    "name": "Standard of the Reincarnation",
-    "cavar": "https://olympustaff.com/images/manga/0432f445e1a74472e89c02a5fa68eb99.png",
-    "last_chapter": 197
-  },
-  {
-    "name": "Heavenly Demon Cultivation Simulation",
-    "cavar": "https://olympustaff.com/images/manga/3218675701665404248.jpeg",
-    "last_chapter": 196
-  },
-  {
     "name": "I Became The Tyrant Of A Defense Game",
     "cavar": "https://olympustaff.com/images/manga/f1104dbd5d7a241159b33815e3139a70.png",
     "last_chapter": 195
   },
   {
+    "name": "I Obtained A Mythic Item",
+    "cavar": "https://olympustaff.com/images/manga/e038a53d61fb5bce30d433b03444425c.png",
+    "last_chapter": 194
+  },
+  {
     "name": "The Return Of The Disaster-Class Hero",
     "cavar": "https://olympustaff.com/images/manga/84d4233bb9bdfe53e1a0c387ce620743.jpg",
-    "last_chapter": 188
+    "last_chapter": 189
   },
   {
     "name": "Chronicles of the Demon Faction",
     "cavar": "https://olympustaff.com/images/manga/f9d31e2b8acfddd856fe39678ce31fdf.jpg",
-    "last_chapter": 186
+    "last_chapter": 188
   },
   {
     "name": "Trash Of The Count’S Family",
@@ -202,32 +267,52 @@
   {
     "name": "Infinite Mage",
     "cavar": "https://olympustaff.com/images/manga/8c753c7ae686a7d8d5a1f6b0be084778.jpg",
-    "last_chapter": 184
-  },
-  {
-    "name": "The S-Classes That I Raised",
-    "cavar": "https://olympustaff.com/images/manga/cfff30a97a1c65a535abb4817aac24c6.jpg",
-    "last_chapter": 179
+    "last_chapter": 185
   },
   {
     "name": "Revenge of the Iron-Blooded Sword Hound",
     "cavar": "https://olympustaff.com/images/manga/1337115942426141728.jpg",
-    "last_chapter": 179
+    "last_chapter": 180
+  },
+  {
+    "name": "The S-Classes That I Raised",
+    "cavar": "https://olympustaff.com/images/manga/cfff30a97a1c65a535abb4817aac24c6.jpg",
+    "last_chapter": 180
+  },
+  {
+    "name": "Boundless Necromancer",
+    "cavar": "https://olympustaff.com/images/manga/1374617091673848301.jpg",
+    "last_chapter": 177
+  },
+  {
+    "name": "Manager Kim",
+    "cavar": "https://olympustaff.com/images/manga/1160328187.jpg",
+    "last_chapter": 174
   },
   {
     "name": "The novels extra",
     "cavar": "https://olympustaff.com/images/manga/14943743771927114128.jpeg",
-    "last_chapter": 170
+    "last_chapter": 171
   },
   {
     "name": "Dungeon Odyssey",
     "cavar": "https://olympustaff.com/images/manga/1674845387864322059.jpeg",
+    "last_chapter": 169
+  },
+  {
+    "name": "The Hero Returns",
+    "cavar": "https://olympustaff.com/images/manga/b5e39e84413a3583bb438c436dda24ba.jpg",
     "last_chapter": 168
   },
   {
     "name": "Terminally-Ill Genius Dark Knight",
     "cavar": "https://olympustaff.com/images/manga/2e599c466104aab49090a81f7fce3f2d.png",
-    "last_chapter": 163
+    "last_chapter": 165
+  },
+  {
+    "name": "Divine Card Creator",
+    "cavar": "https://olympustaff.com/images/manga/9a05833a36ad4cb6d2ac417f1cdd4b37.png",
+    "last_chapter": 160
   },
   {
     "name": "Player Who Returned 10,000 Years Later",
@@ -237,27 +322,47 @@
   {
     "name": "Surviving The Game As A Barbarian",
     "cavar": "https://olympustaff.com/images/manga/8ad1f944129f88a77b4d16a3decb28a2.png",
-    "last_chapter": 158
+    "last_chapter": 159
+  },
+  {
+    "name": "Hero Has Returned",
+    "cavar": "https://olympustaff.com/images/manga/1372892892.jpg",
+    "last_chapter": 159
   },
   {
     "name": "Academy’S Genius Swordsman",
     "cavar": "https://olympustaff.com/images/manga/7c6be8aa9e524137f7526a38e275fd66.png",
-    "last_chapter": 153
+    "last_chapter": 154
+  },
+  {
+    "name": "Sleeping Ranker",
+    "cavar": "https://olympustaff.com/images/manga/4888832071555053927.jpg",
+    "last_chapter": 154
   },
   {
     "name": "The Great Mage of the Hero’s Party Reincarnates",
     "cavar": "https://olympustaff.com/images/manga/f469110ac21e6c316c784ba0d8d9a7d1.png",
-    "last_chapter": 152
+    "last_chapter": 153
+  },
+  {
+    "name": "The Constellations Are My Disciples",
+    "cavar": "https://olympustaff.com/images/manga/16289651871011560302.jpg",
+    "last_chapter": 151
   },
   {
     "name": "Regressor of the Fallen family",
     "cavar": "https://olympustaff.com/images/manga/dd48a5a9ba54dca77629084d693aa78b.png",
-    "last_chapter": 149
+    "last_chapter": 151
+  },
+  {
+    "name": "Solo Bug Player",
+    "cavar": "https://olympustaff.com/images/manga/488751759107889748.jpeg",
+    "last_chapter": 150
   },
   {
     "name": "The Indomitable Martial King",
     "cavar": "https://olympustaff.com/images/manga/3551364782045030238.jpeg",
-    "last_chapter": 149
+    "last_chapter": 150
   },
   {
     "name": "The Archmage's Restaurant",
@@ -267,12 +372,22 @@
   {
     "name": "The Regressed Son of a Duke is an Assassin",
     "cavar": "https://olympustaff.com/images/manga/13002828461125366825.jpeg",
-    "last_chapter": 142
+    "last_chapter": 143
   },
   {
     "name": "Mr Devourer, Please Act Like a Final Boss",
     "cavar": "https://olympustaff.com/images/manga/cd1ba7a59f6761d7796f3d2b58c68ec5.jpg",
     "last_chapter": 142
+  },
+  {
+    "name": "The Dungeon Master",
+    "cavar": "https://olympustaff.com/images/manga/4127335331149081335.jpg",
+    "last_chapter": 142
+  },
+  {
+    "name": "The Nebula's Civilization",
+    "cavar": "https://olympustaff.com/images/manga/f88b4f3f2c4eb53dd61f5ee32b483706.png",
+    "last_chapter": 140
   },
   {
     "name": "The Villain",
@@ -282,11 +397,16 @@
   {
     "name": "Reborn As The Heavenly Demon",
     "cavar": "https://olympustaff.com/images/manga/cdebd79e93448c3a07724f8ace05f689.png",
-    "last_chapter": 137
+    "last_chapter": 139
   },
   {
     "name": "Star-Embracing Swordmaster",
     "cavar": "https://olympustaff.com/images/manga/c62e5b8eaf22eb4affa06110fcb352c9.jpg",
+    "last_chapter": 137
+  },
+  {
+    "name": "Dragon-Devouring Mage",
+    "cavar": "https://olympustaff.com/images/manga/cd742fe5be627182814486bbd82841c6.png",
     "last_chapter": 136
   },
   {
@@ -300,9 +420,24 @@
     "last_chapter": 135
   },
   {
+    "name": "Maxed strength necromancer",
+    "cavar": "https://olympustaff.com/images/manga/5935de2767cd400cbedad47c5b19593c.png",
+    "last_chapter": 134
+  },
+  {
     "name": "My Exclusive Tower Guide",
     "cavar": "https://olympustaff.com/images/manga/b97acd8f4068d79b724e750ab32f7584.jpg",
     "last_chapter": 131
+  },
+  {
+    "name": "Apocalyptic Chef Awakening",
+    "cavar": "https://olympustaff.com/images/manga/1786767386433543494.jpg",
+    "last_chapter": 130
+  },
+  {
+    "name": "Stronger When Facing Strength, My Cultivation Has No Limits",
+    "cavar": "https://olympustaff.com/images/manga/13486067141967703430.jpg",
+    "last_chapter": 130
   },
   {
     "name": "Martial God Regressed To Level 2",
@@ -310,9 +445,14 @@
     "last_chapter": 128
   },
   {
-    "name": "Underworld Restaurant",
-    "cavar": "https://olympustaff.com/images/manga/aa68a3a2c70551fe6847af6e2e6bf1ed.png",
-    "last_chapter": 126
+    "name": "I’m Not That Kind of Talent",
+    "cavar": "https://olympustaff.com/images/manga/a4ab1f5b085a1fbb2621bdc7182693b1.png",
+    "last_chapter": 127
+  },
+  {
+    "name": "Level Up Alone",
+    "cavar": "https://olympustaff.com/images/manga/8877890011478162842.jpeg",
+    "last_chapter": 127
   },
   {
     "name": "Dragon Master",
@@ -320,18 +460,38 @@
     "last_chapter": 126
   },
   {
+    "name": "Underworld Restaurant",
+    "cavar": "https://olympustaff.com/images/manga/aa68a3a2c70551fe6847af6e2e6bf1ed.png",
+    "last_chapter": 126
+  },
+  {
     "name": "The Extra’s Academy Survival Guide",
     "cavar": "https://olympustaff.com/images/manga/63ba6d85a33e2c8324db3ef3de58ed80.png",
+    "last_chapter": 123
+  },
+  {
+    "name": "The Long Way Of The Warrior",
+    "cavar": "https://olympustaff.com/images/manga/590668750816984846.webp",
     "last_chapter": 122
+  },
+  {
+    "name": "Youngest Scion of the Mages",
+    "cavar": "https://olympustaff.com/images/manga/cd4ca0b285b316818cac42c5826e4eb6.png",
+    "last_chapter": 120
+  },
+  {
+    "name": "I Reincarnated as a Legendary Surgeon",
+    "cavar": "https://olympustaff.com/images/manga/102086234391750324.jpg",
+    "last_chapter": 119
   },
   {
     "name": "Absolute Regression",
     "cavar": "https://olympustaff.com/images/manga/9471582891668301132.jpg",
-    "last_chapter": 117
+    "last_chapter": 118
   },
   {
-    "name": "I Was Immediately Mistaken for a Monster Genius Actor",
-    "cavar": "https://olympustaff.com/images/manga/d2fc0317251f6b56dc57ad242fb34dc7.png",
+    "name": "After the School Belle Dumped Me, I Became a Martial Arts God",
+    "cavar": "https://olympustaff.com/images/manga/1404077689625866461.jpg",
     "last_chapter": 116
   },
   {
@@ -340,33 +500,73 @@
     "last_chapter": 116
   },
   {
-    "name": "The Long Way Of The Warrior",
-    "cavar": "https://olympustaff.com/images/manga/590668750816984846.webp",
+    "name": "I Was Immediately Mistaken for a Monster Genius Actor",
+    "cavar": "https://olympustaff.com/images/manga/d2fc0317251f6b56dc57ad242fb34dc7.png",
+    "last_chapter": 116
+  },
+  {
+    "name": "Jungle Juice",
+    "cavar": "https://olympustaff.com/images/manga/1845309301595637116.jpeg",
     "last_chapter": 115
+  },
+  {
+    "name": "Eternally Regressing Knight",
+    "cavar": "https://olympustaff.com/images/manga/2090110104145364251.jpeg",
+    "last_chapter": 112
   },
   {
     "name": "Regressing as the Reincarnated Bastard of the Sword Clan",
     "cavar": "https://olympustaff.com/images/manga/34892946790381433.jpg",
+    "last_chapter": 111
+  },
+  {
+    "name": "Superhuman Battlefield",
+    "cavar": "https://olympustaff.com/images/manga/42eb6e70b9af7b63cfd7ece9d392863d.png",
     "last_chapter": 110
   },
   {
     "name": "Absolute Dominion",
     "cavar": "https://olympustaff.com/images/manga/95800a0bc7eae0031b78ff9206ef5249.jpg",
-    "last_chapter": 108
+    "last_chapter": 109
+  },
+  {
+    "name": "Myst, Might, Mayhem",
+    "cavar": "https://olympustaff.com/images/manga/bdb12c32279059abe6de19e1e12cde72.jpg",
+    "last_chapter": 109
   },
   {
     "name": "Genius Archer's Streaming",
     "cavar": "https://olympustaff.com/images/manga/1016100601518850418.jpeg",
+    "last_chapter": 107
+  },
+  {
+    "name": "Lu Bu's Life Simulator",
+    "cavar": "https://olympustaff.com/images/manga/68e07adf290d29f6e92c8dd8c64b6458.png",
     "last_chapter": 106
+  },
+  {
+    "name": "Light Of The Dawn (Remake)",
+    "cavar": "https://olympustaff.com/images/manga/1739240807665985285.gif",
+    "last_chapter": 105
   },
   {
     "name": "The Regressed Mercenary's Machination",
     "cavar": "https://olympustaff.com/images/manga/f0fcb012930c5c3ab863875382d89fdb.jpg",
-    "last_chapter": 104
+    "last_chapter": 105
   },
   {
     "name": "The Dark Mage’s Return to Enlistment",
     "cavar": "https://olympustaff.com/images/manga/e45b45ee931eca682d8d4a53fdb18c14.jpg",
+    "last_chapter": 104
+  },
+  {
+    "name": "The Legendary Hero is an Academy Honors Student",
+    "cavar": "https://olympustaff.com/images/manga/f8f1c42160797f81b98897e0ed73bbda.png",
+    "last_chapter": 103
+  },
+  {
+    "name": "A Dragonslayer's Peerless Regression",
+    "cavar": "https://olympustaff.com/images/manga/4ccadb4452d92ebfee1f2f41d248d407.jpg",
     "last_chapter": 102
   },
   {
@@ -380,19 +580,29 @@
     "last_chapter": 101
   },
   {
-    "name": "The Legendary Hero is an Academy Honors Student",
-    "cavar": "https://olympustaff.com/images/manga/f8f1c42160797f81b98897e0ed73bbda.png",
-    "last_chapter": 101
+    "name": "Barbarian Quest",
+    "cavar": "https://olympustaff.com/images/manga/1884140111.png",
+    "last_chapter": 100
   },
   {
-    "name": "A Dragonslayer's Peerless Regression",
-    "cavar": "https://olympustaff.com/images/manga/4ccadb4452d92ebfee1f2f41d248d407.jpg",
+    "name": "Solo Resurrection",
+    "cavar": "https://olympustaff.com/images/manga/541ca7a611e75f347f28ce164d1360ec.png",
     "last_chapter": 100
   },
   {
     "name": "Bad Born Blood",
     "cavar": "https://olympustaff.com/images/manga/ed214247fb374a9f98974f91ccb3bc06.jpg",
-    "last_chapter": 97
+    "last_chapter": 99
+  },
+  {
+    "name": "Max Talent Player",
+    "cavar": "https://olympustaff.com/images/manga/b2971a6226fc0e5d51abf32e0bf06c3d.png",
+    "last_chapter": 98
+  },
+  {
+    "name": "The reincarnated assassin is a genius swordsman",
+    "cavar": "https://olympustaff.com/images/manga/9655427991305552401.jpeg",
+    "last_chapter": 96
   },
   {
     "name": "Regressed Genius Creates Mythic Items",
@@ -407,11 +617,16 @@
   {
     "name": "Surviving as a Genius on Borrowed Time",
     "cavar": "https://olympustaff.com/images/manga/c41811147ca4437114ccb5331391acf5.png",
-    "last_chapter": 92
+    "last_chapter": 93
   },
   {
     "name": "السلف الأول في التاريخ",
     "cavar": "https://olympustaff.com/images/manga/698556903.jpg",
+    "last_chapter": 92
+  },
+  {
+    "name": "I’m Going to Destroy this Country",
+    "cavar": "https://olympustaff.com/images/manga/eb2d4dc0244869b045176637fc82bebd.jpg",
     "last_chapter": 92
   },
   {
@@ -420,9 +635,29 @@
     "last_chapter": 91
   },
   {
-    "name": "I’m Going to Destroy this Country",
-    "cavar": "https://olympustaff.com/images/manga/eb2d4dc0244869b045176637fc82bebd.jpg",
-    "last_chapter": 91
+    "name": "I’m Being Misunderstood As A Soccer Genius",
+    "cavar": "https://olympustaff.com/images/manga/12553f7aba80a68b33766a36c3e7a5eb.png",
+    "last_chapter": 90
+  },
+  {
+    "name": "The First Sword of Earth",
+    "cavar": "https://olympustaff.com/images/manga/6649858291542125043.jpg",
+    "last_chapter": 90
+  },
+  {
+    "name": "The 100th Regression of the Max-Level Player",
+    "cavar": "https://olympustaff.com/images/manga/aa7f6c8b70f999c452bcd0c335d70dca.png",
+    "last_chapter": 89
+  },
+  {
+    "name": "Goblin's Night",
+    "cavar": "https://olympustaff.com/images/manga/1604512571866098094.jpg",
+    "last_chapter": 88
+  },
+  {
+    "name": "Return of the Apocalypse-Class Death Knight",
+    "cavar": "https://olympustaff.com/images/manga/92531740fb55c329480ef7cb87f82609.png",
+    "last_chapter": 87
   },
   {
     "name": "Tyrant of the Otherworld Prison: My Shadow Can Evolve Infinitely",
@@ -430,9 +665,14 @@
     "last_chapter": 87
   },
   {
-    "name": "Return of the Apocalypse-Class Death Knight",
-    "cavar": "https://olympustaff.com/images/manga/92531740fb55c329480ef7cb87f82609.png",
+    "name": "Healing Life Through Camping In Another World",
+    "cavar": "https://olympustaff.com/images/manga/33058608356b949a297ca950e2a63b06.png",
     "last_chapter": 86
+  },
+  {
+    "name": "Ending Maker",
+    "cavar": "https://olympustaff.com/images/manga/3f9246115476edcfaac8eb5d715fdc24.jpg",
+    "last_chapter": 85
   },
   {
     "name": "What a Bountiful Harvest, Demon Lord!",
@@ -440,14 +680,24 @@
     "last_chapter": 83
   },
   {
-    "name": "The First Sword of Earth",
-    "cavar": "https://olympustaff.com/images/manga/6649858291542125043.jpg",
+    "name": "Heavenly Demon Wants to Be A Chef",
+    "cavar": "https://olympustaff.com/images/manga/38a11e02fd9cb9a953f2d2741be36c2e.jpg",
+    "last_chapter": 83
+  },
+  {
+    "name": "I'm Destined for Greatness!",
+    "cavar": "https://olympustaff.com/images/manga/14904349331512869698.jpeg",
     "last_chapter": 81
   },
   {
     "name": "Mount Hua Sect's Genius Phantom Swordsman",
     "cavar": "https://olympustaff.com/images/manga/2b5e8ef97f0a33a60c686d0323ae9e35.png",
-    "last_chapter": 79
+    "last_chapter": 80
+  },
+  {
+    "name": "Genius Prismatic Mage",
+    "cavar": "https://olympustaff.com/images/manga/482696d76868bb7cf883fbd8fa619f23.png",
+    "last_chapter": 80
   },
   {
     "name": "The Path Toward Heaven",
@@ -455,8 +705,33 @@
     "last_chapter": 77
   },
   {
-    "name": "loyal-heart-roaming-the-skies",
+    "name": "The Youngest Son of the Eunhae Merchant Group",
+    "cavar": "https://olympustaff.com/images/manga/2b7c4ff8c671148002615764b292d03e.png",
+    "last_chapter": 76
+  },
+  {
+    "name": "Loyal Heart Roaming the Skies",
     "cavar": "https://olympustaff.com/images/manga/35a4746f118d28888abd3aeb7c0ec04e.jpg",
+    "last_chapter": 75
+  },
+  {
+    "name": "Masters are subscribed",
+    "cavar": "https://olympustaff.com/images/manga/929438072069968125.jpg",
+    "last_chapter": 75
+  },
+  {
+    "name": "The Mad Dog of the Duke’s Estate",
+    "cavar": "https://olympustaff.com/images/manga/e80dade5937ec1dbb73a8575f6fac8a0.jpg",
+    "last_chapter": 75
+  },
+  {
+    "name": "The Wailing Perversion",
+    "cavar": "https://olympustaff.com/images/manga/8032e8401fe5f5ae8a5b3a9027b41e09.png",
+    "last_chapter": 75
+  },
+  {
+    "name": "Rise of the Fallen Kingdom's Third Prince",
+    "cavar": "https://olympustaff.com/images/manga/0f9b55ea229116a665c68905681c5142.png",
     "last_chapter": 75
   },
   {
@@ -465,9 +740,14 @@
     "last_chapter": 74
   },
   {
-    "name": "The Mad Dog of the Duke’s Estate",
-    "cavar": "https://olympustaff.com/images/manga/e80dade5937ec1dbb73a8575f6fac8a0.jpg",
-    "last_chapter": 74
+    "name": "Barbarian’s Adventure in a Fantasy World",
+    "cavar": "https://olympustaff.com/images/manga/b5128e1cff0dcd11aa638f7d7cd3c6e4.png",
+    "last_chapter": 70
+  },
+  {
+    "name": "Reincarnation of the Fist King",
+    "cavar": "https://olympustaff.com/images/manga/6c1c8738f5aabceb15550ac2fd771808.gif",
+    "last_chapter": 69
   },
   {
     "name": "The Charm of Soul Pets",
@@ -475,8 +755,8 @@
     "last_chapter": 69
   },
   {
-    "name": "Barbarian’s Adventure in a Fantasy World",
-    "cavar": "https://olympustaff.com/images/manga/b5128e1cff0dcd11aa638f7d7cd3c6e4.png",
+    "name": "I Became the Genius Bastard of a Noble Dark Clan",
+    "cavar": "https://olympustaff.com/images/manga/7ffd58e5f261b0872b3df270f527e95f.gif",
     "last_chapter": 69
   },
   {
@@ -485,14 +765,9 @@
     "last_chapter": 68
   },
   {
-    "name": "Reincarnation of the Fist King",
-    "cavar": "https://olympustaff.com/images/manga/6c1c8738f5aabceb15550ac2fd771808.gif",
-    "last_chapter": 67
-  },
-  {
     "name": "Dark and Light Martial Emperor",
     "cavar": "https://olympustaff.com/images/manga/9058509212052898090.jpeg",
-    "last_chapter": 66
+    "last_chapter": 67
   },
   {
     "name": "The Villain Wants to Live",
@@ -507,27 +782,62 @@
   {
     "name": "The Divine Demon’s Grand Ascension",
     "cavar": "https://olympustaff.com/images/manga/8e41dde1ca297ccf6f9c004bb5bad56b.png",
-    "last_chapter": 64
+    "last_chapter": 65
+  },
+  {
+    "name": "Relife Player",
+    "cavar": "https://olympustaff.com/images/manga/2080692882686516978.webp",
+    "last_chapter": 65
   },
   {
     "name": "Chronicles of the Lazy Sovereign",
     "cavar": "https://olympustaff.com/images/manga/8587aab4e04b200136d58e06e275cdf6.jpg",
-    "last_chapter": 62
+    "last_chapter": 64
+  },
+  {
+    "name": "The Dark Swordsman Returns",
+    "cavar": "https://olympustaff.com/images/manga/128707931103329947.jpg",
+    "last_chapter": 64
   },
   {
     "name": "Crimson Reset",
     "cavar": "https://olympustaff.com/images/manga/6f39c0edeaa6774b3ef5b083fcb4eebd.jpg",
-    "last_chapter": 59
+    "last_chapter": 60
   },
   {
     "name": "The Tang Clan Chronicles",
     "cavar": "https://olympustaff.com/images/manga/588480bd8f69c9ec9092e7f4e5c2e046.jpg",
+    "last_chapter": 60
+  },
+  {
+    "name": "I Became The Villain The Hero Is Obsessed With",
+    "cavar": "https://olympustaff.com/images/manga/34725185423359721.jpeg",
+    "last_chapter": 60
+  },
+  {
+    "name": "Apocalyptic Heat I Became a God Using My Safe House",
+    "cavar": "https://olympustaff.com/images/manga/19f537fa668db4b208cd7267e1df1e59.png",
     "last_chapter": 59
   },
   {
     "name": "The Wandering Knight’s Survival Manual",
     "cavar": "https://olympustaff.com/images/manga/ca7403fb92b08cf6c2233bae4677363a.png",
-    "last_chapter": 57
+    "last_chapter": 58
+  },
+  {
+    "name": "Love Letter From the Future",
+    "cavar": "https://olympustaff.com/images/manga/972c16c46a9cf80774578946bbe759d2.png",
+    "last_chapter": 58
+  },
+  {
+    "name": "I Become The Youngest Disciple of The Martial Arts Leader",
+    "cavar": "https://olympustaff.com/images/manga/c81d76a35235db0a58fb9f0cf86fbeef.jpg",
+    "last_chapter": 56
+  },
+  {
+    "name": "Rebirth of the Divine Demon",
+    "cavar": "https://olympustaff.com/images/manga/8679ecd4c167de86841a136bfdd29ccf.png",
+    "last_chapter": 55
   },
   {
     "name": "Regression of the Yong Clan Heir",
@@ -535,8 +845,38 @@
     "last_chapter": 55
   },
   {
+    "name": "Kalli The Champion",
+    "cavar": "https://olympustaff.com/images/manga/2342255671088889933.webp",
+    "last_chapter": 55
+  },
+  {
+    "name": "The House Without Time",
+    "cavar": "https://olympustaff.com/images/manga/561617381569594674.jpg",
+    "last_chapter": 54
+  },
+  {
     "name": "Fog land",
     "cavar": "https://olympustaff.com/images/manga/786eb450e83e139c48307a958fb77fb7.png",
+    "last_chapter": 53
+  },
+  {
+    "name": "Fire Dragon King",
+    "cavar": "https://olympustaff.com/images/manga/8581868c3ed7e913541654d9e156ce08.png",
+    "last_chapter": 53
+  },
+  {
+    "name": "I Became The Rogue First Prince",
+    "cavar": "https://olympustaff.com/images/manga/6af2782ec77c2fdf1cdddef59b390a8f.png",
+    "last_chapter": 52
+  },
+  {
+    "name": "Playing the Perfect Fox-Eyed Villain",
+    "cavar": "https://olympustaff.com/images/manga/999927790103544716.jpg",
+    "last_chapter": 52
+  },
+  {
+    "name": "Raising villains the right way",
+    "cavar": "https://olympustaff.com/images/manga/6996906871152675872.jpeg",
     "last_chapter": 52
   },
   {
@@ -545,14 +885,59 @@
     "last_chapter": 52
   },
   {
-    "name": "I Became The Rogue First Prince",
-    "cavar": "https://olympustaff.com/images/manga/6af2782ec77c2fdf1cdddef59b390a8f.png",
+    "name": "Artifact-Devouring Player",
+    "cavar": "https://olympustaff.com/images/manga/4c69c25355c41215d1a327f78f7b305e.png",
+    "last_chapter": 52
+  },
+  {
+    "name": "The Regressed Extra Becomes a Genius",
+    "cavar": "https://olympustaff.com/images/manga/1693311409488870554.jpg",
+    "last_chapter": 52
+  },
+  {
+    "name": "The Sword God From a Fallen World",
+    "cavar": "https://olympustaff.com/images/manga/4595937041530040744.jpeg",
     "last_chapter": 51
   },
   {
-    "name": "Raising villains the right way",
-    "cavar": "https://olympustaff.com/images/manga/6996906871152675872.jpeg",
+    "name": "Corpse Knight Gunther",
+    "cavar": "https://olympustaff.com/images/manga/7368e4aee197306c21b427ed4433244a.png",
     "last_chapter": 50
+  },
+  {
+    "name": "Reborn on the Demonic Cult Battlefield",
+    "cavar": "https://olympustaff.com/images/manga/a325f2a1f2536fcaf2b0dc78d7dcada1.jpg",
+    "last_chapter": 50
+  },
+  {
+    "name": "Revenger: Apocalypse of Vengeance",
+    "cavar": "https://olympustaff.com/images/manga/5118850241332164166.jpg",
+    "last_chapter": 50
+  },
+  {
+    "name": "The Rebellious Apostle of the Harvest Goddess",
+    "cavar": "https://olympustaff.com/images/manga/dbbc583ca0a55b596f2d367105679f1f.jpg",
+    "last_chapter": 50
+  },
+  {
+    "name": "I Can Devour Everything",
+    "cavar": "https://olympustaff.com/images/manga/7633279141951220077.webp",
+    "last_chapter": 49
+  },
+  {
+    "name": "Supreme Zerg Lord",
+    "cavar": "https://olympustaff.com/images/manga/12652490981051641466.png",
+    "last_chapter": 47
+  },
+  {
+    "name": "The Demon King Overrun by Heroes",
+    "cavar": "https://olympustaff.com/images/manga/9bf789bf16a9dda9bd625960092b1855.jpg",
+    "last_chapter": 47
+  },
+  {
+    "name": "A Wimp’s Strategy Guide to Conquer the Tower",
+    "cavar": "https://olympustaff.com/images/manga/992345e8fbb8dc6468b09578a0a79ae3.jpg",
+    "last_chapter": 46
   },
   {
     "name": "Starting With 13 Hidden Traits",
@@ -560,19 +945,54 @@
     "last_chapter": 46
   },
   {
-    "name": "The Demon King Overrun by Heroes",
-    "cavar": "https://olympustaff.com/images/manga/9bf789bf16a9dda9bd625960092b1855.jpg",
-    "last_chapter": 45
-  },
-  {
-    "name": "A Wimp’s Strategy Guide to Conquer the Tower",
-    "cavar": "https://olympustaff.com/images/manga/992345e8fbb8dc6468b09578a0a79ae3.jpg",
-    "last_chapter": 44
+    "name": "Nuclear Explosion Swordsmanship: One Slash, One Kill",
+    "cavar": "https://olympustaff.com/images/manga/0f75bbc8cc20c11a1aa9e4f41fb38660.png",
+    "last_chapter": 46
   },
   {
     "name": "Sword-Devouring Swordmaster",
     "cavar": "https://olympustaff.com/images/manga/452848308448110506.gif",
-    "last_chapter": 44
+    "last_chapter": 45
+  },
+  {
+    "name": "Warrior High School - Dungeon Raid Department",
+    "cavar": "https://olympustaff.com/images/manga/9248e2068cf6666f3494a474406b476e.png",
+    "last_chapter": 45
+  },
+  {
+    "name": "Ninja Reincarnation: Fuuma Kotarou's Quest to Reclaim His Humanity",
+    "cavar": "https://olympustaff.com/images/manga/16759209741605596938.jpg",
+    "last_chapter": 45
+  },
+  {
+    "name": "The Prosecutor: Kim Seo-jin",
+    "cavar": "https://olympustaff.com/images/manga/2037358920649525347.jpeg",
+    "last_chapter": 45
+  },
+  {
+    "name": "The Mighty Teacher is a Roleplayer",
+    "cavar": "https://olympustaff.com/images/manga/7c46194a2d68b6ee51b3c7dff775f95e.png",
+    "last_chapter": 45
+  },
+  {
+    "name": "A Mountain of Corpses, A Sea of Blood",
+    "cavar": "https://olympustaff.com/images/manga/077b9d049805c99a1a872cab15135468.png",
+    "last_chapter": 43
+  },
+  {
+    "name": "Murim Psychopath",
+    "cavar": "https://olympustaff.com/images/manga/2b273fcf3fe927d1c4faf091c60a8d8f.png",
+    "last_chapter": 42
+  },
+  {
+    "name": "Wild Ranker",
+    "cavar": "https://olympustaff.com/images/manga/30d696cc424fb011970b0ba123f7b978.png",
+    "last_chapter": 42
+  },
+  {
+    "name": "After Signing In For 30 Days, I Can Annihilate Stars",
+    "cavar": "https://olympustaff.com/images/manga/6218238141599063659.png",
+    "last_chapter": 41
   },
   {
     "name": "Evil Dragon Reincarnation: Vengeance Begins at Age Five!",
@@ -580,8 +1000,8 @@
     "last_chapter": 41
   },
   {
-    "name": "Murim Psychopath",
-    "cavar": "https://olympustaff.com/images/manga/2b273fcf3fe927d1c4faf091c60a8d8f.png",
+    "name": "Noble Lady Reformation Guide",
+    "cavar": "https://olympustaff.com/images/manga/623d0b3e589457c521c61d17046162c4.jpg",
     "last_chapter": 41
   },
   {
@@ -590,8 +1010,8 @@
     "last_chapter": 41
   },
   {
-    "name": "After Signing In For 30 Days, I Can Annihilate Stars",
-    "cavar": "https://olympustaff.com/images/manga/6218238141599063659.png",
+    "name": "الصيد التلقائي رفقة نسخي",
+    "cavar": "https://olympustaff.com/images/manga/193715432.jpg",
     "last_chapter": 41
   },
   {
@@ -605,24 +1025,84 @@
     "last_chapter": 40
   },
   {
-    "name": "Noble Lady Reformation Guide",
-    "cavar": "https://olympustaff.com/images/manga/623d0b3e589457c521c61d17046162c4.jpg",
-    "last_chapter": 39
+    "name": "I Became a Munchkin Skill Thief",
+    "cavar": "https://olympustaff.com/images/manga/884f14b22e580087fdbb4ac91384a422.png",
+    "last_chapter": 40
+  },
+  {
+    "name": "Kariel the Hero",
+    "cavar": "https://olympustaff.com/images/manga/93788417566900744.jpg",
+    "last_chapter": 40
+  },
+  {
+    "name": "The Sword Master Who Travels Through Time",
+    "cavar": "https://olympustaff.com/images/manga/2033658271687285643.jpg",
+    "last_chapter": 40
+  },
+  {
+    "name": "Gwan-Jon Lee Kang-jin",
+    "cavar": "https://olympustaff.com/images/manga/dbb188d7124de57547513f021f16500d.png",
+    "last_chapter": 40
+  },
+  {
+    "name": "Level 999 Goblin",
+    "cavar": "https://olympustaff.com/images/manga/01cf6035b6bda4b2e532d5c8a6dfe827.png",
+    "last_chapter": 40
   },
   {
     "name": "The Sword Emperor Who Surpasses His Previous Life",
     "cavar": "https://olympustaff.com/images/manga/767a98603b40057b6f12e07292ee4815.png",
-    "last_chapter": 38
+    "last_chapter": 39
+  },
+  {
+    "name": "Reincarnation Path Of The Underworld King",
+    "cavar": "https://olympustaff.com/images/manga/45948242549131395.jpg",
+    "last_chapter": 39
   },
   {
     "name": "I Was Thrown Into an Unknown Manga",
     "cavar": "https://olympustaff.com/images/manga/0779d38a2a9be6a23a1d40b5161e3dc6.jpg",
-    "last_chapter": 37
+    "last_chapter": 38
+  },
+  {
+    "name": "The Berserker's Second Playthrough",
+    "cavar": "https://olympustaff.com/images/manga/f3bf1ffb7d02deeeb1095bf41f1935c2.jpg",
+    "last_chapter": 38
   },
   {
     "name": "The Regressor Can Make Them All",
     "cavar": "https://olympustaff.com/images/manga/19127438031861593655.jpeg",
+    "last_chapter": 38
+  },
+  {
+    "name": "World’s Strongest Survivor",
+    "cavar": "https://olympustaff.com/images/manga/6973334641584325742.jpeg",
+    "last_chapter": 38
+  },
+  {
+    "name": "The Reincarnation of God-Level Crafting",
+    "cavar": "https://olympustaff.com/images/manga/8bb6012dc9d8d1db925a6cde5229ff1f.png",
     "last_chapter": 37
+  },
+  {
+    "name": "Dungeon Defense",
+    "cavar": "https://olympustaff.com/images/manga/10508337591707321448.jpeg",
+    "last_chapter": 36
+  },
+  {
+    "name": "The Knight's Revival Through a Cursed Game",
+    "cavar": "https://olympustaff.com/images/manga/1724929550475321093.webp",
+    "last_chapter": 36
+  },
+  {
+    "name": "The Return Of Senior Disciple Lee Hoo",
+    "cavar": "https://olympustaff.com/images/manga/0bdbd21374fc92cf2f9a4d9477f2075e.webp",
+    "last_chapter": 36
+  },
+  {
+    "name": "Boruto: Two Blue Vortex",
+    "cavar": "https://olympustaff.com/images/manga/952306554814455554.jpg",
+    "last_chapter": 36
   },
   {
     "name": "Fantasy Induction Corps",
@@ -632,6 +1112,16 @@
   {
     "name": "The Shepherd Wizard",
     "cavar": "https://olympustaff.com/images/manga/9279216961370920269.png",
+    "last_chapter": 35
+  },
+  {
+    "name": "King of Acting",
+    "cavar": "https://olympustaff.com/images/manga/7dd2b515ab39edfca4ebeb10592dbff8.png",
+    "last_chapter": 34
+  },
+  {
+    "name": "The Forgotten Field",
+    "cavar": "https://olympustaff.com/images/manga/9128f74847ffd7e29547649d4ad07230.png",
     "last_chapter": 34
   },
   {
@@ -640,14 +1130,39 @@
     "last_chapter": 34
   },
   {
-    "name": "KING-OF-IMPROVISATION",
-    "cavar": "https://olympustaff.com/images/manga/7dd2b515ab39edfca4ebeb10592dbff8.png",
-    "last_chapter": 33
+    "name": "Golden Martial God",
+    "cavar": "https://olympustaff.com/images/manga/b404a57cf30cf8f0e1e6c39be2fea470.png",
+    "last_chapter": 31
   },
   {
-    "name": "The Forgotten Field",
-    "cavar": "https://olympustaff.com/images/manga/9128f74847ffd7e29547649d4ad07230.png",
-    "last_chapter": 33
+    "name": "Gunman",
+    "cavar": "https://olympustaff.com/images/manga/3162512341389707938.jpg",
+    "last_chapter": 31
+  },
+  {
+    "name": "The Barbarian From The Middle Ages",
+    "cavar": "https://olympustaff.com/images/manga/a84de1e358d96b359cca9dfe6b667eab.png",
+    "last_chapter": 31
+  },
+  {
+    "name": "The Immortal Genius Spearman",
+    "cavar": "https://olympustaff.com/images/manga/c7860d8a170b8aeff1c5c6589dfe6399.webp",
+    "last_chapter": 31
+  },
+  {
+    "name": "The Apocalypse Needs a Pro",
+    "cavar": "https://olympustaff.com/images/manga/87a1b1984418e7fbdda8631ba3147843.png",
+    "last_chapter": 31
+  },
+  {
+    "name": "The Ultimate Weapon Returns After 100 Million Years",
+    "cavar": "https://olympustaff.com/images/manga/b4c70967dd62ac5cc541f71c2f388e91.png",
+    "last_chapter": 31
+  },
+  {
+    "name": "Outside of Time",
+    "cavar": "https://olympustaff.com/images/manga/1213698530741772890.webp",
+    "last_chapter": 31
   },
   {
     "name": "Regressed blood demon",
@@ -655,18 +1170,43 @@
     "last_chapter": 30
   },
   {
-    "name": "The Immortal Genius Spearman",
-    "cavar": "https://olympustaff.com/images/manga/c7860d8a170b8aeff1c5c6589dfe6399.webp",
+    "name": "I Contracted Myself",
+    "cavar": "https://olympustaff.com/images/manga/8a233dbecebf95e04183a1d712523690.png",
     "last_chapter": 30
+  },
+  {
+    "name": "The Tales of Heaven and Earth",
+    "cavar": "https://olympustaff.com/images/manga/3b57a36b3ece552bc6528163b9b28781.png",
+    "last_chapter": 30
+  },
+  {
+    "name": "Defense Breaker",
+    "cavar": "https://olympustaff.com/images/manga/2075855294551082204.jpg",
+    "last_chapter": 30
+  },
+  {
+    "name": "The Tale of the Skeleton Messenger",
+    "cavar": "https://olympustaff.com/images/manga/1444656586562485572.jpg",
+    "last_chapter": 30
+  },
+  {
+    "name": "‏Invincible With Only a Single Point of HP",
+    "cavar": "https://olympustaff.com/images/manga/14f9c1c31d31e8aaa047180794f5143e.png",
+    "last_chapter": 30
+  },
+  {
+    "name": "Gods' Gambit",
+    "cavar": "https://olympustaff.com/images/manga/238837461732985410.jpeg",
+    "last_chapter": 29
+  },
+  {
+    "name": "Reverend Insanity (Master of Gu)",
+    "cavar": "https://olympustaff.com/images/manga/1498791882885536429.jpeg",
+    "last_chapter": 29
   },
   {
     "name": "The Hero Starts Over at the Academy",
     "cavar": "https://olympustaff.com/images/manga/d33c9c3b2bf022f4d256d0d775e193eb.png",
-    "last_chapter": 29
-  },
-  {
-    "name": "The Barbarian From The Middle Ages",
-    "cavar": "https://olympustaff.com/images/manga/a84de1e358d96b359cca9dfe6b667eab.png",
     "last_chapter": 29
   },
   {
@@ -675,9 +1215,14 @@
     "last_chapter": 29
   },
   {
-    "name": "Golden Martial God",
-    "cavar": "https://olympustaff.com/images/manga/b404a57cf30cf8f0e1e6c39be2fea470.png",
+    "name": "Solo Leveling:ARISE",
+    "cavar": "https://olympustaff.com/images/manga/1108464038109225512.jpg",
     "last_chapter": 29
+  },
+  {
+    "name": "Immortal's Way of Life",
+    "cavar": "https://olympustaff.com/images/manga/859ea6afa87e09a3b8bbd5428e0a1281.jpg",
+    "last_chapter": 28
   },
   {
     "name": "Is It Bad That the Main Character’s a Roleplayer?",
@@ -685,18 +1230,28 @@
     "last_chapter": 28
   },
   {
-    "name": "Reverend Insanity (Master of Gu)",
-    "cavar": "https://olympustaff.com/images/manga/1498791882885536429.jpeg",
+    "name": "My Dad Is the Strongest Under Heaven",
+    "cavar": "https://olympustaff.com/images/manga/d32cda06ce9ca096ac3ed26b9e91f67f.webp",
     "last_chapter": 28
   },
   {
-    "name": "Immortal's Way of Life",
-    "cavar": "https://olympustaff.com/images/manga/859ea6afa87e09a3b8bbd5428e0a1281.jpg",
-    "last_chapter": 27
+    "name": "Sandmancer of the Scorched Desert",
+    "cavar": "https://olympustaff.com/images/manga/e7cd1c84c182657bf2c99dfbd66a925c.jpg",
+    "last_chapter": 28
   },
   {
-    "name": "My Dad Is the Strongest Under Heaven",
-    "cavar": "https://olympustaff.com/images/manga/d32cda06ce9ca096ac3ed26b9e91f67f.webp",
+    "name": "Eldmia Ega, the Reincarnated Avenger",
+    "cavar": "https://olympustaff.com/images/manga/d15c237297da5d8ea00fcd98d1442f97.jpg",
+    "last_chapter": 28
+  },
+  {
+    "name": "The Academy is Doomed",
+    "cavar": "https://olympustaff.com/images/manga/a05c4af4f2bfb4143f8cd30299fde1fe.png",
+    "last_chapter": 28
+  },
+  {
+    "name": "Cultivate with a fairy",
+    "cavar": "https://olympustaff.com/images/manga/529063287.png",
     "last_chapter": 27
   },
   {
@@ -705,8 +1260,8 @@
     "last_chapter": 27
   },
   {
-    "name": "Drug Devourer",
-    "cavar": "https://olympustaff.com/images/manga/1050834842.jpg",
+    "name": "King of Violence",
+    "cavar": "https://olympustaff.com/images/manga/235417400907786157.png",
     "last_chapter": 27
   },
   {
@@ -715,8 +1270,23 @@
     "last_chapter": 27
   },
   {
-    "name": "Cultivate with a fairy",
-    "cavar": "https://olympustaff.com/images/manga/529063287.png",
+    "name": "Drug Devourer",
+    "cavar": "https://olympustaff.com/images/manga/1050834842.jpg",
+    "last_chapter": 27
+  },
+  {
+    "name": "Who Let Him Cultivate Immortality",
+    "cavar": "https://olympustaff.com/images/manga/14376694271689614740.jpg",
+    "last_chapter": 27
+  },
+  {
+    "name": "Archmage Curriculum",
+    "cavar": "https://olympustaff.com/images/manga/1417949693950183518.png",
+    "last_chapter": 27
+  },
+  {
+    "name": "The Mirror Legacy",
+    "cavar": "https://olympustaff.com/images/manga/4287af9344494689edc06b0d4a33f898.png",
     "last_chapter": 27
   },
   {
@@ -725,8 +1295,8 @@
     "last_chapter": 26
   },
   {
-    "name": "King of Violence",
-    "cavar": "https://olympustaff.com/images/manga/235417400907786157.png",
+    "name": "The Genius Healer’s Restart",
+    "cavar": "https://olympustaff.com/images/manga/fc6bf6da9c15b964d3cb5ed297368af4.jpg",
     "last_chapter": 25
   },
   {
@@ -735,29 +1305,59 @@
     "last_chapter": 24
   },
   {
+    "name": "Epilogue",
+    "cavar": "https://olympustaff.com/images/manga/20576291491986461217.jpeg",
+    "last_chapter": 23
+  },
+  {
+    "name": "The Great Villain Who Threatened to Kill Himself",
+    "cavar": "https://olympustaff.com/images/manga/4471268151134662902.jpeg",
+    "last_chapter": 23
+  },
+  {
+    "name": "The Novice's Frontline",
+    "cavar": "https://olympustaff.com/images/manga/5c218555e18d20cf77e2a65e19b0c3c7.jpg",
+    "last_chapter": 23
+  },
+  {
+    "name": "Return of the Reaper: Assassin",
+    "cavar": "https://olympustaff.com/images/manga/0431a0c0bc4d559b743d528e80290e8b.png",
+    "last_chapter": 22
+  },
+  {
+    "name": "The Strongest Swordsman Rising from a Bottom-Tier Job",
+    "cavar": "https://olympustaff.com/images/manga/d6b1bc78689d7fe4b58dcd2406a265d4.png",
+    "last_chapter": 22
+  },
+  {
+    "name": "The Sword Saint Reincarnated Into A Noble Mage Family",
+    "cavar": "https://olympustaff.com/images/manga/1095c40e69ccdea7f21a6c71cd81bf9c.png",
+    "last_chapter": 22
+  },
+  {
+    "name": "Vampire's alchemy",
+    "cavar": "https://olympustaff.com/images/manga/7bdc7b7df06432520edc67db102659aa.png",
+    "last_chapter": 21
+  },
+  {
+    "name": "Paying Respects To The Sect Leader",
+    "cavar": "https://olympustaff.com/images/manga/b1e1260652cca07accdbbb4e88eafaf3.jpg",
+    "last_chapter": 21
+  },
+  {
+    "name": "The Calamity Prince Tames the Craziest Real-World Hero",
+    "cavar": "https://olympustaff.com/images/manga/f86aa1c6f41667325ca93c5fbdb5823c.png",
+    "last_chapter": 21
+  },
+  {
     "name": "The Jinx's Strategy for Domination",
     "cavar": "https://olympustaff.com/images/manga/de061698019f7f2cf498f40f4516dc27.png",
     "last_chapter": 21
   },
   {
-    "name": "Who Let Him Cultivate Immortality",
-    "cavar": "https://olympustaff.com/images/manga/14376694271689614740.jpg",
+    "name": "NIPPON SANGOKU: The Three Nations of the Crimson Sun",
+    "cavar": "https://olympustaff.com/images/manga/9bbbcae3f9a2bc950123e569929e0fa8.jpg",
     "last_chapter": 21
-  },
-  {
-    "name": "The Novice's Frontline",
-    "cavar": "https://olympustaff.com/images/manga/5c218555e18d20cf77e2a65e19b0c3c7.jpg",
-    "last_chapter": 21
-  },
-  {
-    "name": "the-lord-who-levels-up-by-absorbing-powers",
-    "cavar": "https://olympustaff.com/images/manga/77ba9883e001b94205a34a6755bdb267.png",
-    "last_chapter": 20
-  },
-  {
-    "name": "I Contracted Myself",
-    "cavar": "https://olympustaff.com/images/manga/8a233dbecebf95e04183a1d712523690.png",
-    "last_chapter": 20
   },
   {
     "name": "Disaster Comes I Evolve In To The Crimson King",
@@ -767,17 +1367,57 @@
   {
     "name": "Sword King High School: The Talentless Underachiever Becomes the Strongest",
     "cavar": "https://olympustaff.com/images/manga/63cfa2c0505a140074cc17b5d132ece8.png",
-    "last_chapter": 19
+    "last_chapter": 20
   },
   {
-    "name": "Vampire's alchemy",
-    "cavar": "https://olympustaff.com/images/manga/7bdc7b7df06432520edc67db102659aa.png",
-    "last_chapter": 19
+    "name": "The Genius Professor Wants to Take It Easy",
+    "cavar": "https://olympustaff.com/images/manga/d3b78f72c6f5f7cb184fee5a8014157c.webp",
+    "last_chapter": 20
+  },
+  {
+    "name": "the-lord-who-levels-up-by-absorbing-powers",
+    "cavar": "https://olympustaff.com/images/manga/77ba9883e001b94205a34a6755bdb267.png",
+    "last_chapter": 20
+  },
+  {
+    "name": "Online Game: I Can Evolve Everything",
+    "cavar": "https://olympustaff.com/images/manga/cd80b06d61195efaae4a9400390984d4.webp",
+    "last_chapter": 20
+  },
+  {
+    "name": "Mushroom Brave",
+    "cavar": "https://olympustaff.com/images/manga/3432b1abeb208f3e1fb1cbfa896cc10c.png",
+    "last_chapter": 20
+  },
+  {
+    "name": "Heavenly Moon",
+    "cavar": "https://olympustaff.com/images/manga/1414028370.jpg",
+    "last_chapter": 20
+  },
+  {
+    "name": "Pavane for the Dead Hunter",
+    "cavar": "https://olympustaff.com/images/manga/42ed175dcccb61b22eff5d904c275386.png",
+    "last_chapter": 20
   },
   {
     "name": "I Kidnapped the Youngest Daughter of the Sichuan Tang Clan",
     "cavar": "https://olympustaff.com/images/manga/0e32dc570e3445f0b3bec1d09f584c9e.jpg",
-    "last_chapter": 18
+    "last_chapter": 19
+  },
+  {
+    "name": "Titan of star forging",
+    "cavar": "https://olympustaff.com/images/manga/69fb34c6de24ca1ffc27c4feafc92615.png",
+    "last_chapter": 19
+  },
+  {
+    "name": "A Glimpse of the Jianghu",
+    "cavar": "https://olympustaff.com/images/manga/142657835933951637.png",
+    "last_chapter": 19
+  },
+  {
+    "name": "Voodoo Slam",
+    "cavar": "https://olympustaff.com/images/manga/1799256870248137842.jpg",
+    "last_chapter": 19
   },
   {
     "name": "The Seventh Prince Wants to Bail",
@@ -790,9 +1430,29 @@
     "last_chapter": 17
   },
   {
-    "name": "MURIMS-DEBT-KING",
+    "name": "Murim’s Debt King",
     "cavar": "https://olympustaff.com/images/manga/a84cac760cbb91ab75a8b6b6d3b1b6c4.jpg",
-    "last_chapter": 16
+    "last_chapter": 17
+  },
+  {
+    "name": "Rise Of The Northern Shadow",
+    "cavar": "https://olympustaff.com/images/manga/d4a056ba6968c5f567c8dfdeb9052964.png",
+    "last_chapter": 17
+  },
+  {
+    "name": "Turns Out I'm a Third-Generation Chaebol",
+    "cavar": "https://olympustaff.com/images/manga/a8f61b144f963b8e7a60fe92a7b2d201.jpg",
+    "last_chapter": 17
+  },
+  {
+    "name": "Suspicion Of Plagiarism",
+    "cavar": "https://olympustaff.com/images/manga/124ca88ab1434be96337ff3f07b2a1b5.webp",
+    "last_chapter": 17
+  },
+  {
+    "name": "War Of The Corpses",
+    "cavar": "https://olympustaff.com/images/manga/f6e0d18e27ff258b8297076d9a6e8eb6.png",
+    "last_chapter": 17
   },
   {
     "name": "ANNIHILATION-OF-THE-HEAVENLY-WAY",
@@ -800,13 +1460,33 @@
     "last_chapter": 16
   },
   {
+    "name": "I’m Level 999, But I Only Have One Year To Live",
+    "cavar": "https://olympustaff.com/images/manga/161314984750612688.jpg",
+    "last_chapter": 15
+  },
+  {
     "name": "The Genius Monster of a Chaebol Family",
     "cavar": "https://olympustaff.com/images/manga/922f5ad6a92ce16293705380d1743d90.png",
     "last_chapter": 15
   },
   {
-    "name": "I’m Level 999, But I Only Have One Year To Live",
-    "cavar": "https://olympustaff.com/images/manga/161314984750612688.jpg",
+    "name": "Transcendence Due To A System Error",
+    "cavar": "https://olympustaff.com/images/manga/15ab3f327c12970d1516ee571884cd07.jpg",
+    "last_chapter": 15
+  },
+  {
+    "name": "A Mercenary's Second Playthrough is Anything But Peaceful",
+    "cavar": "https://olympustaff.com/images/manga/db205866c105a2f1aa5d8f40a8105117.webp",
+    "last_chapter": 15
+  },
+  {
+    "name": "The Regressed Lowest-Ranked Wizard Overturns the Academy Hierarchy",
+    "cavar": "https://olympustaff.com/images/manga/a48b06e5fee6671a3fe99c539fd4e172.webp",
+    "last_chapter": 15
+  },
+  {
+    "name": "I’m Back as the Strongest Gamer",
+    "cavar": "https://olympustaff.com/images/manga/cc1d782d38096c3df5c07702fea2f71e.jpg",
     "last_chapter": 15
   },
   {
@@ -815,13 +1495,58 @@
     "last_chapter": 14
   },
   {
+    "name": "Reincarnated as the Weakest Warrior with the Power to Choose Any Reward",
+    "cavar": "https://olympustaff.com/images/manga/48cbfa7d4b491ba9b6c7bdb62dc4bca8.png",
+    "last_chapter": 14
+  },
+  {
+    "name": "Star of Falling Blossoms",
+    "cavar": "https://olympustaff.com/images/manga/918445891790605922.jpeg",
+    "last_chapter": 14
+  },
+  {
+    "name": "Rebirth Of The Warrior King",
+    "cavar": "https://olympustaff.com/images/manga/3c16d8af57b23f73ff16d593421707f9.jpg",
+    "last_chapter": 14
+  },
+  {
+    "name": "The Black-Haired Knight King",
+    "cavar": "https://olympustaff.com/images/manga/14912797681235390778.jpg",
+    "last_chapter": 14
+  },
+  {
     "name": "Fatal Reset",
     "cavar": "https://olympustaff.com/images/manga/0d5046ba41a480eb341b326891041b06.png",
     "last_chapter": 13
   },
   {
-    "name": "Master of Wine",
-    "cavar": "https://olympustaff.com/images/manga/7da215767e57bcbe5f0700bde793bf16.png",
+    "name": "Healing At The Academy Convenience Store",
+    "cavar": "https://olympustaff.com/images/manga/d1f4a9e67886ada0415dcdc495c9882d.jpg",
+    "last_chapter": 13
+  },
+  {
+    "name": "The Substitute Hero",
+    "cavar": "https://olympustaff.com/images/manga/9f56cf4c958170d405b3fdf8cf6480eb.png",
+    "last_chapter": 13
+  },
+  {
+    "name": "This Killer is a Son-in-Law",
+    "cavar": "https://olympustaff.com/images/manga/6551baae34d7fc976ad7a1ff4d97b798.png",
+    "last_chapter": 13
+  },
+  {
+    "name": "Other World Contractor",
+    "cavar": "https://olympustaff.com/images/manga/fd11b7ea419c5ce1eaab708684c6b338.png",
+    "last_chapter": 13
+  },
+  {
+    "name": "Goblin Inc",
+    "cavar": "https://olympustaff.com/images/manga/9d41f9d39099505be2dc113be4650760.jpg",
+    "last_chapter": 12
+  },
+  {
+    "name": "I'm Quitting Everything and Selling Cola",
+    "cavar": "https://olympustaff.com/images/manga/acd51f923a0fb8072fa96318fa0886ef.jpg",
     "last_chapter": 12
   },
   {
@@ -830,18 +1555,43 @@
     "last_chapter": 12
   },
   {
-    "name": "Goblin Inc",
-    "cavar": "https://olympustaff.com/images/manga/9d41f9d39099505be2dc113be4650760.jpg",
-    "last_chapter": 11
+    "name": "Master of Wine",
+    "cavar": "https://olympustaff.com/images/manga/7da215767e57bcbe5f0700bde793bf16.png",
+    "last_chapter": 12
   },
   {
-    "name": "The Substitute Hero",
-    "cavar": "https://olympustaff.com/images/manga/9f56cf4c958170d405b3fdf8cf6480eb.png",
-    "last_chapter": 11
+    "name": "The Amber Sword",
+    "cavar": "https://olympustaff.com/images/manga/a2787cead6dfba004dc081a6326239b5.png",
+    "last_chapter": 12
+  },
+  {
+    "name": "Infinite Breakthrough",
+    "cavar": "https://olympustaff.com/images/manga/90240af699c44924350cdda9f95588fa.jpg",
+    "last_chapter": 12
   },
   {
     "name": "A Comic Artist’s Survival Guide",
     "cavar": "https://olympustaff.com/images/manga/706775306.png",
+    "last_chapter": 11
+  },
+  {
+    "name": "I Never Take Action Yet I Became The Biggest Boss in the Sky",
+    "cavar": "https://olympustaff.com/images/manga/1674644153521259753.jpg",
+    "last_chapter": 11
+  },
+  {
+    "name": "Record of Lodoss War: The Necromancer Queen",
+    "cavar": "https://olympustaff.com/images/manga/ad6bcd070a80cb236d3cdca3770d5a90.png",
+    "last_chapter": 11
+  },
+  {
+    "name": "After Being Expelled, I Awakened a Barrier Skill and Became Unmatched",
+    "cavar": "https://olympustaff.com/images/manga/6251c3ff75b7162f8a21920a40f1c348.jpg",
+    "last_chapter": 11
+  },
+  {
+    "name": "Stray Bullet",
+    "cavar": "https://olympustaff.com/images/manga/88d77a34c39c67eb3478c0b3f398cc1b.png",
     "last_chapter": 11
   },
   {
@@ -850,8 +1600,18 @@
     "last_chapter": 10
   },
   {
-    "name": "The ultimate prodigy",
-    "cavar": "https://olympustaff.com/images/manga/c00988963db58e24a62071fcfd6e3644.png",
+    "name": "Global Job Change: Starting With the Hidden Class Necromancer Lord",
+    "cavar": "https://olympustaff.com/images/manga/c4eafe30038b651bbab1289aebdbea3a.png",
+    "last_chapter": 10
+  },
+  {
+    "name": "Hwarim’s Divine Brush",
+    "cavar": "https://olympustaff.com/images/manga/aa7344f89647bdee83ca1c536c893174.png",
+    "last_chapter": 10
+  },
+  {
+    "name": "Nightmare Realm Summoner",
+    "cavar": "https://olympustaff.com/images/manga/cc49e244b458a2426f0e3b5057791ae3.webp",
     "last_chapter": 10
   },
   {
@@ -865,13 +1625,23 @@
     "last_chapter": 10
   },
   {
-    "name": "WORLDS-STRONGEST-STRAIGHT-PUNCH",
-    "cavar": "https://olympustaff.com/images/manga/c0359e3e683da953c62c5b4c2ecf8ba5.png",
-    "last_chapter": 9
+    "name": "The ultimate prodigy",
+    "cavar": "https://olympustaff.com/images/manga/c00988963db58e24a62071fcfd6e3644.png",
+    "last_chapter": 10
   },
   {
-    "name": "Global Job Change: Starting With the Hidden Class Necromancer Lord",
-    "cavar": "https://olympustaff.com/images/manga/c4eafe30038b651bbab1289aebdbea3a.png",
+    "name": "The Return of the Musical Genius",
+    "cavar": "https://olympustaff.com/images/manga/2c02b9132937f9e6cc9fdad5125e7fd3.jpg",
+    "last_chapter": 10
+  },
+  {
+    "name": "Exodus",
+    "cavar": "https://olympustaff.com/images/manga/da6f1173dfda872d8003dd5c2b6b6666.webp",
+    "last_chapter": 10
+  },
+  {
+    "name": "Assassin X Dragon",
+    "cavar": "https://olympustaff.com/images/manga/1998729402324407454.jpg",
     "last_chapter": 9
   },
   {
@@ -880,13 +1650,53 @@
     "last_chapter": 9
   },
   {
+    "name": "National-Level Big Shots Flock to My Farm",
+    "cavar": "https://olympustaff.com/images/manga/074d0e4302092560e3b749201931a225.jpg",
+    "last_chapter": 9
+  },
+  {
+    "name": "Road to Mastery",
+    "cavar": "https://olympustaff.com/images/manga/f887d5859f869e3f6dd640c1b19f59ed.png",
+    "last_chapter": 9
+  },
+  {
+    "name": "Unlimited Bacterimancer",
+    "cavar": "https://olympustaff.com/images/manga/08eeafc781e46f2223140eaa72f197a6.jpg",
+    "last_chapter": 9
+  },
+  {
+    "name": "World's Strongest Straight Punch",
+    "cavar": "https://olympustaff.com/images/manga/c0359e3e683da953c62c5b4c2ecf8ba5.png",
+    "last_chapter": 9
+  },
+  {
+    "name": "The Sergeant Dragon",
+    "cavar": "https://olympustaff.com/images/manga/09baaabd588881db2dfd63c73233901b.jpg",
+    "last_chapter": 9
+  },
+  {
+    "name": "crocodile",
+    "cavar": "https://olympustaff.com/images/manga/fe5d66b4d96a272172e40c4bb0fde545.png",
+    "last_chapter": 8
+  },
+  {
     "name": "Everyone Start with Synthesizing the Undead Army",
     "cavar": "https://olympustaff.com/images/manga/8e34b3cd1b4ebcbcd43d9e72f3c96e29.png",
     "last_chapter": 8
   },
   {
-    "name": "The Old Man Swears Vengeance Against His Demonic Wife",
-    "cavar": "https://olympustaff.com/images/manga/66e3e6dd135f5308e8554399e64440f4.jpg",
+    "name": "Reborn in the City: Immortal Realm Supreme",
+    "cavar": "https://olympustaff.com/images/manga/cc90065d786807d7afaa8ae093ca0982.jpg",
+    "last_chapter": 8
+  },
+  {
+    "name": "Shadow Slave",
+    "cavar": "https://olympustaff.com/images/manga/2eef94798d7df361f7265496bb4177ec.png",
+    "last_chapter": 8
+  },
+  {
+    "name": "Surviving In An RPG Maker Horror Game",
+    "cavar": "https://olympustaff.com/images/manga/b0fb2c4c163005aa4d7908ad421016d8.jpg",
     "last_chapter": 8
   },
   {
@@ -900,48 +1710,83 @@
     "last_chapter": 8
   },
   {
-    "name": "Nightmare Realm Summoner",
-    "cavar": "https://olympustaff.com/images/manga/cc49e244b458a2426f0e3b5057791ae3.webp",
-    "last_chapter": 8
-  },
-  {
-    "name": "Reborn in the City: Immortal Realm Supreme",
-    "cavar": "https://olympustaff.com/images/manga/cc90065d786807d7afaa8ae093ca0982.jpg",
-    "last_chapter": 8
-  },
-  {
-    "name": "Shadow Slave",
-    "cavar": "https://olympustaff.com/images/manga/2eef94798d7df361f7265496bb4177ec.png",
-    "last_chapter": 7
-  },
-  {
-    "name": "Surviving In An RPG Maker Horror Game",
-    "cavar": "https://olympustaff.com/images/manga/b0fb2c4c163005aa4d7908ad421016d8.jpg",
-    "last_chapter": 7
-  },
-  {
-    "name": "Road to Mastery",
-    "cavar": "https://olympustaff.com/images/manga/f887d5859f869e3f6dd640c1b19f59ed.png",
-    "last_chapter": 7
-  },
-  {
     "name": "Urban Dragon War",
     "cavar": "https://olympustaff.com/images/manga/d12293940bb9d77b5830226606abb7cf.jpg",
+    "last_chapter": 8
+  },
+  {
+    "name": "Legend of the Demon God in Joseon",
+    "cavar": "https://olympustaff.com/images/manga/da39c33c4acca5339c01730641d0e39a.jpg",
+    "last_chapter": 8
+  },
+  {
+    "name": "My Healing Skill Can Copy Anything, So I Conquered the Abyss",
+    "cavar": "https://olympustaff.com/images/manga/db05e4cc57ceadf80895bd972f5b9838.webp",
     "last_chapter": 7
   },
   {
-    "name": "Hwarim’s Divine Brush",
-    "cavar": "https://olympustaff.com/images/manga/45e15206de3e945f7f55fa878eac3c42.jpg",
+    "name": "Onimusha: Way Of The Sword",
+    "cavar": "https://olympustaff.com/images/manga/1a6fb9f04a167d6fb7e7cef0d3772899.png",
     "last_chapter": 7
   },
   {
-    "name": "The Wall Street Genius’s Final Investment Playbook",
-    "cavar": "https://olympustaff.com/images/manga/cd551c20090b7d97737c46030bcc4cd2.png",
-    "last_chapter": 6
+    "name": "The Demon King's Friend",
+    "cavar": "https://olympustaff.com/images/manga/a45ea938b9ed54f5dca330140554f53b.png",
+    "last_chapter": 7
   },
   {
     "name": "The Heavenly Demon’s Apocalypse",
     "cavar": "https://olympustaff.com/images/manga/04b7977c159d13a040cfddee41c70815.png",
+    "last_chapter": 7
+  },
+  {
+    "name": "The Old Man Swears Vengeance Against His Demonic Wife",
+    "cavar": "https://olympustaff.com/images/manga/66e3e6dd135f5308e8554399e64440f4.jpg",
+    "last_chapter": 7
+  },
+  {
+    "name": "with a no cooldown cheat I can transform into an undead calamity",
+    "cavar": "https://olympustaff.com/images/manga/53240ded9403bfe8305dec4e6f750f7f.png",
+    "last_chapter": 7
+  },
+  {
+    "name": "Emperor of fortune",
+    "cavar": "https://olympustaff.com/images/manga/726179663.jpg",
+    "last_chapter": 7
+  },
+  {
+    "name": "Fight Delivery",
+    "cavar": "https://olympustaff.com/images/manga/50022b3a8e08ad6173c1fc733cd503e2.png",
+    "last_chapter": 7
+  },
+  {
+    "name": "my brother is a mad dog",
+    "cavar": "https://olympustaff.com/images/manga/8a84302b01fa2b3b95c36432967b2738.webp",
+    "last_chapter": 7
+  },
+  {
+    "name": "Contract Killer Enrollment",
+    "cavar": "https://olympustaff.com/images/manga/c4bd154180b6fb03c205af3063b2f339.png",
+    "last_chapter": 7
+  },
+  {
+    "name": "The Heavenly Demon’s Otherworld Livestream",
+    "cavar": "https://olympustaff.com/images/manga/e031ff62ee1f251cf0d436e967195612.png",
+    "last_chapter": 7
+  },
+  {
+    "name": "10,000 Ways to eliminate Players",
+    "cavar": "https://olympustaff.com/images/manga/215324951223737268.webp",
+    "last_chapter": 7
+  },
+  {
+    "name": "Boss beating",
+    "cavar": "https://olympustaff.com/images/manga/d02491f4b39a1562d681a954c10dcc16.jpg",
+    "last_chapter": 6
+  },
+  {
+    "name": "The Invincible Escort",
+    "cavar": "https://olympustaff.com/images/manga/264eaff464c6eaa85070770150d91868.png",
     "last_chapter": 6
   },
   {
@@ -950,34 +1795,84 @@
     "last_chapter": 6
   },
   {
-    "name": "Boss beating",
-    "cavar": "https://olympustaff.com/images/manga/d02491f4b39a1562d681a954c10dcc16.jpg",
+    "name": "King of the Cartel",
+    "cavar": "https://olympustaff.com/images/manga/4438566721404587302.jpg",
     "last_chapter": 6
   },
   {
-    "name": "My Healing Skill Can Copy Anything, So I Conquered the Abyss",
-    "cavar": "https://olympustaff.com/images/manga/db05e4cc57ceadf80895bd972f5b9838.webp",
-    "last_chapter": 5
+    "name": "Love Tears Apart Zombies",
+    "cavar": "https://olympustaff.com/images/manga/ae28e3d96b292df40fea076c17e52e2b.png",
+    "last_chapter": 6
   },
   {
-    "name": "underworld monarch I am the abyss",
-    "cavar": "https://olympustaff.com/images/manga/2bcc7e58dc02e1fb8dba4d53f047faa3.png",
-    "last_chapter": 5
+    "name": "Miro in Memory",
+    "cavar": "https://olympustaff.com/images/manga/907504813194327605.webp",
+    "last_chapter": 6
   },
   {
-    "name": "with a no cooldown cheat I can transform into an undead calamity",
-    "cavar": "https://olympustaff.com/images/manga/53240ded9403bfe8305dec4e6f750f7f.png",
-    "last_chapter": 5
+    "name": "the blood demon chronicles",
+    "cavar": "https://olympustaff.com/images/manga/22ef1002e214ed0df9d8ee7c7e71ab80.webp",
+    "last_chapter": 6
   },
   {
     "name": "The Theory of Useless Magic",
     "cavar": "https://olympustaff.com/images/manga/aaf9e78cd0b4dd4de35f23344b8ecd60.webp",
+    "last_chapter": 6
+  },
+  {
+    "name": "The Wall Street Genius’s Final Investment Playbook",
+    "cavar": "https://olympustaff.com/images/manga/cd551c20090b7d97737c46030bcc4cd2.png",
+    "last_chapter": 6
+  },
+  {
+    "name": "underworld monarch I am the abyss",
+    "cavar": "https://olympustaff.com/images/manga/2bcc7e58dc02e1fb8dba4d53f047faa3.png",
+    "last_chapter": 6
+  },
+  {
+    "name": "Whispers of a Scheming Demon",
+    "cavar": "https://olympustaff.com/images/manga/bf0f40737ed3d8b6ddbb3333ee46d7ea.webp",
+    "last_chapter": 6
+  },
+  {
+    "name": "Global Game I Can Have 100 Fold Amplification",
+    "cavar": "https://olympustaff.com/images/manga/a4fba54ce23fabc833af327d2a743388.png",
+    "last_chapter": 5
+  },
+  {
+    "name": "Ovcharka",
+    "cavar": "https://olympustaff.com/images/manga/1798576139151046408.jpg",
     "last_chapter": 5
   },
   {
     "name": "Super Devouring System",
     "cavar": "https://olympustaff.com/images/manga/662144846.jpg",
     "last_chapter": 5
+  },
+  {
+    "name": "The Hero Directed by The Demon King",
+    "cavar": "https://olympustaff.com/images/manga/126315437488906942.jpg",
+    "last_chapter": 5
+  },
+  {
+    "name": "I'm really not The villain",
+    "cavar": "https://olympustaff.com/images/manga/22520607.webp",
+    "last_chapter": 5
+  },
+  {
+    "name": "Reincarnation Of The Strongest Sword God",
+    "cavar": "https://olympustaff.com/images/manga/1586876005.webp",
+    "last_chapter": 5
+  },
+  {
+    "name": "Return of the Top Player",
+    "cavar": "https://olympustaff.com/images/manga/2c6a961177471deac202741c3f37981c.png",
+    "last_chapter": 5
+  },
+  {
+    "name": "Dog Eat Dog",
+    "cavar": "https://olympustaff.com/images/manga/0845a005cc933f53cc91ffffbd27dbfb.png",
+    "last_chapter": 4
   },
   {
     "name": "My Basic Attacks Summon the Undead: I, the Dark Ranger, Am the True Calamity",
@@ -987,6 +1882,11 @@
   {
     "name": "One Hundred Million Inspirations",
     "cavar": "https://olympustaff.com/images/manga/2a64e6df13d9a9c962bece9494a11496.webp",
+    "last_chapter": 4
+  },
+  {
+    "name": "Star Armor: My Great-Grandpa Feeds Me Through the Beast Apocalypse",
+    "cavar": "https://olympustaff.com/images/manga/157959595695578012.webp",
     "last_chapter": 4
   },
   {
@@ -1000,24 +1900,74 @@
     "last_chapter": 4
   },
   {
-    "name": "Global Game I Can Have 100 Fold Amplification",
-    "cavar": "https://olympustaff.com/images/manga/a4fba54ce23fabc833af327d2a743388.png",
+    "name": "Apocalypse Mechanic",
+    "cavar": "https://olympustaff.com/images/manga/1276561440.jpg",
+    "last_chapter": 4
+  },
+  {
+    "name": "Thriller Game",
+    "cavar": "https://olympustaff.com/images/manga/fa1518a12ec3e77ee4571d896f87c9d6.webp",
+    "last_chapter": 4
+  },
+  {
+    "name": "Reincarnated Through Dreams, I Became the Supreme Martial God",
+    "cavar": "https://olympustaff.com/images/manga/28d5880c5ec409ec9e1b64410deb1097.png",
+    "last_chapter": 4
+  },
+  {
+    "name": "A Space Marine Got a Status Window",
+    "cavar": "https://olympustaff.com/images/manga/f0d4fb4be58aa59f87123dab76a1ac47.png",
     "last_chapter": 3
   },
   {
-    "name": "Dog Eat Dog",
-    "cavar": "https://olympustaff.com/images/manga/0845a005cc933f53cc91ffffbd27dbfb.png",
+    "name": "Lovers Walking on a Clockwork",
+    "cavar": "https://olympustaff.com/images/manga/5f742d5e0ea9fe1afe5b55c0aafcdb01.png",
+    "last_chapter": 3
+  },
+  {
+    "name": "Supercritical Hell",
+    "cavar": "https://olympustaff.com/images/manga/c618950570940cfe2221e8ec12e893cb.jpg",
     "last_chapter": 3
   },
   {
     "name": "The Strongest Priest: There's Nothing Wrong with Wielding a Hammer, Right?",
     "cavar": "https://olympustaff.com/images/manga/3d85136ff3950af123536a1a17312f80.png",
+    "last_chapter": 3
+  },
+  {
+    "name": "Shadow hunter",
+    "cavar": "https://olympustaff.com/images/manga/f6d674ee7282eff80f7cad5f2214d1f1.png",
+    "last_chapter": 3
+  },
+  {
+    "name": "SELFISH ALLIANCE",
+    "cavar": "https://olympustaff.com/images/manga/778ed52bfe4c4eedc5e7e57329d67320.png",
+    "last_chapter": 3
+  },
+  {
+    "name": "Radiant Black",
+    "cavar": "https://olympustaff.com/images/manga/825602456619617037.jpg",
+    "last_chapter": 3
+  },
+  {
+    "name": "Big Shining",
+    "cavar": "https://olympustaff.com/images/manga/990106077299232733.jpg",
     "last_chapter": 2
   },
   {
-    "name": "god-of-martial-arts",
-    "cavar": "https://olympustaff.com/images/manga/05393d67b2f39df9a27d4b5391aef92d.png",
+    "name": "The Immortal Empress Is Haunted by Her Inner Demons",
+    "cavar": "https://olympustaff.com/images/manga/2fffd28ff7608d869fd6fa8fb86b6bcf.png",
     "last_chapter": 2
+  },
+  {
+    "name": "The Descent of the Crimson Calamity",
+    "cavar": "https://olympustaff.com/images/manga/b8c93d78781f43c8944223e84ad2b4fc.jpg",
+    "last_chapter": 2
+  },
+  {
+    "name": "After Dying a Billion Times, I Copy Talents and Slaughter My Way Through the Ten Thousand Races",
+    "cavar": "https://olympustaff.com/images/manga/59c7717a5f1f996cc247d2d49765bb73.png",
+    "last_chapter": 1
   },
   {
     "name": "demon king cheat system",
@@ -1025,8 +1975,28 @@
     "last_chapter": 1
   },
   {
+    "name": "God Of Martial Arts",
+    "cavar": "https://olympustaff.com/images/manga/05393d67b2f39df9a27d4b5391aef92d.png",
+    "last_chapter": 1
+  },
+  {
     "name": "I Took Over the Demonic Ancestor",
     "cavar": "https://olympustaff.com/images/manga/1d36583d283f8c76bbd29c059b18d293.png",
+    "last_chapter": 1
+  },
+  {
+    "name": "Surviving in a School Bully Webtoon",
+    "cavar": "https://olympustaff.com/images/manga/8251272031220123857.webp",
+    "last_chapter": 1
+  },
+  {
+    "name": "Wild Heart",
+    "cavar": "https://olympustaff.com/images/manga/1566318811177709188.png",
+    "last_chapter": 1
+  },
+  {
+    "name": "Otherworldly Skeleton Evolution",
+    "cavar": "https://olympustaff.com/images/manga/1930147892108434501.webp",
     "last_chapter": 1
   }
 ]
