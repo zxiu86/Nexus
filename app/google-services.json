@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "830681771668",
+    "project_id": "nexus-de50d",
+    "storage_bucket": "nexus-de50d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:830681771668:android:dcaa01d5a7ed1ea8be0e81",
+        "android_client_info": {
+          "package_name": "com.aistudio.nexus.manga"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "830681771668-r7044r7huaje8j1cusj0b1q456gc7ji2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGk-cphplkBaWHQbTm2_ikQ7qDO5IVExE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "830681771668-r7044r7huaje8j1cusj0b1q456gc7ji2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
