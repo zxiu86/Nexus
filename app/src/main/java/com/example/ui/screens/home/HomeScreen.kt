@@ -58,6 +58,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -103,10 +106,21 @@ import com.example.R
 import com.example.data.model.Chapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
+import com.example.data.model.NexusUser
+import com.example.data.model.ReportCategory
+import com.example.data.model.ReportSubCategory
+import com.example.data.model.UserReport
+import com.example.ui.components.AdminBroadcastBanner
+import com.example.ui.components.AdminDashboardDialog
 import com.example.ui.components.AppUpdateDialog
+import com.example.ui.components.AuthDialog
 import com.example.ui.components.FavoritesPopupDialog
 import com.example.ui.components.NexusMangaImage
 import com.example.ui.components.StartIoBannerAd
+import com.example.ui.components.SubmitReportDialog
+import com.example.ui.components.UserReportsListDialog
+import com.example.ui.components.UserSideReportBanner
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.ui.geometry.Offset
 import com.example.ui.theme.ThemePalettes
 import com.example.ui.theme.BackgroundDark
@@ -164,12 +178,40 @@ fun HomeScreen(
     onUpdateCardAnimationEnabled: (Boolean) -> Unit = {},
     onUpdatePreventChapterCache: (Boolean) -> Unit = {},
     onDeleteAllDownloads: () -> Unit = {},
+    onOpenAuthDialog: () -> Unit = {},
+    onDismissAuthDialog: () -> Unit = {},
+    onOpenAdminDialog: () -> Unit = {},
+    onDismissAdminDialog: () -> Unit = {},
+    onSignInEmail: (String, String) -> Unit = { _, _ -> },
+    onSignUpEmail: (String, String, String) -> Unit = { _, _, _ -> },
+    onSignInGoogle: () -> Unit = {},
+    onSignOut: () -> Unit = {},
+    onForgotPassword: (String) -> Unit = {},
+    onClearAuthMessages: () -> Unit = {},
+    onSyncCloud: () -> Unit = {},
+    onPostAnnouncement: (String, String, String) -> Unit = { _, _, _ -> },
+    onDismissAnnouncement: () -> Unit = {},
+    onOpenSubmitReportDialog: (String, String) -> Unit = { _, _ -> },
+    onDismissSubmitReportDialog: () -> Unit = {},
+    onSubmitReport: (ReportCategory, ReportSubCategory, String, String, String) -> Unit = { _, _, _, _, _ -> },
+    onOpenUserReportsDialog: () -> Unit = {},
+    onDismissUserReportsDialog: () -> Unit = {},
+    onForceDispatchReport: (String) -> Unit = {},
+    onApproveReport: (String, String) -> Unit = { _, _ -> },
+    onRejectReport: (String, String) -> Unit = { _, _ -> },
+    onDismissSideReportNotification: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
+            // 📢 Admin Broadcast Banner (Urgent/System Announcements from Admin)
+            AdminBroadcastBanner(
+                announcement = uiState.activeAnnouncement,
+                onDismissLocally = onDismissAnnouncement
+            )
+
             // Offline Status Indicator Banner (Professional layout at top of screen)
             AnimatedVisibility(
                 visible = uiState.isOffline,
@@ -215,6 +257,22 @@ fun HomeScreen(
                     }
                 }
             }
+
+            // Universal Nexus Top Bar (App Identity, Cloud Status, Admin Access, Refresh)
+            NexusHomeTopBar(
+                selectedTab = uiState.selectedTab,
+                favoritesCount = uiState.favorites.size,
+                hasUpdate = uiState.updateInfo.updateAvailable,
+                isRefreshing = uiState.isRefreshing,
+                currentUser = uiState.currentUser,
+                isCloudSyncing = uiState.isCloudSyncing,
+                onFavoritesClick = { showFavoritesPopup = true },
+                onUpdateBadgeClick = onOpenUpdatesDialog,
+                onRefreshClick = onRefresh,
+                onAuthClick = onOpenAuthDialog,
+                onAdminClick = onOpenAdminDialog,
+                onReportClick = { onOpenSubmitReportDialog("", "") }
+            )
 
             // Dynamic Tab Content with Smooth Transitions
             Box(
@@ -506,7 +564,13 @@ fun HomeScreen(
                             onUpdateAccentColor = onUpdateAccentColor,
                             onUpdateCardAnimationEnabled = onUpdateCardAnimationEnabled,
                             onUpdatePreventChapterCache = onUpdatePreventChapterCache,
-                            onDeleteAllDownloads = onDeleteAllDownloads
+                            onDeleteAllDownloads = onDeleteAllDownloads,
+                            onOpenAuthDialog = onOpenAuthDialog,
+                            onOpenAdminDialog = onOpenAdminDialog,
+                            onSignOut = onSignOut,
+                            onSyncCloud = onSyncCloud,
+                            onOpenSubmitReportDialog = onOpenSubmitReportDialog,
+                            onOpenUserReportsDialog = onOpenUserReportsDialog
                         )
                     }
                 }
@@ -551,6 +615,69 @@ fun HomeScreen(
                 onDismiss = onDismissUpdateDialog
             )
         }
+
+        // 🔐 Authentication Dialog (Google / Email & Password)
+        AuthDialog(
+            isOpen = uiState.showAuthDialog,
+            isLoading = uiState.isAuthLoading,
+            errorMessage = uiState.authErrorMessage,
+            successMessage = uiState.authSuccessMessage,
+            onDismiss = onDismissAuthDialog,
+            onSignInEmail = onSignInEmail,
+            onSignUpEmail = onSignUpEmail,
+            onResetPassword = onForgotPassword,
+            onGoogleSignInClick = onSignInGoogle,
+            onClearMessages = onClearAuthMessages
+        )
+
+        // 👑 Protected Admin Dashboard Dialog
+        AdminDashboardDialog(
+            isOpen = uiState.showAdminDialog,
+            currentUser = uiState.currentUser,
+            activeAnnouncement = uiState.activeAnnouncement,
+            totalMangaCount = uiState.allMangaList.size,
+            isCloudSyncing = uiState.isCloudSyncing,
+            incomingReports = uiState.incomingReports,
+            onDismiss = onDismissAdminDialog,
+            onPostAnnouncement = onPostAnnouncement,
+            onDismissAnnouncement = onDismissAnnouncement,
+            onTriggerManualSync = onSyncCloud,
+            onApproveReport = onApproveReport,
+            onRejectReport = onRejectReport
+        )
+
+        // 📝 Submit User Report / Request Dialog
+        SubmitReportDialog(
+            isOpen = uiState.showSubmitReportDialog,
+            initialTargetTitle = uiState.reportTargetTitle,
+            initialChapterNumber = uiState.reportChapterNumber,
+            onDismiss = onDismissSubmitReportDialog,
+            onSubmit = onSubmitReport
+        )
+
+        // 📋 User Reports History & Status Dialog
+        UserReportsListDialog(
+            isOpen = uiState.showUserReportsDialog,
+            reports = uiState.userReports,
+            onDismiss = onDismissUserReportsDialog,
+            onForceDispatch = onForceDispatchReport,
+            onNewReportClick = {
+                onDismissUserReportsDialog()
+                onOpenSubmitReportDialog("", "")
+            }
+        )
+
+        // 🔔 Floating User-Side Status Notification Banner
+        UserSideReportBanner(
+            report = uiState.activeSideNotificationReport,
+            onDismiss = {
+                uiState.activeSideNotificationReport?.let { onDismissSideReportNotification(it.id) }
+            },
+            onViewReports = {
+                uiState.activeSideNotificationReport?.let { onDismissSideReportNotification(it.id) }
+                onOpenUserReportsDialog()
+            }
+        )
     }
 }
 
@@ -560,9 +687,14 @@ fun NexusHomeTopBar(
     favoritesCount: Int = 0,
     hasUpdate: Boolean = false,
     isRefreshing: Boolean = false,
+    currentUser: NexusUser? = null,
+    isCloudSyncing: Boolean = false,
     onFavoritesClick: () -> Unit = {},
     onUpdateBadgeClick: () -> Unit = {},
-    onRefreshClick: () -> Unit = {}
+    onRefreshClick: () -> Unit = {},
+    onAuthClick: () -> Unit = {},
+    onAdminClick: () -> Unit = {},
+    onReportClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "topbar_refresh_rotation")
     val rotation by infiniteTransition.animateFloat(
@@ -743,6 +875,97 @@ fun NexusHomeTopBar(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 10.sp
                             )
+                        )
+                    }
+                }
+            }
+
+            // 👑 Protected Admin Dashboard Button (Only visible for verified Admin)
+            if (currentUser?.isAdmin == true) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = NexusGold.copy(alpha = 0.2f),
+                    border = BorderStroke(1.2.dp, NexusGold),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onAdminClick() }
+                        .testTag("topbar_admin_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AdminPanelSettings,
+                            contentDescription = "لوحة تحكم المشرف",
+                            tint = NexusGold,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "مشرف",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Black,
+                                color = NexusGold,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            // 📢 Quick Report / Feature Request Button
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .clickable { onReportClick() }
+                    .testTag("topbar_report_shortcut")
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ReportProblem,
+                        contentDescription = "تقديم بلاغ أو طلب ميزة",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+            }
+
+            // 👤 User Account / Sign In Button
+            Surface(
+                shape = CircleShape,
+                color = if (currentUser != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, if (currentUser != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .clickable { onAuthClick() }
+                    .testTag("topbar_auth_button")
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (currentUser != null) {
+                        Text(
+                            text = (currentUser.displayName.takeIf { it.isNotBlank() } ?: currentUser.email).take(1).uppercase(),
+                            fontWeight = FontWeight.Black,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "تسجيل الدخول",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }

@@ -10,6 +10,7 @@ import com.example.data.model.Chapter
 import com.example.data.model.ChapterDetailDto
 import com.example.data.model.ChapterDownloadProgress
 import com.example.data.model.ChapterPage
+import com.example.data.model.CloudUserData
 import com.example.data.model.DownloadedChapter
 import com.example.data.model.MangaItem
 import com.example.data.model.MangaType
@@ -1067,6 +1068,58 @@ class MangaRepository(private val context: Context) {
     fun clearAllReadingHistory() {
         _readingHistoryFlow.value = emptyList()
         saveReadingHistoryToDisk()
+    }
+
+    /**
+     * Merge cloud data (favorites, read later, read chapters, history) into local state
+     */
+    fun mergeCloudUserData(cloudData: CloudUserData) {
+        // Merge favorites
+        if (cloudData.favorites.isNotEmpty()) {
+            val mergedFavorites = _favoritesFlow.value.toMutableSet()
+            mergedFavorites.addAll(cloudData.favorites)
+            _favoritesFlow.value = mergedFavorites
+            prefs.edit().putStringSet("favorites", mergedFavorites).apply()
+        }
+
+        // Merge read later
+        if (cloudData.readLater.isNotEmpty()) {
+            val mergedReadLater = _readLaterFlow.value.toMutableSet()
+            mergedReadLater.addAll(cloudData.readLater)
+            _readLaterFlow.value = mergedReadLater
+            prefs.edit().putStringSet("read_later", mergedReadLater).apply()
+        }
+
+        // Merge read chapters
+        if (cloudData.readChapters.isNotEmpty()) {
+            val mergedReadChapters = _readChaptersFlow.value.toMutableMap()
+            cloudData.readChapters.forEach { (mangaId, chList) ->
+                val existing = (mergedReadChapters[mangaId] ?: loadReadChaptersFromPrefs(mangaId)).toMutableSet()
+                existing.addAll(chList)
+                mergedReadChapters[mangaId] = existing
+                val strSet = existing.map { it.toString() }.toSet()
+                prefs.edit().putStringSet("read_chapters_$mangaId", strSet).apply()
+            }
+            _readChaptersFlow.value = mergedReadChapters
+        }
+
+        // Merge reading history
+        if (cloudData.history.isNotEmpty()) {
+            val currentHistory = _readingHistoryFlow.value.toMutableList()
+            cloudData.history.forEach { cloudEntry ->
+                val idx = currentHistory.indexOfFirst { it.mangaId == cloudEntry.mangaId }
+                if (idx >= 0) {
+                    if (cloudEntry.timestamp > currentHistory[idx].timestamp) {
+                        currentHistory[idx] = cloudEntry
+                    }
+                } else {
+                    currentHistory.add(cloudEntry)
+                }
+            }
+            val sorted = currentHistory.sortedByDescending { it.timestamp }.take(50)
+            _readingHistoryFlow.value = sorted
+            saveReadingHistoryToDisk()
+        }
     }
 
     /**

@@ -7,20 +7,20 @@ package com.example.util
  * Update Cards, Badges, Diagnostics, Footer).
  */
 object AppVersionConfig {
-    const val VERSION_NAME = "1.9.9"
-    const val VERSION_CODE = 39
-    const val BUILD_CODENAME = "Nexus Prism"
+    const val VERSION_NAME = "2.0.0"
+    const val VERSION_CODE = 40
+    const val BUILD_CODENAME = "Nexus Titan"
     const val RELEASE_CHANNEL = "النسخة الرسمية المستقرة"
     const val RELEASE_DATE = "سبتمبر 2026"
     const val AUTHOR_CREDITS = "فريق Nexus"
 
     /**
-     * Short version string: "v1.9.4"
+     * Short version string: "v2.0.0"
      */
     fun getFullVersionString(): String = "v$VERSION_NAME"
 
     /**
-     * Build identifier: "Build 34"
+     * Build identifier: "Build 40"
      */
     fun getFormattedVersionCode(): String = "Build $VERSION_CODE"
 
@@ -36,7 +36,7 @@ object AppVersionConfig {
 
     /**
      * Full footer/copyright string in settings:
-     * "الإصدار الرسمي v1.9.4 (Build 34) • فريق Nexus"
+     * "الإصدار الرسمي v2.0.0 (Build 40) • فريق Nexus"
      */
     fun getSettingsFullDetails(): String =
         "الإصدار الرسمي v$VERSION_NAME (Build $VERSION_CODE) • $AUTHOR_CREDITS"
@@ -55,9 +55,11 @@ object AppVersionConfig {
      * Highlights of this release
      */
     val CURRENT_CHANGELOG_FEATURES = listOf(
+        "نظام البلاغات وطلبات الأعمال والميزات الشامل مع إمكانية التخزين المؤقت الذكي لمدة 30 دقيقة وخيار الإرسال الفوري.",
+        "لوحة إدارة وتحكم المشرفين لمراجعة البلاغات والطلبات مع أزرار الموافقة والرفض المباشرة والمزامنة السحابية.",
+        "نظام إشعارات المستخدم الفورية المنبثقة لمتابعة حالة البلاغات وسجل الردود والقرارات الإدارية.",
         "إضافة باقة من تدرجات الألوان التجميلية الساحرة (الشفق، الغروب، سايبربانك، أمواج المحيط، لهب التنين، سديم الفضاء) بجانب الألوان الأساسية.",
-        "تحسين واجهات وتناسق التطبيق بالكامل ليكون مريحاً وأنيقاً للغاية للقراءة والتصفح بالثيم الفاتح.",
-        "نظام احتساب قراءة الفصول الذكي في الخلفية (احتساب القراءة فقط بعد البقاء لمدة 6 ثوانٍ داخل الفصل بدون أي إزعاج).",
-        "تأثيرات وتموجات ألوان حية ومتحركة على بطاقات أحدث عملين في التطبيق فقط عند اختيار ثيم متعدد الألوان."
+        "تحسين واجهات وتناسق التطبيق بالكامل ليكون مريحاً وأنيقاً للغاية للقراءة والتصفح بالثيم الفاتح والداكن.",
+        "نظام احتساب قراءة الفصول الذكي في الخلفية (احتساب القراءة فقط بعد البقاء لمدة 6 ثوانٍ داخل الفصل بدون أي إزعاج)."
     )
 }

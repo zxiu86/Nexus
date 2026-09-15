@@ -171,6 +171,64 @@ fun NexusNavGraph(
                     },
                     onDeleteAllDownloads = {
                         viewModel.deleteAllDownloads()
+                    },
+                    onOpenAuthDialog = { viewModel.openAuthDialog() },
+                    onDismissAuthDialog = { viewModel.dismissAuthDialog() },
+                    onOpenAdminDialog = { viewModel.openAdminDialog() },
+                    onDismissAdminDialog = { viewModel.dismissAdminDialog() },
+                    onSignInEmail = { email, password ->
+                        viewModel.signInWithEmail(email, password)
+                    },
+                    onSignUpEmail = { email, password, name ->
+                        viewModel.signUpWithEmail(email, password, name)
+                    },
+                    onSignInGoogle = {
+                        viewModel.signInWithGoogle()
+                    },
+                    onSignOut = {
+                        viewModel.signOut()
+                    },
+                    onForgotPassword = { email ->
+                        viewModel.sendPasswordReset(email)
+                    },
+                    onClearAuthMessages = {
+                        viewModel.clearAuthMessages()
+                    },
+                    onSyncCloud = {
+                        viewModel.triggerCloudSync()
+                    },
+                    onPostAnnouncement = { title, message, priority ->
+                        viewModel.postAdminAnnouncement(title, message, priority)
+                    },
+                    onDismissAnnouncement = {
+                        viewModel.dismissAdminAnnouncement()
+                    },
+                    onOpenSubmitReportDialog = { title, chapter ->
+                        viewModel.openSubmitReportDialog(title, chapter)
+                    },
+                    onDismissSubmitReportDialog = {
+                        viewModel.dismissSubmitReportDialog()
+                    },
+                    onSubmitReport = { category, subCategory, targetTitle, chapterNumber, details ->
+                        viewModel.submitUserReport(category, subCategory, targetTitle, chapterNumber, details)
+                    },
+                    onOpenUserReportsDialog = {
+                        viewModel.openUserReportsDialog()
+                    },
+                    onDismissUserReportsDialog = {
+                        viewModel.dismissUserReportsDialog()
+                    },
+                    onForceDispatchReport = { reportId ->
+                        viewModel.forceDispatchReport(reportId)
+                    },
+                    onApproveReport = { reportId, note ->
+                        viewModel.approveReport(reportId, note)
+                    },
+                    onRejectReport = { reportId, note ->
+                        viewModel.rejectReport(reportId, note)
+                    },
+                    onDismissSideReportNotification = { reportId ->
+                        viewModel.dismissSideReportNotification(reportId)
                     }
                 )
             }

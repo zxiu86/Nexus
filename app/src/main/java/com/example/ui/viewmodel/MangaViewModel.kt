@@ -4,15 +4,24 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.model.AdminAnnouncement
 import com.example.data.model.AppUpdateState
+import com.example.data.model.AuthResult
 import com.example.data.model.Chapter
 import com.example.data.model.ChapterDownloadProgress
 import com.example.data.model.DownloadedChapter
 import com.example.data.model.MangaItem
+import com.example.data.model.NexusUser
 import com.example.data.model.ReadingHistoryEntry
+import com.example.data.model.ReportCategory
+import com.example.data.model.ReportSubCategory
+import com.example.data.model.UserReport
+import com.example.data.repository.AuthRepository
 import com.example.data.repository.MangaRepository
+import com.example.data.repository.ReportsRepository
 import com.example.data.settings.AppSettings
 import com.example.data.settings.AppSettingsManager
+import com.example.util.GoogleSignInHelper
 import com.example.util.InAppUpdateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +61,24 @@ data class HomeUiState(
     val updateInfo: AppUpdateState = AppUpdateState(),
     val isAppReady: Boolean = false,
     val isOffline: Boolean = false,
-    val appSettings: AppSettings = AppSettings()
+    val appSettings: AppSettings = AppSettings(),
+    val currentUser: NexusUser? = null,
+    val isFirebaseConfigured: Boolean = false,
+    val isCloudSyncing: Boolean = false,
+    val lastCloudSyncTime: Long = 0L,
+    val activeAnnouncement: AdminAnnouncement? = null,
+    val showAuthDialog: Boolean = false,
+    val showAdminDialog: Boolean = false,
+    val authErrorMessage: String? = null,
+    val authSuccessMessage: String? = null,
+    val isAuthLoading: Boolean = false,
+    val showSubmitReportDialog: Boolean = false,
+    val showUserReportsDialog: Boolean = false,
+    val userReports: List<UserReport> = emptyList(),
+    val incomingReports: List<UserReport> = emptyList(),
+    val activeSideNotificationReport: UserReport? = null,
+    val reportTargetTitle: String = "",
+    val reportChapterNumber: String = ""
 ) {
     val totalPages: Int
         get() = if (latestMangaGrid.isEmpty()) 1 else (latestMangaGrid.size + itemsPerPage - 1) / itemsPerPage
@@ -166,6 +192,9 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = MangaRepository(application.applicationContext)
     private val networkMonitor = NetworkMonitor(application.applicationContext)
     private val settingsManager = AppSettingsManager.getInstance(application.applicationContext)
+    private val authRepository = AuthRepository(application.applicationContext)
+    val reportsRepository = ReportsRepository(application.applicationContext, authRepository)
+    private val googleSignInHelper = GoogleSignInHelper(application.applicationContext)
 
     private val _selectedTab = MutableStateFlow(0)
     private val _searchQuery = MutableStateFlow("")
@@ -177,6 +206,21 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     private val _isRefreshing = MutableStateFlow(false)
     private val _showUpdateDialog = MutableStateFlow(false)
     private val _appUpdateState = MutableStateFlow(AppUpdateState())
+
+    // Auth & Cloud State Flows
+    private val _showAuthDialog = MutableStateFlow(false)
+    private val _showAdminDialog = MutableStateFlow(false)
+    private val _authErrorMessage = MutableStateFlow<String?>(null)
+    private val _authSuccessMessage = MutableStateFlow<String?>(null)
+    private val _isAuthLoading = MutableStateFlow(false)
+    private val _activeAnnouncement = MutableStateFlow<AdminAnnouncement?>(null)
+
+    // Reports State Flows
+    private val _showSubmitReportDialog = MutableStateFlow(false)
+    private val _showUserReportsDialog = MutableStateFlow(false)
+    private val _reportTargetTitle = MutableStateFlow("")
+    private val _reportChapterNumber = MutableStateFlow("")
+    private val _activeSideNotificationReport = MutableStateFlow<UserReport?>(null)
 
     private data class DialogState(
         val isRefreshing: Boolean,
@@ -255,12 +299,97 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         UiControlsState(filterState, dialogState, settings)
     }
 
+    private data class AuthCombinedState(
+        val currentUser: NexusUser? = null,
+        val isFirebaseConfigured: Boolean = false,
+        val isSyncing: Boolean = false,
+        val lastSyncTime: Long = 0L,
+        val activeAnnouncement: AdminAnnouncement? = null,
+        val showAuthDialog: Boolean = false,
+        val showAdminDialog: Boolean = false,
+        val authError: String? = null,
+        val authSuccess: String? = null,
+        val isAuthLoading: Boolean = false,
+        val userReports: List<UserReport> = emptyList(),
+        val incomingReports: List<UserReport> = emptyList(),
+        val showSubmitReportDialog: Boolean = false,
+        val showUserReportsDialog: Boolean = false,
+        val activeSideNotificationReport: UserReport? = null,
+        val reportTargetTitle: String = "",
+        val reportChapterNumber: String = ""
+    )
+
+    private val _authCoreFlow = combine(
+        authRepository.currentUserFlow,
+        authRepository.isFirebaseConfigured,
+        authRepository.isSyncing,
+        authRepository.lastSyncTimestamp,
+        _activeAnnouncement
+    ) { user, fbConfig, syncing, lastSync, announcement ->
+        Triple(user, fbConfig, syncing) to Pair(lastSync, announcement)
+    }
+
+    private val _authDialogFlow = combine(
+        _showAuthDialog,
+        _showAdminDialog,
+        _authErrorMessage,
+        _authSuccessMessage,
+        _isAuthLoading
+    ) { showAuth, showAdmin, authErr, authSucc, isLoading ->
+        Triple(showAuth, showAdmin, isLoading) to Pair(authErr, authSucc)
+    }
+
+    private val _reportsFlow = combine(
+        reportsRepository.userReportsFlow,
+        reportsRepository.allIncomingReportsFlow,
+        _showSubmitReportDialog,
+        _showUserReportsDialog,
+        _activeSideNotificationReport
+    ) { userReports, incoming, showSubmit, showUserDlg, sideNotif ->
+        Triple(userReports, incoming, showSubmit) to Pair(showUserDlg, sideNotif)
+    }
+
+    private val _reportsMetaFlow = combine(
+        _reportTargetTitle,
+        _reportChapterNumber
+    ) { title, chapter ->
+        title to chapter
+    }
+
+    private val _authCombinedFlow = combine(
+        _authCoreFlow,
+        _authDialogFlow,
+        _reportsFlow,
+        _reportsMetaFlow
+    ) { core, dlg, rep, meta ->
+        AuthCombinedState(
+            currentUser = core.first.first,
+            isFirebaseConfigured = core.first.second,
+            isSyncing = core.first.third,
+            lastSyncTime = core.second.first,
+            activeAnnouncement = core.second.second,
+            showAuthDialog = dlg.first.first,
+            showAdminDialog = dlg.first.second,
+            isAuthLoading = dlg.first.third,
+            authError = dlg.second.first,
+            authSuccess = dlg.second.second,
+            userReports = rep.first.first,
+            incomingReports = rep.first.second,
+            showSubmitReportDialog = rep.first.third,
+            showUserReportsDialog = rep.second.first,
+            activeSideNotificationReport = rep.second.second,
+            reportTargetTitle = meta.first,
+            reportChapterNumber = meta.second
+        )
+    }
+
     val homeUiState: StateFlow<HomeUiState> = combine(
         repository.allMangaFlow,
         repository.favoritesFlow,
         _offlineDataFlow,
-        _uiControlsFlow
-    ) { allMangaList, favorites, offlineData, controls ->
+        _uiControlsFlow,
+        _authCombinedFlow
+    ) { allMangaList, favorites, offlineData, controls, authState ->
         val filterState = controls.filterState
         val dialogState = controls.dialogState
         val settings = controls.settings
@@ -309,7 +438,24 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             updateInfo = dialogState.updateInfo,
             isAppReady = dialogState.isAppReady,
             isOffline = dialogState.isOffline,
-            appSettings = settings
+            appSettings = settings,
+            currentUser = authState.currentUser,
+            isFirebaseConfigured = authState.isFirebaseConfigured,
+            isCloudSyncing = authState.isSyncing,
+            lastCloudSyncTime = authState.lastSyncTime,
+            activeAnnouncement = authState.activeAnnouncement,
+            showAuthDialog = authState.showAuthDialog,
+            showAdminDialog = authState.showAdminDialog,
+            authErrorMessage = authState.authError,
+            authSuccessMessage = authState.authSuccess,
+            isAuthLoading = authState.isAuthLoading,
+            showSubmitReportDialog = authState.showSubmitReportDialog,
+            showUserReportsDialog = authState.showUserReportsDialog,
+            userReports = authState.userReports,
+            incomingReports = authState.incomingReports,
+            activeSideNotificationReport = authState.activeSideNotificationReport,
+            reportTargetTitle = authState.reportTargetTitle,
+            reportChapterNumber = authState.reportChapterNumber
         )
     }.stateIn(
         viewModelScope,
@@ -335,6 +481,22 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        // Observe cloud announcements
+        viewModelScope.launch {
+            authRepository.observeActiveAnnouncement().collect { ann ->
+                _activeAnnouncement.value = ann
+            }
+        }
+
+        // On User login -> automatically pull cloud data and merge into local repo
+        viewModelScope.launch {
+            authRepository.currentUserFlow.collect { user ->
+                if (user != null) {
+                    syncFromCloudAndMerge()
+                }
+            }
+        }
+
         // App Preload warmup for smooth entry without stutter
         viewModelScope.launch {
             delay(1200L)
@@ -346,6 +508,13 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         // Automatically start silent background auto-sync and periodic update checker
         startSilentAutoSyncLoop()
         checkForUpdates()
+
+        // Observe side notification banner for user report status updates
+        viewModelScope.launch {
+            reportsRepository.userSideNotificationFlow.collect { report ->
+                _activeSideNotificationReport.value = report
+            }
+        }
 
         // Trigger smart watermark cleaner bot as soon as manga list is loaded
         viewModelScope.launch {
@@ -515,6 +684,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                     timestamp = System.currentTimeMillis()
                 )
             }
+            triggerCloudSync()
         }
     }
 
@@ -526,6 +696,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                     isReadLater = repository.isReadLater(mangaId)
                 )
             }
+            triggerCloudSync()
         }
     }
 
@@ -598,12 +769,14 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteHistoryItem(mangaId: String) {
         viewModelScope.launch {
             repository.deleteReadingHistoryItem(mangaId)
+            triggerCloudSync()
         }
     }
 
     fun clearAllHistory() {
         viewModelScope.launch {
             repository.clearAllReadingHistory()
+            triggerCloudSync()
         }
     }
 
@@ -642,6 +815,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                 readChapterNumbers = _detailsUiState.value.readChapterNumbers + chapterNumber
             )
         }
+        triggerCloudSync()
     }
 
     fun setBatchIndex(index: Int) {
@@ -735,6 +909,7 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                 totalPages = currentChapter.pages.size.coerceAtLeast(1)
             )
             repository.markChapterAsRead(manga.id, chapterNumber)
+            triggerCloudSync()
         }
     }
 
@@ -814,5 +989,217 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteAllDownloads() {
         deleteAllDownloadedChapters()
+    }
+
+    // ==========================================
+    // 🔐 Firebase Auth & Cloud Sync Operations
+    // ==========================================
+
+    fun openAuthDialog() {
+        _authErrorMessage.value = null
+        _authSuccessMessage.value = null
+        _showAuthDialog.value = true
+    }
+
+    fun dismissAuthDialog() {
+        _showAuthDialog.value = false
+        _authErrorMessage.value = null
+        _authSuccessMessage.value = null
+    }
+
+    fun openAdminDialog() {
+        _showAdminDialog.value = true
+    }
+
+    fun dismissAdminDialog() {
+        _showAdminDialog.value = false
+    }
+
+    fun clearAuthMessages() {
+        _authErrorMessage.value = null
+        _authSuccessMessage.value = null
+    }
+
+    fun signInWithEmail(email: String, pass: String) {
+        viewModelScope.launch {
+            _isAuthLoading.value = true
+            _authErrorMessage.value = null
+            when (val result = authRepository.signInWithEmail(email, pass)) {
+                is AuthResult.Success -> {
+                    _isAuthLoading.value = false
+                    _showAuthDialog.value = false
+                    syncFromCloudAndMerge()
+                }
+                is AuthResult.Error -> {
+                    _isAuthLoading.value = false
+                    _authErrorMessage.value = result.message
+                }
+                else -> { _isAuthLoading.value = false }
+            }
+        }
+    }
+
+    fun signUpWithEmail(email: String, pass: String, displayName: String) {
+        viewModelScope.launch {
+            _isAuthLoading.value = true
+            _authErrorMessage.value = null
+            when (val result = authRepository.signUpWithEmail(email, pass, displayName)) {
+                is AuthResult.Success -> {
+                    _isAuthLoading.value = false
+                    _showAuthDialog.value = false
+                    triggerCloudSync()
+                }
+                is AuthResult.Error -> {
+                    _isAuthLoading.value = false
+                    _authErrorMessage.value = result.message
+                }
+                else -> { _isAuthLoading.value = false }
+            }
+        }
+    }
+
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch {
+            _isAuthLoading.value = true
+            _authErrorMessage.value = null
+            val result = authRepository.sendPasswordReset(email)
+            _isAuthLoading.value = false
+            if (result.isSuccess) {
+                _authSuccessMessage.value = "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني"
+            } else {
+                _authErrorMessage.value = result.exceptionOrNull()?.localizedMessage ?: "فشل إرسال الرابط"
+            }
+        }
+    }
+
+    fun signInWithGoogle() {
+        viewModelScope.launch {
+            _isAuthLoading.value = true
+            _authErrorMessage.value = null
+            val tokenResult = googleSignInHelper.getGoogleIdToken(AuthRepository.DEFAULT_WEB_CLIENT_ID)
+            if (tokenResult.isSuccess) {
+                val idToken = tokenResult.getOrThrow()
+                when (val authRes = authRepository.signInWithGoogleCredential(idToken)) {
+                    is AuthResult.Success -> {
+                        _isAuthLoading.value = false
+                        _showAuthDialog.value = false
+                        syncFromCloudAndMerge()
+                    }
+                    is AuthResult.Error -> {
+                        _isAuthLoading.value = false
+                        _authErrorMessage.value = authRes.message
+                    }
+                    else -> { _isAuthLoading.value = false }
+                }
+            } else {
+                _isAuthLoading.value = false
+                val err = tokenResult.exceptionOrNull()?.localizedMessage ?: "تعذر استكمال تسجيل الدخول بحساب Google"
+                _authErrorMessage.value = err
+            }
+        }
+    }
+
+    fun signOut() {
+        authRepository.signOut()
+    }
+
+    fun syncFromCloudAndMerge() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cloudData = authRepository.fetchCloudUserData()
+            if (cloudData != null) {
+                repository.mergeCloudUserData(cloudData)
+            }
+            triggerCloudSync()
+        }
+    }
+
+    fun triggerCloudSync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = authRepository.currentUserFlow.value ?: return@launch
+            authRepository.syncDataToCloud(
+                favorites = repository.favoritesFlow.value,
+                readLater = repository.readLaterFlow.value,
+                history = repository.readingHistoryFlow.value,
+                readChapters = repository.readChaptersFlow.value
+            )
+        }
+    }
+
+    fun postAdminAnnouncement(title: String, message: String, priority: String) {
+        viewModelScope.launch {
+            authRepository.postAdminAnnouncement(title, message, priority)
+        }
+    }
+
+    fun dismissAdminAnnouncement() {
+        viewModelScope.launch {
+            authRepository.dismissAdminAnnouncement()
+            _activeAnnouncement.value = null
+        }
+    }
+
+    // ==========================================
+    // 📢 User Reporting System Actions
+    // ==========================================
+
+    fun openSubmitReportDialog(targetTitle: String = "", chapterNumber: String = "") {
+        _reportTargetTitle.value = targetTitle
+        _reportChapterNumber.value = chapterNumber
+        _showSubmitReportDialog.value = true
+    }
+
+    fun dismissSubmitReportDialog() {
+        _showSubmitReportDialog.value = false
+        _reportTargetTitle.value = ""
+        _reportChapterNumber.value = ""
+    }
+
+    fun openUserReportsDialog() {
+        _showUserReportsDialog.value = true
+    }
+
+    fun dismissUserReportsDialog() {
+        _showUserReportsDialog.value = false
+    }
+
+    fun submitUserReport(
+        category: ReportCategory,
+        subCategory: ReportSubCategory,
+        targetTitle: String,
+        chapterNumber: String,
+        details: String
+    ) {
+        viewModelScope.launch {
+            reportsRepository.submitReport(
+                category = category,
+                subCategory = subCategory,
+                targetTitle = targetTitle,
+                chapterNumber = chapterNumber,
+                details = details
+            )
+        }
+    }
+
+    fun forceDispatchReport(reportId: String) {
+        viewModelScope.launch {
+            reportsRepository.forceDispatchNow(reportId)
+        }
+    }
+
+    fun approveReport(reportId: String, note: String = "تمت الموافقة من قِبل المشرف") {
+        viewModelScope.launch {
+            reportsRepository.approveReport(reportId, note)
+        }
+    }
+
+    fun rejectReport(reportId: String, note: String = "للأسف تم رفض البلاغ") {
+        viewModelScope.launch {
+            reportsRepository.rejectReport(reportId, note)
+        }
+    }
+
+    fun dismissSideReportNotification(reportId: String) {
+        _activeSideNotificationReport.value = null
+        reportsRepository.dismissSideNotification(reportId)
     }
 }

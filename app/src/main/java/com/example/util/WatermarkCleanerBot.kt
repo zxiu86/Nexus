@@ -263,7 +263,7 @@ object WatermarkCleanerBot {
         return try {
             val request = Request.Builder()
                 .url(imageUrl)
-                .header("User-Agent", "Nexus-Manga-App-Android/1.9.7")
+                .header("User-Agent", "Nexus-Manga-App-Android/${AppVersionConfig.VERSION_NAME}")
                 .build()
 
             val response = GitHubNetworkModule.okHttpClient.newCall(request).execute()
