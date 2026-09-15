@@ -1072,11 +1072,11 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun signInWithGoogle() {
+    fun signInWithGoogle(context: Context? = null) {
         viewModelScope.launch {
             _isAuthLoading.value = true
             _authErrorMessage.value = null
-            val tokenResult = googleSignInHelper.getGoogleIdToken(AuthRepository.DEFAULT_WEB_CLIENT_ID)
+            val tokenResult = googleSignInHelper.getGoogleIdToken(context, AuthRepository.DEFAULT_WEB_CLIENT_ID)
             if (tokenResult.isSuccess) {
                 val idToken = tokenResult.getOrThrow()
                 when (val authRes = authRepository.signInWithGoogleCredential(idToken)) {

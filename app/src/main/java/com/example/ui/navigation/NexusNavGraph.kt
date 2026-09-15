@@ -183,7 +183,7 @@ fun NexusNavGraph(
                         viewModel.signUpWithEmail(email, password, name)
                     },
                     onSignInGoogle = {
-                        viewModel.signInWithGoogle()
+                        viewModel.signInWithGoogle(context)
                     },
                     onSignOut = {
                         viewModel.signOut()
