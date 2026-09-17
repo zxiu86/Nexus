@@ -1,6 +1,6 @@
 {
   "name": "Nexus",
-  "description": "تطبيق Nexus الإصدار 2.0.0 لقراءة المانها والمانهوا مع تسجيل الدخول بحساب Google وحفظ السجل والمفضلة سحابياً وصلاحيات الأدمن المحمية",
+  "description": "تطبيق Nexus الإصدار 2.0.0 لقراءة المانها والمانهوا مع نظام تسجيل دخول وحفظ المفضلة والمشاهدة لاحقاً وصلاحيات الأدمن",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

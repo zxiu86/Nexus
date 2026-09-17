@@ -28,10 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -39,16 +39,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -89,16 +86,15 @@ fun AuthDialog(
     onDismiss: () -> Unit,
     onSignInEmail: (String, String) -> Unit,
     onSignUpEmail: (String, String, String) -> Unit,
-    onResetPassword: (String) -> Unit,
-    onGoogleSignInClick: () -> Unit,
+    onResetPassword: (String) -> Unit = {},
+    onGoogleSignInClick: () -> Unit = {},
     onClearMessages: () -> Unit = {}
 ) {
     if (!isOpen) return
 
-    // 0: Sign In, 1: Sign Up, 2: Forgot Password
+    // 0: Sign In, 1: Sign Up
     var authMode by remember { mutableIntStateOf(0) }
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -119,7 +115,7 @@ fun AuthDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(26.dp))
                 .testTag("auth_dialog_card"),
             colors = CardDefaults.cardColors(
                 containerColor = BackgroundDark.copy(alpha = 0.98f)
@@ -143,7 +139,7 @@ fun AuthDialog(
                     .padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header with Close Button
+                // Header with Title & Close Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -177,11 +173,7 @@ fun AuthDialog(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = when (authMode) {
-                                0 -> "تسجيل الدخول السحابي"
-                                1 -> "إنشاء حساب Nexus جديد"
-                                else -> "استعادة كلمة المرور"
-                            },
+                            text = if (authMode == 0) "تسجيل الدخول" else "إنشاء حساب جديد",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -191,9 +183,9 @@ fun AuthDialog(
                     Spacer(modifier = Modifier.size(36.dp))
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Cloud Sync Guarantee Tag
+                // Info banner explaining the lightweight per-user persistence
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = NexusGold.copy(alpha = 0.12f),
@@ -213,7 +205,7 @@ fun AuthDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "مزامنة فورية للسجل والمفضلة والمشاهدة لاحقاً سحابياً",
+                            text = "تسجيل فوري وسريع لحفظ المفضلة والمشاهدة لاحقاً لكل مستخدم",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = NexusGold,
@@ -225,139 +217,65 @@ fun AuthDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Mode Tabs (Sign In vs Sign Up)
-                if (authMode != 2) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(SurfaceElevated, RoundedCornerShape(16.dp))
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val loginBgModifier = if (authMode == 0) {
-                            Modifier.background(Brush.horizontalGradient(listOf(NexusGold, NexusOrange)))
-                        } else {
-                            Modifier
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .then(loginBgModifier)
-                                .clickable {
-                                    onClearMessages()
-                                    authMode = 0
-                                }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "تسجيل الدخول",
-                                fontWeight = if (authMode == 0) FontWeight.Bold else FontWeight.Normal,
-                                color = if (authMode == 0) Color.Black else TextSecondary,
-                                fontSize = 13.sp
-                            )
-                        }
-
-                        val registerBgModifier = if (authMode == 1) {
-                            Modifier.background(Brush.horizontalGradient(listOf(NexusGold, NexusOrange)))
-                        } else {
-                            Modifier
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .then(registerBgModifier)
-                                .clickable {
-                                    onClearMessages()
-                                    authMode = 1
-                                }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "حساب جديد",
-                                fontWeight = if (authMode == 1) FontWeight.Bold else FontWeight.Normal,
-                                color = if (authMode == 1) Color.Black else TextSecondary,
-                                fontSize = 13.sp
-                            )
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceElevated, RoundedCornerShape(16.dp))
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val loginBgModifier = if (authMode == 0) {
+                        Modifier.background(Brush.horizontalGradient(listOf(NexusGold, NexusOrange)))
+                    } else {
+                        Modifier
                     }
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    // Primary Google Sign-In Button
-                    OutlinedButton(
-                        onClick = {
-                            onClearMessages()
-                            onGoogleSignInClick()
-                        },
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .testTag("google_sign_in_button"),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.06f),
-                            contentColor = TextPrimary
-                        ),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
-                        enabled = !isLoading
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            // Stylized Google 'G' Symbol
-                            Surface(
-                                shape = CircleShape,
-                                color = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "G",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 14.sp,
-                                        color = Color(0xFF4285F4)
-                                    )
-                                }
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .then(loginBgModifier)
+                            .clickable {
+                                onClearMessages()
+                                authMode = 0
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "المتابعة باستخدام Google",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Divider: Or with email
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        HorizontalDivider(
-                            modifier = Modifier.weight(1f),
-                            color = Color.White.copy(alpha = 0.12f)
-                        )
                         Text(
-                            text = "أو عبر البريد الإلكتروني",
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            fontSize = 11.sp,
-                            color = TextSecondary
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.weight(1f),
-                            color = Color.White.copy(alpha = 0.12f)
+                            text = "تسجيل الدخول",
+                            fontWeight = if (authMode == 0) FontWeight.Bold else FontWeight.Normal,
+                            color = if (authMode == 0) Color.Black else TextSecondary,
+                            fontSize = 13.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    val registerBgModifier = if (authMode == 1) {
+                        Modifier.background(Brush.horizontalGradient(listOf(NexusGold, NexusOrange)))
+                    } else {
+                        Modifier
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .then(registerBgModifier)
+                            .clickable {
+                                onClearMessages()
+                                authMode = 1
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "حساب جديد",
+                            fontWeight = if (authMode == 1) FontWeight.Bold else FontWeight.Normal,
+                            color = if (authMode == 1) Color.Black else TextSecondary,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Error Message Banner
                 AnimatedVisibility(
@@ -430,191 +348,115 @@ fun AuthDialog(
                     }
                 }
 
-                // Form Fields
-                AnimatedContent(
-                    targetState = authMode,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "auth_form_transition"
-                ) { mode ->
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        // Display Name field (only for Sign Up)
-                        if (mode == 1) {
-                            OutlinedTextField(
-                                value = name,
-                                onValueChange = { name = it },
-                                label = { Text("الاسم أو اللقب", fontSize = 12.sp) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null,
-                                        tint = NexusGold
-                                    )
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("auth_name_field"),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = NexusGold,
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                                    focusedContainerColor = SurfaceElevated.copy(alpha = 0.5f),
-                                    unfocusedContainerColor = SurfaceElevated.copy(alpha = 0.3f),
-                                    focusedLabelColor = NexusGold,
-                                    unfocusedLabelColor = TextSecondary,
-                                    cursorColor = NexusGold
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Text,
-                                    imeAction = ImeAction.Next
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                                )
+                // Form Fields (Only Username & Password)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Username Field
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("اسم المستخدم", fontSize = 12.sp) },
+                        placeholder = { Text("مثال: zxiuzaid أو اسمك المستعار", fontSize = 11.sp, color = TextSecondary.copy(alpha = 0.5f)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = NexusGold
                             )
-                        }
-
-                        // Email field
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("البريد الإلكتروني", fontSize = 12.sp) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Email,
-                                    contentDescription = null,
-                                    tint = NexusGold
-                                )
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("auth_email_field"),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = NexusGold,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                                focusedContainerColor = SurfaceElevated.copy(alpha = 0.5f),
-                                unfocusedContainerColor = SurfaceElevated.copy(alpha = 0.3f),
-                                focusedLabelColor = NexusGold,
-                                unfocusedLabelColor = TextSecondary,
-                                cursorColor = NexusGold
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = if (mode == 2) ImeAction.Done else ImeAction.Next
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                                onDone = {
-                                    focusManager.clearFocus()
-                                    if (mode == 2 && email.isNotBlank()) onResetPassword(email)
-                                }
-                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_username_field"),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NexusGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                            focusedContainerColor = SurfaceElevated.copy(alpha = 0.5f),
+                            unfocusedContainerColor = SurfaceElevated.copy(alpha = 0.3f),
+                            focusedLabelColor = NexusGold,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = NexusGold
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next,
+                            autoCorrectEnabled = false
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         )
+                    )
 
-                        // Password field (hidden in Reset Password mode)
-                        if (mode != 2) {
-                            OutlinedTextField(
-                                value = password,
-                                onValueChange = { password = it },
-                                label = { Text("كلمة المرور", fontSize = 12.sp) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = null,
-                                        tint = NexusGold
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                        Icon(
-                                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                            contentDescription = if (passwordVisible) "إخفاء كلمة المرور" else "إظهار كلمة المرور",
-                                            tint = TextSecondary
-                                        )
-                                    }
-                                },
-                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("auth_password_field"),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = NexusGold,
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                                    focusedContainerColor = SurfaceElevated.copy(alpha = 0.5f),
-                                    unfocusedContainerColor = SurfaceElevated.copy(alpha = 0.3f),
-                                    focusedLabelColor = NexusGold,
-                                    unfocusedLabelColor = TextSecondary,
-                                    cursorColor = NexusGold
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Password,
-                                    imeAction = ImeAction.Done
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        focusManager.clearFocus()
-                                        if (mode == 0 && email.isNotBlank() && password.isNotBlank()) {
-                                            onSignInEmail(email, password)
-                                        } else if (mode == 1 && email.isNotBlank() && password.isNotBlank()) {
-                                            onSignUpEmail(email, password, name)
-                                        }
-                                    }
-                                )
+                    // Password Field
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("كلمة المرور", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = NexusGold
                             )
-                        }
-
-                        // Forgot password link (only in Sign In mode)
-                        if (mode == 0) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        onClearMessages()
-                                        authMode = 2
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "إخفاء كلمة المرور" else "إظهار كلمة المرور",
+                                    tint = TextSecondary
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_password_field"),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NexusGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                            focusedContainerColor = SurfaceElevated.copy(alpha = 0.5f),
+                            unfocusedContainerColor = SurfaceElevated.copy(alpha = 0.3f),
+                            focusedLabelColor = NexusGold,
+                            unfocusedLabelColor = TextSecondary,
+                            cursorColor = NexusGold
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                if (username.isNotBlank() && password.isNotBlank()) {
+                                    if (authMode == 0) {
+                                        onSignInEmail(username, password)
+                                    } else {
+                                        onSignUpEmail(username, password, username)
                                     }
-                                ) {
-                                    Text(
-                                        text = "نسيت كلمة المرور؟",
-                                        fontSize = 12.sp,
-                                        color = NexusGold
-                                    )
                                 }
                             }
-                        }
-                    }
+                        )
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Submit CTA Button
+                // Submit Button
                 Button(
                     onClick = {
                         focusManager.clearFocus()
                         onClearMessages()
-                        when (authMode) {
-                            0 -> {
-                                if (email.isNotBlank() && password.isNotBlank()) {
-                                    onSignInEmail(email, password)
-                                }
-                            }
-                            1 -> {
-                                if (email.isNotBlank() && password.isNotBlank()) {
-                                    onSignUpEmail(email, password, name)
-                                }
-                            }
-                            2 -> {
-                                if (email.isNotBlank()) {
-                                    onResetPassword(email)
-                                }
+                        if (username.isNotBlank() && password.isNotBlank()) {
+                            if (authMode == 0) {
+                                onSignInEmail(username, password)
+                            } else {
+                                onSignUpEmail(username, password, username)
                             }
                         }
                     },
@@ -626,7 +468,7 @@ fun AuthDialog(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = NexusGold
                     ),
-                    enabled = !isLoading && email.isNotBlank() && (authMode == 2 || password.isNotBlank())
+                    enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -636,31 +478,10 @@ fun AuthDialog(
                         )
                     } else {
                         Text(
-                            text = when (authMode) {
-                                0 -> "تسجيل الدخول"
-                                1 -> "إنشاء الحساب والمزامنة"
-                                else -> "إرسال رابط الاستعادة"
-                            },
+                            text = if (authMode == 0) "تسجيل الدخول" else "إنشاء الحساب",
                             fontWeight = FontWeight.Bold,
                             color = Color.Black,
                             fontSize = 14.sp
-                        )
-                    }
-                }
-
-                // Footer Mode Switcher
-                if (authMode == 2) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TextButton(
-                        onClick = {
-                            onClearMessages()
-                            authMode = 0
-                        }
-                    ) {
-                        Text(
-                            text = "العودة إلى تسجيل الدخول",
-                            color = TextSecondary,
-                            fontSize = 12.sp
                         )
                     }
                 }

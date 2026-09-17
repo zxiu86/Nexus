@@ -1020,11 +1020,11 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         _authSuccessMessage.value = null
     }
 
-    fun signInWithEmail(email: String, pass: String) {
+    fun signInWithUsername(username: String, pass: String) {
         viewModelScope.launch {
             _isAuthLoading.value = true
             _authErrorMessage.value = null
-            when (val result = authRepository.signInWithEmail(email, pass)) {
+            when (val result = authRepository.signInWithUsername(username, pass)) {
                 is AuthResult.Success -> {
                     _isAuthLoading.value = false
                     _showAuthDialog.value = false
@@ -1039,11 +1039,11 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun signUpWithEmail(email: String, pass: String, displayName: String) {
+    fun signUpWithUsername(username: String, pass: String) {
         viewModelScope.launch {
             _isAuthLoading.value = true
             _authErrorMessage.value = null
-            when (val result = authRepository.signUpWithEmail(email, pass, displayName)) {
+            when (val result = authRepository.signUpWithUsername(username, pass)) {
                 is AuthResult.Success -> {
                     _isAuthLoading.value = false
                     _showAuthDialog.value = false
@@ -1056,6 +1056,14 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
                 else -> { _isAuthLoading.value = false }
             }
         }
+    }
+
+    fun signInWithEmail(email: String, pass: String) {
+        signInWithUsername(email, pass)
+    }
+
+    fun signUpWithEmail(email: String, pass: String, displayName: String) {
+        signUpWithUsername(if (displayName.isNotBlank()) displayName else email, pass)
     }
 
     fun sendPasswordReset(email: String) {

@@ -5,6 +5,7 @@ import androidx.annotation.Keep
 @Keep
 data class NexusUser(
     val uid: String = "",
+    val username: String = "",
     val email: String = "",
     val displayName: String = "",
     val photoUrl: String? = null,
