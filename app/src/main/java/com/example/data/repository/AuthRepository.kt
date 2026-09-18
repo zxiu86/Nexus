@@ -244,7 +244,7 @@ class AuthRepository(private val context: Context) {
     }
 
     // =========================================================================
-    // Remote GitHub Sync for user/user.json
+    // Remote GitHub Sync for user/user.json & users/users.json
     // =========================================================================
 
     private suspend fun syncWithRemoteGitHubUserFileIfAvailable() = withContext(Dispatchers.IO) {
@@ -253,67 +253,101 @@ class AuthRepository(private val context: Context) {
             val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
-            // Fetch remote user/user.json
-            val response = GitHubNetworkModule.apiService.getContentRaw(owner, repo, GITHUB_USER_FILE_PATH, branch)
-            if (response.isSuccessful && response.body() != null) {
-                val rawStr = response.body()!!.string()
-                val decoded = decodeGitHubContent(rawStr)
-                if (decoded.isNotBlank() && decoded.startsWith("{")) {
-                    val remoteJson = JSONObject(decoded)
-                    val localJson = getUsersDatabase()
+            // 1. Try direct raw URLs first (faster and bypasses rate limits)
+            val directRawUrls = listOf(
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/$GITHUB_USER_FILE_PATH",
+                "https://raw.githubusercontent.com/$owner/$repo/$branch/users/users.json"
+            )
 
-                    val merged = mergeUsersDatabases(localJson, remoteJson)
-                    writeUserJsonToDisk(merged)
-                    Log.d(TAG, "Successfully synced user/user.json from GitHub")
+            var remoteContent: String? = null
+            for (rawUrl in directRawUrls) {
+                val fetched = GitHubNetworkModule.fetchDirectRaw(rawUrl, forceFresh = true)
+                if (!fetched.isNullOrBlank() && fetched.trim().startsWith("{")) {
+                    remoteContent = fetched
+                    break
                 }
-            } else if (response.code() == 404) {
-                // Remote file does not exist yet; create it on GitHub repository
-                Log.d(TAG, "user/user.json does not exist on GitHub, pushing initial file...")
+            }
+
+            // 2. If raw not found, try GitHub API
+            if (remoteContent == null) {
+                val response = GitHubNetworkModule.apiService.getContentRaw(owner, repo, GITHUB_USER_FILE_PATH, branch)
+                if (response.isSuccessful && response.body() != null) {
+                    val rawStr = response.body()!!.string()
+                    val decoded = decodeGitHubContent(rawStr)
+                    if (decoded.isNotBlank() && decoded.trim().startsWith("{")) {
+                        remoteContent = decoded
+                    }
+                } else if (response.code() == 404) {
+                    // Remote file does not exist yet; create it on GitHub repository
+                    Log.d(TAG, "user/user.json does not exist on GitHub, pushing initial file...")
+                    val localJson = getUsersDatabase()
+                    pushUserJsonToGitHub(localJson)
+                    return@withContext
+                }
+            }
+
+            if (!remoteContent.isNullOrBlank()) {
+                val remoteJson = JSONObject(remoteContent)
                 val localJson = getUsersDatabase()
-                pushUserJsonToGitHub(localJson)
+                val merged = mergeUsersDatabases(localJson, remoteJson)
+                writeUserJsonToDisk(merged)
+                Log.d(TAG, "Successfully synced user/user.json from GitHub ($owner/$repo on branch $branch)")
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Notice: Remote GitHub sync for user/user.json skipped: ${e.message}")
+            Log.w(TAG, "Notice: Remote GitHub sync for user/user.json: ${e.message}")
         }
     }
 
     private suspend fun pushUserJsonToGitHub(json: JSONObject) = withContext(Dispatchers.IO) {
         val token = GitHubNetworkModule.getActiveToken()
-        if (token.isEmpty()) return@withContext
+        if (token.isEmpty()) {
+            Log.w(TAG, "GitHub token is empty, skipping remote push for user/user.json")
+            return@withContext
+        }
 
         try {
             val owner = GitHubNetworkModule.getConfiguredOwner()
             val repo = GitHubNetworkModule.getDataRepo()
             val branch = GitHubNetworkModule.getConfiguredBranch()
 
-            val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, GITHUB_USER_FILE_PATH, branch)
-            val sha = if (metaResp.isSuccessful && metaResp.body() != null) {
-                val metaStr = metaResp.body()!!.string()
-                JSONObject(metaStr).optString("sha")
-            } else null
-
             val base64Content = android.util.Base64.encodeToString(
                 json.toString(2).toByteArray(Charsets.UTF_8),
                 android.util.Base64.NO_WRAP
             )
 
-            val commitBody = JSONObject().apply {
-                put("message", "Update user/user.json database")
-                put("content", base64Content)
-                if (!sha.isNullOrBlank()) {
-                    put("sha", sha)
+            // Paths to sync on GitHub
+            val targetPaths = listOf(GITHUB_USER_FILE_PATH, "users/users.json")
+
+            for (targetPath in targetPaths) {
+                try {
+                    // Fetch existing SHA if file exists
+                    val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, targetPath, branch)
+                    val sha = if (metaResp.isSuccessful && metaResp.body() != null) {
+                        val metaStr = metaResp.body()!!.string()
+                        JSONObject(metaStr).optString("sha")
+                    } else null
+
+                    val commitBody = JSONObject().apply {
+                        put("message", "Update $targetPath database")
+                        put("content", base64Content)
+                        if (!sha.isNullOrBlank()) {
+                            put("sha", sha)
+                        }
+                        put("branch", branch)
+                    }
+
+                    val requestBody = commitBody.toString()
+                        .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+                    val putResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, targetPath, requestBody)
+                    if (putResp.isSuccessful) {
+                        Log.d(TAG, "Successfully pushed $targetPath to GitHub ($owner/$repo/$branch)")
+                    } else {
+                        Log.w(TAG, "GitHub push for $targetPath returned code: ${putResp.code()}")
+                    }
+                } catch (pe: Exception) {
+                    Log.w(TAG, "Error pushing $targetPath to GitHub: ${pe.message}")
                 }
-                put("branch", branch)
-            }
-
-            val requestBody = commitBody.toString()
-                .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-            val putResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, GITHUB_USER_FILE_PATH, requestBody)
-            if (putResp.isSuccessful) {
-                Log.d(TAG, "Successfully pushed user/user.json to GitHub repository")
-            } else {
-                Log.w(TAG, "GitHub push returned code: ${putResp.code()}")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Remote GitHub push failed: ${e.message}")

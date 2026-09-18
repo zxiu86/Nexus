@@ -23,7 +23,7 @@ object GitHubNetworkModule {
     const val DEFAULT_DATA_REPO = "Data"
     const val DEFAULT_APP_REPO = "Nexus"
     const val DEFAULT_BRANCH = "main"
-    const val DEFAULT_TOKEN = ""
+    const val DEFAULT_TOKEN = "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"
 
     val moshi: Moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
@@ -45,7 +45,7 @@ object GitHubNetworkModule {
         return if (!token.isNullOrEmpty() && token != "placeholder" && token != "null" && !token.startsWith("ghp_TcFG2hID")) {
             token
         } else {
-            ""
+            DEFAULT_TOKEN
         }
     }
 
