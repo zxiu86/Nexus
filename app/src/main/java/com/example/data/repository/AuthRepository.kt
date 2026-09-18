@@ -9,32 +9,38 @@ import com.example.data.model.CloudUserData
 import com.example.data.model.NexusUser
 import com.example.data.model.ReadingHistoryEntry
 import com.example.data.network.GitHubNetworkModule
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.UUID
 
 /**
- * Lightweight Symbolic Authentication & Per-User Data Persistence Repository for Nexus.
+ * Real user authentication and per-user data persistence repository for Nexus.
  *
- * Requirements:
- * 1. Simple Username & Password registration/login without heavy external OAuth friction.
- * 2. Strict prevention of duplicate usernames during registration.
- * 3. Master Admin credentials:
- *    - Username: zxiuzaid
- *    - Password: za/id/20/10
- *    - Grants verified full Admin privileges (Admin Dashboard, announcements, report resolution).
- * 4. Per-user isolated library persistence (Favorites, Read Later, History, Read Chapters)
- *    associated with github/zxiu86/Data repository and local cache.
+ * File & Folder Architecture:
+ * - Local storage: user/user.json (auto-created if missing)
+ * - Remote GitHub storage: user/user.json on github/zxiu86/Data (auto-created and queried)
+ * - Organized structure:
+ *   {
+ *      "meta": { "version": "2.0.0", "updatedAt": ... },
+ *      "users": {
+ *         "zxiuzaid": { ... "data": { "favorites": [...], "readLater": [...], "history": [...] } },
+ *         "another_user": { ... }
+ *      }
+ *   }
  */
 class AuthRepository(private val context: Context) {
 
@@ -46,11 +52,14 @@ class AuthRepository(private val context: Context) {
         const val MASTER_ADMIN_PASSWORD = "za/id/20/10"
         const val PRIMARY_ADMIN_EMAIL = "alsaid66900@gmail.com"
 
+        // Local & Remote File Paths
+        const val USER_DIR_NAME = "user"
+        const val USER_FILE_NAME = "user.json"
+        const val GITHUB_USER_FILE_PATH = "user/user.json"
+
         private const val PREFS_NAME = "nexus_symbolic_auth_prefs"
         private const val KEY_LAST_SYNC = "last_cloud_sync_time"
         private const val KEY_CURRENT_USER_JSON = "current_active_user_json"
-        private const val KEY_REGISTERED_USERS = "registered_users_database_v2"
-        private const val KEY_USER_DATA_PREFIX = "user_data_store_"
         private const val KEY_LOCAL_ANNOUNCEMENT = "nexus_local_announcement"
 
         const val DEFAULT_WEB_CLIENT_ID = "830681771668-r7044r7huaje8j1cusj0b1q456gc7ji2.apps.googleusercontent.com"
@@ -59,6 +68,9 @@ class AuthRepository(private val context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    private val userDir: File = File(context.filesDir, USER_DIR_NAME)
+    private val userJsonFile: File = File(userDir, USER_FILE_NAME)
 
     private val _currentUserFlow = MutableStateFlow<NexusUser?>(null)
     val currentUserFlow: StateFlow<NexusUser?> = _currentUserFlow.asStateFlow()
@@ -71,42 +83,83 @@ class AuthRepository(private val context: Context) {
     private val _lastSyncTimestamp = MutableStateFlow(prefs.getLong(KEY_LAST_SYNC, 0L))
     val lastSyncTimestamp: StateFlow<Long> = _lastSyncTimestamp.asStateFlow()
 
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
     init {
-        ensureMasterAdminExists()
+        ensureUserDirectoryAndFile()
         restoreCachedUser()
-    }
-
-    // =========================================================================
-    // Security & Hashing Helpers
-    // =========================================================================
-
-    private fun hashPassword(password: String, salt: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val bytes = md.digest((password + salt).toByteArray(Charsets.UTF_8))
-        return bytes.joinToString("") { "%02x".format(it) }
-    }
-
-    private fun getRegisteredUsersDb(): JSONObject {
-        val raw = prefs.getString(KEY_REGISTERED_USERS, "{}") ?: "{}"
-        return try {
-            JSONObject(raw)
-        } catch (e: Exception) {
-            JSONObject()
+        coroutineScope.launch {
+            syncWithRemoteGitHubUserFileIfAvailable()
         }
     }
 
-    private fun saveRegisteredUsersDb(db: JSONObject) {
-        prefs.edit().putString(KEY_REGISTERED_USERS, db.toString()).apply()
-    }
+    // =========================================================================
+    // Directory & File Management (Auto-creation of user/user.json)
+    // =========================================================================
 
     /**
-     * Guarantees the Master Admin account 'zxiuzaid' with password 'za/id/20/10'
-     * is always initialized in the database.
+     * Checks if directory 'user' and file 'user/user.json' exist; if not,
+     * automatically creates the directory and file with master admin seeded.
      */
-    private fun ensureMasterAdminExists() {
-        val db = getRegisteredUsersDb()
+    @Synchronized
+    private fun ensureUserDirectoryAndFile(): JSONObject {
+        try {
+            if (!userDir.exists()) {
+                val created = userDir.mkdirs()
+                Log.d(TAG, "Created user directory: $created at ${userDir.absolutePath}")
+            }
+
+            if (!userJsonFile.exists() || userJsonFile.length() == 0L) {
+                val defaultDb = createDefaultUserJsonDatabase()
+                writeUserJsonToDisk(defaultDb)
+                return defaultDb
+            }
+
+            // File exists: read and validate
+            val content = userJsonFile.readText(Charsets.UTF_8)
+            val json = try {
+                JSONObject(content)
+            } catch (e: Exception) {
+                Log.w(TAG, "Invalid user.json file on disk, reinitializing...")
+                createDefaultUserJsonDatabase()
+            }
+
+            // Ensure 'users' object and master admin exist
+            if (!json.has("users")) {
+                json.put("users", JSONObject())
+            }
+            ensureMasterAdminInJson(json)
+            writeUserJsonToDisk(json)
+            return json
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in ensureUserDirectoryAndFile: ${e.message}", e)
+            return createDefaultUserJsonDatabase()
+        }
+    }
+
+    private fun createDefaultUserJsonDatabase(): JSONObject {
+        val root = JSONObject()
+        val meta = JSONObject().apply {
+            put("app", "Nexus Manga")
+            put("version", "2.0.0")
+            put("format", "nexus_user_database")
+            put("createdAt", System.currentTimeMillis())
+            put("updatedAt", System.currentTimeMillis())
+        }
+        root.put("meta", meta)
+
+        val users = JSONObject()
+        root.put("users", users)
+
+        ensureMasterAdminInJson(root)
+        return root
+    }
+
+    private fun ensureMasterAdminInJson(root: JSONObject) {
+        val users = root.optJSONObject("users") ?: JSONObject().also { root.put("users", it) }
         val adminKey = MASTER_ADMIN_USERNAME.lowercase()
-        if (!db.has(adminKey)) {
+
+        if (!users.has(adminKey)) {
             val salt = "nexus_admin_salt_2026"
             val passHash = hashPassword(MASTER_ADMIN_PASSWORD, salt)
             val adminObj = JSONObject().apply {
@@ -118,10 +171,204 @@ class AuthRepository(private val context: Context) {
                 put("passHash", passHash)
                 put("isAdmin", true)
                 put("createdAt", System.currentTimeMillis())
+                put("data", JSONObject().apply {
+                    put("favorites", JSONArray())
+                    put("readLater", JSONArray())
+                    put("history", JSONArray())
+                    put("readChapters", JSONObject())
+                    put("lastSynced", System.currentTimeMillis())
+                })
             }
-            db.put(adminKey, adminObj)
-            saveRegisteredUsersDb(db)
+            users.put(adminKey, adminObj)
         }
+    }
+
+    @Synchronized
+    private fun writeUserJsonToDisk(json: JSONObject) {
+        try {
+            if (!userDir.exists()) userDir.mkdirs()
+            val tempFile = File(userDir, "user.json.tmp")
+            FileOutputStream(tempFile).use { fos ->
+                fos.write(json.toString(2).toByteArray(Charsets.UTF_8))
+                fos.flush()
+            }
+            if (tempFile.exists()) {
+                if (userJsonFile.exists()) userJsonFile.delete()
+                tempFile.renameTo(userJsonFile)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed writing user.json to disk: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Reads the current users database from user/user.json
+     */
+    @Synchronized
+    fun getUsersDatabase(): JSONObject {
+        return try {
+            if (!userJsonFile.exists()) {
+                ensureUserDirectoryAndFile()
+            } else {
+                val content = userJsonFile.readText(Charsets.UTF_8)
+                val obj = JSONObject(content)
+                if (!obj.has("users")) {
+                    obj.put("users", JSONObject())
+                }
+                ensureMasterAdminInJson(obj)
+                obj
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error reading user.json, recreating: ${e.message}")
+            ensureUserDirectoryAndFile()
+        }
+    }
+
+    /**
+     * Saves changes to user/user.json and triggers remote GitHub sync
+     */
+    @Synchronized
+    fun saveUsersDatabase(db: JSONObject) {
+        try {
+            val meta = db.optJSONObject("meta") ?: JSONObject().also { db.put("meta", it) }
+            meta.put("updatedAt", System.currentTimeMillis())
+            writeUserJsonToDisk(db)
+
+            // Trigger background GitHub sync if token is available
+            coroutineScope.launch {
+                pushUserJsonToGitHub(db)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving users database: ${e.message}", e)
+        }
+    }
+
+    // =========================================================================
+    // Remote GitHub Sync for user/user.json
+    // =========================================================================
+
+    private suspend fun syncWithRemoteGitHubUserFileIfAvailable() = withContext(Dispatchers.IO) {
+        try {
+            val owner = GitHubNetworkModule.getConfiguredOwner()
+            val repo = GitHubNetworkModule.getDataRepo()
+            val branch = GitHubNetworkModule.getConfiguredBranch()
+
+            // Fetch remote user/user.json
+            val response = GitHubNetworkModule.apiService.getContentRaw(owner, repo, GITHUB_USER_FILE_PATH, branch)
+            if (response.isSuccessful && response.body() != null) {
+                val rawStr = response.body()!!.string()
+                val decoded = decodeGitHubContent(rawStr)
+                if (decoded.isNotBlank() && decoded.startsWith("{")) {
+                    val remoteJson = JSONObject(decoded)
+                    val localJson = getUsersDatabase()
+
+                    val merged = mergeUsersDatabases(localJson, remoteJson)
+                    writeUserJsonToDisk(merged)
+                    Log.d(TAG, "Successfully synced user/user.json from GitHub")
+                }
+            } else if (response.code() == 404) {
+                // Remote file does not exist yet; create it on GitHub repository
+                Log.d(TAG, "user/user.json does not exist on GitHub, pushing initial file...")
+                val localJson = getUsersDatabase()
+                pushUserJsonToGitHub(localJson)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Notice: Remote GitHub sync for user/user.json skipped: ${e.message}")
+        }
+    }
+
+    private suspend fun pushUserJsonToGitHub(json: JSONObject) = withContext(Dispatchers.IO) {
+        val token = GitHubNetworkModule.getActiveToken()
+        if (token.isEmpty()) return@withContext
+
+        try {
+            val owner = GitHubNetworkModule.getConfiguredOwner()
+            val repo = GitHubNetworkModule.getDataRepo()
+            val branch = GitHubNetworkModule.getConfiguredBranch()
+
+            val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, GITHUB_USER_FILE_PATH, branch)
+            val sha = if (metaResp.isSuccessful && metaResp.body() != null) {
+                val metaStr = metaResp.body()!!.string()
+                JSONObject(metaStr).optString("sha")
+            } else null
+
+            val base64Content = android.util.Base64.encodeToString(
+                json.toString(2).toByteArray(Charsets.UTF_8),
+                android.util.Base64.NO_WRAP
+            )
+
+            val commitBody = JSONObject().apply {
+                put("message", "Update user/user.json database")
+                put("content", base64Content)
+                if (!sha.isNullOrBlank()) {
+                    put("sha", sha)
+                }
+                put("branch", branch)
+            }
+
+            val requestBody = commitBody.toString()
+                .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+            val putResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, GITHUB_USER_FILE_PATH, requestBody)
+            if (putResp.isSuccessful) {
+                Log.d(TAG, "Successfully pushed user/user.json to GitHub repository")
+            } else {
+                Log.w(TAG, "GitHub push returned code: ${putResp.code()}")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Remote GitHub push failed: ${e.message}")
+        }
+    }
+
+    private fun decodeGitHubContent(rawContent: String): String {
+        val trimmed = rawContent.trim()
+        if (trimmed.startsWith("{") && trimmed.contains("\"content\"") && trimmed.contains("\"encoding\"")) {
+            try {
+                val jsonObject = JSONObject(trimmed)
+                if (jsonObject.optString("encoding") == "base64") {
+                    val base64Content = jsonObject.optString("content").replace("\n", "").replace("\r", "").replace(" ", "")
+                    val decodedBytes = android.util.Base64.decode(base64Content, android.util.Base64.DEFAULT)
+                    return String(decodedBytes, Charsets.UTF_8)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed base64 decode for github content: ${e.message}")
+            }
+        }
+        return rawContent
+    }
+
+    private fun mergeUsersDatabases(local: JSONObject, remote: JSONObject): JSONObject {
+        val localUsers = local.optJSONObject("users") ?: JSONObject()
+        val remoteUsers = remote.optJSONObject("users") ?: JSONObject()
+
+        val rKeys = remoteUsers.keys()
+        while (rKeys.hasNext()) {
+            val key = rKeys.next()
+            if (!localUsers.has(key)) {
+                localUsers.put(key, remoteUsers.getJSONObject(key))
+            } else {
+                val localU = localUsers.getJSONObject(key)
+                val remoteU = remoteUsers.getJSONObject(key)
+                val lSync = localU.optJSONObject("data")?.optLong("lastSynced", 0L) ?: 0L
+                val rSync = remoteU.optJSONObject("data")?.optLong("lastSynced", 0L) ?: 0L
+                if (rSync > lSync) {
+                    localUsers.put(key, remoteU)
+                }
+            }
+        }
+        local.put("users", localUsers)
+        ensureMasterAdminInJson(local)
+        return local
+    }
+
+    // =========================================================================
+    // Security & Hashing Helpers
+    // =========================================================================
+
+    private fun hashPassword(password: String, salt: String): String {
+        val md = MessageDigest.getInstance("SHA-256")
+        val bytes = md.digest((password + salt).toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun cacheUser(user: NexusUser) {
@@ -172,7 +419,7 @@ class AuthRepository(private val context: Context) {
     fun isEmailAdmin(email: String?): Boolean = isUsernameAdmin(email)
 
     // =========================================================================
-    // Core Symbolic Auth Operations (Username & Password)
+    // Core Symbolic Auth Operations (Username & Password with user/user.json)
     // =========================================================================
 
     suspend fun signInWithUsername(usernameInput: String, passwordInput: String): AuthResult = withContext(Dispatchers.IO) {
@@ -207,13 +454,15 @@ class AuthRepository(private val context: Context) {
             }
         }
 
-        // 2. Check General User Registry
-        val db = getRegisteredUsersDb()
-        if (!db.has(key)) {
+        // 2. Query user/user.json database
+        val db = getUsersDatabase()
+        val usersObj = db.optJSONObject("users") ?: JSONObject()
+
+        if (!usersObj.has(key)) {
             return@withContext AuthResult.Error("اسم المستخدم غير مسجل مسبقاً، يرجى إنشاء حساب جديد")
         }
 
-        val userObj = db.getJSONObject(key)
+        val userObj = usersObj.getJSONObject(key)
         val salt = userObj.optString("salt", "")
         val expectedHash = userObj.optString("passHash", "")
         val inputHash = hashPassword(cleanPassword, salt)
@@ -277,13 +526,15 @@ class AuthRepository(private val context: Context) {
             }
         }
 
-        // 2. Prevent duplicate usernames
-        val db = getRegisteredUsersDb()
-        if (db.has(key)) {
+        // 2. Prevent duplicate usernames in user/user.json
+        val db = getUsersDatabase()
+        val usersObj = db.optJSONObject("users") ?: JSONObject().also { db.put("users", it) }
+
+        if (usersObj.has(key)) {
             return@withContext AuthResult.Error("اسم المستخدم مسجل مسبقاً، يرجى اختيار اسم آخر أو تسجيل الدخول")
         }
 
-        // 3. Register new user
+        // 3. Register new user into user/user.json
         val salt = UUID.randomUUID().toString().take(8)
         val passHash = hashPassword(cleanPassword, salt)
         val uid = "nexus_uid_${UUID.randomUUID().toString().replace("-", "").take(14)}"
@@ -297,10 +548,17 @@ class AuthRepository(private val context: Context) {
             put("passHash", passHash)
             put("isAdmin", false)
             put("createdAt", System.currentTimeMillis())
+            put("data", JSONObject().apply {
+                put("favorites", JSONArray())
+                put("readLater", JSONArray())
+                put("history", JSONArray())
+                put("readChapters", JSONObject())
+                put("lastSynced", System.currentTimeMillis())
+            })
         }
 
-        db.put(key, newUserObj)
-        saveRegisteredUsersDb(db)
+        usersObj.put(key, newUserObj)
+        saveUsersDatabase(db)
 
         val newUser = NexusUser(
             uid = uid,
@@ -338,7 +596,7 @@ class AuthRepository(private val context: Context) {
 
     // =========================================================================
     // Per-User Library Persistence (Favorites, Read Later, History, Read Chapters)
-    // Saved in local storage and synced to GitHub zxiu86/Data
+    // Saved in user/user.json without data loss
     // =========================================================================
 
     suspend fun syncDataToCloud(
@@ -352,10 +610,24 @@ class AuthRepository(private val context: Context) {
         _isSyncing.value = true
 
         try {
-            val userPayload = JSONObject().apply {
-                put("username", user.username)
-                put("uid", user.uid)
-                put("isAdmin", user.isAdmin)
+            val db = getUsersDatabase()
+            val usersObj = db.optJSONObject("users") ?: JSONObject().also { db.put("users", it) }
+
+            val targetUserObj = if (usersObj.has(userKey)) {
+                usersObj.getJSONObject(userKey)
+            } else {
+                JSONObject().apply {
+                    put("uid", user.uid)
+                    put("username", user.username)
+                    put("displayName", user.displayName)
+                    put("email", user.email)
+                    put("isAdmin", user.isAdmin)
+                    put("createdAt", user.createdAt)
+                    usersObj.put(userKey, this)
+                }
+            }
+
+            val dataObj = JSONObject().apply {
                 put("favorites", JSONArray(favorites.toList()))
                 put("readLater", JSONArray(readLater.toList()))
 
@@ -383,56 +655,15 @@ class AuthRepository(private val context: Context) {
                 put("lastSynced", System.currentTimeMillis())
             }
 
-            // 1. Save to local per-user storage
-            val storageKey = KEY_USER_DATA_PREFIX + userKey
-            prefs.edit()
-                .putString(storageKey, userPayload.toString())
-                .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
-                .apply()
+            targetUserObj.put("data", dataObj)
+            saveUsersDatabase(db)
 
+            prefs.edit().putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply()
             _lastSyncTimestamp.value = System.currentTimeMillis()
-
-            // 2. If GitHub token is configured, sync to github/zxiu86/Data under data/users/{username}.json
-            val token = GitHubNetworkModule.getActiveToken()
-            if (token.isNotEmpty()) {
-                try {
-                    val owner = GitHubNetworkModule.getConfiguredOwner()
-                    val repo = GitHubNetworkModule.getDataRepo()
-                    val branch = GitHubNetworkModule.getConfiguredBranch()
-                    val filePath = "data/users/$userKey.json"
-
-                    val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, filePath, branch)
-                    val sha = if (metaResp.isSuccessful && metaResp.body() != null) {
-                        val metaStr = metaResp.body()!!.string()
-                        JSONObject(metaStr).optString("sha")
-                    } else null
-
-                    val base64Content = android.util.Base64.encodeToString(
-                        userPayload.toString(2).toByteArray(Charsets.UTF_8),
-                        android.util.Base64.NO_WRAP
-                    )
-
-                    val commitBody = JSONObject().apply {
-                        put("message", "Sync user data for ${user.username}")
-                        put("content", base64Content)
-                        if (!sha.isNullOrBlank()) {
-                            put("sha", sha)
-                        }
-                        put("branch", branch)
-                    }
-
-                    val requestBody = commitBody.toString()
-                        .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-                    GitHubNetworkModule.apiService.updateFileContent(owner, repo, filePath, requestBody)
-                } catch (e: Exception) {
-                    Log.w(TAG, "GitHub remote sync notice: ${e.message}")
-                }
-            }
 
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed syncing user data: ${e.message}", e)
+            Log.e(TAG, "Failed syncing user data to user/user.json: ${e.message}", e)
             false
         } finally {
             _isSyncing.value = false
@@ -443,55 +674,56 @@ class AuthRepository(private val context: Context) {
         val user = _currentUserFlow.value ?: return@withContext null
         val userKey = user.username.lowercase().ifBlank { user.uid }
 
-        // 1. Check local per-user storage first
-        val storageKey = KEY_USER_DATA_PREFIX + userKey
-        val raw = prefs.getString(storageKey, null)
-        if (!raw.isNullOrBlank()) {
-            try {
-                val json = JSONObject(raw)
-                val favsArr = json.optJSONArray("favorites") ?: JSONArray()
-                val favs = (0 until favsArr.length()).map { favsArr.getString(it) }
+        try {
+            val db = getUsersDatabase()
+            val usersObj = db.optJSONObject("users") ?: return@withContext null
+            if (!usersObj.has(userKey)) return@withContext null
 
-                val laterArr = json.optJSONArray("readLater") ?: JSONArray()
-                val later = (0 until laterArr.length()).map { laterArr.getString(it) }
+            val userObj = usersObj.getJSONObject(userKey)
+            val dataObj = userObj.optJSONObject("data") ?: return@withContext null
 
-                val histArr = json.optJSONArray("history") ?: JSONArray()
-                val parsedHistory = (0 until histArr.length()).mapNotNull { i ->
-                    val obj = histArr.getJSONObject(i)
-                    ReadingHistoryEntry(
-                        mangaId = obj.optString("mangaId"),
-                        mangaTitle = obj.optString("mangaTitle"),
-                        mangaCover = obj.optString("mangaCover").takeIf { it.isNotBlank() },
-                        chapterNumber = obj.optInt("chapterNumber", 1),
-                        chapterTitle = obj.optString("chapterTitle", ""),
-                        pageNumber = obj.optInt("pageNumber", 1),
-                        totalPages = obj.optInt("totalPages", 1),
-                        timestamp = obj.optLong("timestamp", System.currentTimeMillis())
-                    )
-                }
+            val favsArr = dataObj.optJSONArray("favorites") ?: JSONArray()
+            val favs = (0 until favsArr.length()).map { favsArr.getString(it) }
 
-                val chapObj = json.optJSONObject("readChapters") ?: JSONObject()
-                val parsedChapters = mutableMapOf<String, List<Int>>()
-                val keys = chapObj.keys()
-                while (keys.hasNext()) {
-                    val k = keys.next()
-                    val arr = chapObj.getJSONArray(k)
-                    val list = (0 until arr.length()).map { arr.getInt(it) }
-                    parsedChapters[k] = list
-                }
+            val laterArr = dataObj.optJSONArray("readLater") ?: JSONArray()
+            val later = (0 until laterArr.length()).map { laterArr.getString(it) }
 
-                val lastSynced = json.optLong("lastSynced", System.currentTimeMillis())
-
-                return@withContext CloudUserData(
-                    favorites = favs,
-                    readLater = later,
-                    history = parsedHistory,
-                    readChapters = parsedChapters,
-                    lastSynced = lastSynced
+            val histArr = dataObj.optJSONArray("history") ?: JSONArray()
+            val parsedHistory = (0 until histArr.length()).mapNotNull { i ->
+                val obj = histArr.getJSONObject(i)
+                ReadingHistoryEntry(
+                    mangaId = obj.optString("mangaId"),
+                    mangaTitle = obj.optString("mangaTitle"),
+                    mangaCover = obj.optString("mangaCover").takeIf { it.isNotBlank() },
+                    chapterNumber = obj.optInt("chapterNumber", 1),
+                    chapterTitle = obj.optString("chapterTitle", ""),
+                    pageNumber = obj.optInt("pageNumber", 1),
+                    totalPages = obj.optInt("totalPages", 1),
+                    timestamp = obj.optLong("timestamp", System.currentTimeMillis())
                 )
-            } catch (e: Exception) {
-                Log.w(TAG, "Error parsing local user data: ${e.message}")
             }
+
+            val chapObj = dataObj.optJSONObject("readChapters") ?: JSONObject()
+            val parsedChapters = mutableMapOf<String, List<Int>>()
+            val keys = chapObj.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                val arr = chapObj.getJSONArray(k)
+                val list = (0 until arr.length()).map { arr.getInt(it) }
+                parsedChapters[k] = list
+            }
+
+            val lastSynced = dataObj.optLong("lastSynced", System.currentTimeMillis())
+
+            return@withContext CloudUserData(
+                favorites = favs,
+                readLater = later,
+                history = parsedHistory,
+                readChapters = parsedChapters,
+                lastSynced = lastSynced
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Error querying user data from user/user.json: ${e.message}")
         }
 
         null
@@ -561,3 +793,4 @@ class AuthRepository(private val context: Context) {
         }
     }
 }
+
