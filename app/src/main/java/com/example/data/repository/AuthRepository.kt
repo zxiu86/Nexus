@@ -141,7 +141,7 @@ class AuthRepository(private val context: Context) {
         val root = JSONObject()
         val meta = JSONObject().apply {
             put("app", "Nexus Manga")
-            put("version", "2.0.0")
+            put("version", "2.0.1")
             put("format", "nexus_user_database")
             put("createdAt", System.currentTimeMillis())
             put("updatedAt", System.currentTimeMillis())
@@ -306,51 +306,65 @@ class AuthRepository(private val context: Context) {
         }
 
         try {
-            val owner = GitHubNetworkModule.getConfiguredOwner()
-            val repo = GitHubNetworkModule.getDataRepo()
-            val branch = GitHubNetworkModule.getConfiguredBranch()
+            val jsonStr = json.toString(2)
+            val commitMsg = "[Nexus 2.0.1] Update user accounts database"
 
-            val base64Content = android.util.Base64.encodeToString(
-                json.toString(2).toByteArray(Charsets.UTF_8),
-                android.util.Base64.NO_WRAP
+            // Primary path: user/user.json
+            val res1 = GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = GITHUB_USER_FILE_PATH,
+                contentString = jsonStr,
+                commitMessage = commitMsg
             )
 
-            // Paths to sync on GitHub
-            val targetPaths = listOf(GITHUB_USER_FILE_PATH, "users/users.json")
+            // Secondary path: users/users.json for dual compatibility
+            val res2 = GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = "users/users.json",
+                contentString = jsonStr,
+                commitMessage = commitMsg
+            )
 
-            for (targetPath in targetPaths) {
-                try {
-                    // Fetch existing SHA if file exists
-                    val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, targetPath, branch)
-                    val sha = if (metaResp.isSuccessful && metaResp.body() != null) {
-                        val metaStr = metaResp.body()!!.string()
-                        JSONObject(metaStr).optString("sha")
-                    } else null
-
-                    val commitBody = JSONObject().apply {
-                        put("message", "Update $targetPath database")
-                        put("content", base64Content)
-                        if (!sha.isNullOrBlank()) {
-                            put("sha", sha)
-                        }
-                        put("branch", branch)
-                    }
-
-                    val requestBody = commitBody.toString()
-                        .toRequestBody("application/json; charset=utf-8".toMediaType())
-
-                    val putResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, targetPath, requestBody)
-                    if (putResp.isSuccessful) {
-                        Log.d(TAG, "Successfully pushed $targetPath to GitHub ($owner/$repo/$branch)")
-                    } else {
-                        Log.w(TAG, "GitHub push for $targetPath returned code: ${putResp.code()}")
-                    }
-                } catch (pe: Exception) {
-                    Log.w(TAG, "Error pushing $targetPath to GitHub: ${pe.message}")
-                }
+            if (res1.isSuccess || res2.isSuccess) {
+                Log.d(TAG, "Successfully committed user accounts to GitHub repo")
+            } else {
+                Log.w(TAG, "Notice: GitHub push for user/user.json: ${res1.exceptionOrNull()?.message}")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Remote GitHub push failed: ${e.message}")
+        }
+    }
+
+    suspend fun forceSyncUsersWithGitHub(): Result<String> = withContext(Dispatchers.IO) {
+        val token = GitHubNetworkModule.getActiveToken()
+        if (token.isEmpty()) {
+            return@withContext Result.failure(IllegalStateException("رمز الوصول (GitHub Token) غير مضبوط. يرجى ضبط الرمز من لوحة المشرف لإتمام المزامنة السحابية."))
+        }
+
+        try {
+            val localJson = getUsersDatabase()
+            val usersCount = localJson.optJSONObject("users")?.length() ?: 0
+            val jsonStr = localJson.toString(2)
+            val commitMsg = "[Nexus 2.0.1] Force sync user database ($usersCount users)"
+
+            val res = GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = GITHUB_USER_FILE_PATH,
+                contentString = jsonStr,
+                commitMessage = commitMsg
+            )
+
+            // Also mirror to users/users.json
+            GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = "users/users.json",
+                contentString = jsonStr,
+                commitMessage = commitMsg
+            )
+
+            if (res.isSuccess) {
+                Result.success("تمت مزامنة بيانات المستخدمين بنجاح مع GitHub ($usersCount مستخدمين مسجلين).")
+            } else {
+                Result.failure(res.exceptionOrNull() ?: Exception("فشل رفع ملف user/user.json إلى GitHub"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -787,6 +801,18 @@ class AuthRepository(private val context: Context) {
             put("authorEmail", user.displayName)
         }
         prefs.edit().putString(KEY_LOCAL_ANNOUNCEMENT, annJson.toString()).apply()
+
+        // Push announcement to GitHub repo (data/announcements.json)
+        try {
+            GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = "data/announcements.json",
+                contentString = annJson.toString(2),
+                commitMessage = "[Nexus 2.0.1] Admin broadcast: $title"
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Notice: Announcement saved locally, GitHub push error: ${e.message}")
+        }
+
         Result.success(Unit)
     }
 
@@ -796,11 +822,28 @@ class AuthRepository(private val context: Context) {
             return@withContext Result.failure(SecurityException("غير مصرح"))
         }
         prefs.edit().remove(KEY_LOCAL_ANNOUNCEMENT).apply()
+
+        try {
+            val emptyObj = JSONObject().apply {
+                put("active", false)
+                put("timestamp", System.currentTimeMillis())
+            }
+            GitHubNetworkModule.pushOrUpdateFileToGitHub(
+                path = "data/announcements.json",
+                contentString = emptyObj.toString(2),
+                commitMessage = "[Nexus 2.0.1] Dismiss broadcast announcement"
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Notice: Local announcement dismissed, GitHub dismiss error: ${e.message}")
+        }
+
         Result.success(Unit)
     }
 
     fun observeActiveAnnouncement(): Flow<AdminAnnouncement?> = flow {
+        // 1. Emit local cached announcement first
         val localRaw = prefs.getString(KEY_LOCAL_ANNOUNCEMENT, null)
+        var hasEmitted = false
         if (localRaw != null) {
             try {
                 val obj = JSONObject(localRaw)
@@ -816,13 +859,44 @@ class AuthRepository(private val context: Context) {
                             authorEmail = obj.optString("authorEmail", "")
                         )
                     )
-                } else {
-                    emit(null)
+                    hasEmitted = true
                 }
-            } catch (e: Exception) {
-                emit(null)
+            } catch (_: Exception) {}
+        }
+
+        // 2. Fetch remote announcement from GitHub
+        try {
+            val owner = GitHubNetworkModule.getConfiguredOwner()
+            val repo = GitHubNetworkModule.getDataRepo()
+            val branch = GitHubNetworkModule.getConfiguredBranch()
+            val remoteUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/data/announcements.json"
+            val remoteContent = GitHubNetworkModule.fetchDirectRaw(remoteUrl, forceFresh = true)
+            if (!remoteContent.isNullOrBlank()) {
+                val remoteObj = JSONObject(remoteContent)
+                if (remoteObj.optBoolean("active", false)) {
+                    val announcement = AdminAnnouncement(
+                        id = remoteObj.optString("id", "ann_1"),
+                        title = remoteObj.optString("title", ""),
+                        message = remoteObj.optString("message", ""),
+                        priority = remoteObj.optString("priority", "info"),
+                        timestamp = remoteObj.optLong("timestamp", System.currentTimeMillis()),
+                        active = true,
+                        authorEmail = remoteObj.optString("authorEmail", "")
+                    )
+                    prefs.edit().putString(KEY_LOCAL_ANNOUNCEMENT, remoteObj.toString()).apply()
+                    emit(announcement)
+                    return@flow
+                } else {
+                    prefs.edit().remove(KEY_LOCAL_ANNOUNCEMENT).apply()
+                    emit(null)
+                    return@flow
+                }
             }
-        } else {
+        } catch (e: Exception) {
+            Log.d(TAG, "Notice: Fetching remote announcements: ${e.message}")
+        }
+
+        if (!hasEmitted) {
             emit(null)
         }
     }

@@ -200,6 +200,9 @@ fun HomeScreen(
     onApproveReport: (String, String) -> Unit = { _, _ -> },
     onRejectReport: (String, String) -> Unit = { _, _ -> },
     onDismissSideReportNotification: (String) -> Unit = {},
+    onTestGitHubConnection: (String, String, String) -> Unit = { _, _, _ -> },
+    onSaveGitHubCredentials: (String, String, String, String) -> Unit = { _, _, _, _ -> },
+    onForceSyncAllToGitHub: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFavoritesPopup by remember { mutableStateOf(false) }
@@ -643,7 +646,13 @@ fun HomeScreen(
             onDismissAnnouncement = onDismissAnnouncement,
             onTriggerManualSync = onSyncCloud,
             onApproveReport = onApproveReport,
-            onRejectReport = onRejectReport
+            onRejectReport = onRejectReport,
+            onTestGitHubConnection = onTestGitHubConnection,
+            onSaveGitHubCredentials = onSaveGitHubCredentials,
+            onForceSyncAllToGitHub = onForceSyncAllToGitHub,
+            gitHubTestResult = uiState.gitHubTestResult,
+            isTestingGitHub = uiState.isTestingGitHub,
+            syncStatusMessage = uiState.gitHubSyncStatus
         )
 
         // 📝 Submit User Report / Request Dialog

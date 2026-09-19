@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Refresh
@@ -48,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -84,6 +86,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.example.util.AppVersionConfig
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+
 @Composable
 fun AdminDashboardDialog(
     isOpen: Boolean,
@@ -97,7 +108,13 @@ fun AdminDashboardDialog(
     onDismissAnnouncement: () -> Unit,
     onTriggerManualSync: () -> Unit,
     onApproveReport: (reportId: String, note: String) -> Unit = { _, _ -> },
-    onRejectReport: (reportId: String, note: String) -> Unit = { _, _ -> }
+    onRejectReport: (reportId: String, note: String) -> Unit = { _, _ -> },
+    onTestGitHubConnection: (token: String, owner: String, repo: String) -> Unit = { _, _, _ -> },
+    onSaveGitHubCredentials: (token: String, owner: String, repo: String, branch: String) -> Unit = { _, _, _, _ -> },
+    onForceSyncAllToGitHub: () -> Unit = {},
+    gitHubTestResult: com.example.data.network.GitHubConnectionTestResult? = null,
+    isTestingGitHub: Boolean = false,
+    syncStatusMessage: String? = null
 ) {
     if (!isOpen || currentUser == null || !currentUser.isAdmin) return
 
@@ -107,6 +124,13 @@ fun AdminDashboardDialog(
     var announcementMessage by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf("info") }
     var isPosting by remember { mutableStateOf(false) }
+
+    // GitHub Settings State
+    var ghToken by remember { mutableStateOf(com.example.data.network.GitHubNetworkModule.getCustomToken().ifEmpty { com.example.data.network.GitHubNetworkModule.getActiveToken() }) }
+    var ghOwner by remember { mutableStateOf(com.example.data.network.GitHubNetworkModule.getConfiguredOwner()) }
+    var ghRepo by remember { mutableStateOf(com.example.data.network.GitHubNetworkModule.getConfiguredRepo()) }
+    var ghBranch by remember { mutableStateOf(com.example.data.network.GitHubNetworkModule.getConfiguredBranch()) }
+    var isTokenVisible by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -195,7 +219,7 @@ fun AdminDashboardDialog(
                                 color = TextPrimary
                             )
                             Text(
-                                text = "الإصدار 2.0.0 | محمي بالحساب المعتمد",
+                                text = "الإصدار ${AppVersionConfig.VERSION_NAME} | محمي بالحساب المعتمد",
                                 fontSize = 10.sp,
                                 color = NexusGold
                             )
@@ -243,12 +267,13 @@ fun AdminDashboardDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Admin Tabs: 0: Overview, 1: Incoming Reports, 2: Broadcast Alerts, 3: Security & Rules
+                // Admin Tabs: 0: Overview, 1: Incoming Reports, 2: Broadcast Alerts, 3: GitHub Sync, 4: Security & Rules
                 val pendingCount = incomingReports.count { it.isPending() }
                 val tabs = listOf(
                     "الإحصائيات",
                     if (pendingCount > 0) "البلاغات ($pendingCount)" else "البلاغات",
                     "بث تنبيه",
+                    "ربط GitHub",
                     "الأمان"
                 )
                 Row(
@@ -653,8 +678,315 @@ fun AdminDashboardDialog(
                         }
                     }
 
-                    // TAB 3: Security & Cloud Rules
+                    // TAB 3: GitHub Cloud Sync & Token Settings
                     3 -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Key,
+                                    contentDescription = null,
+                                    tint = NexusGold,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "ربط مستودع GitHub والمزامنة السحابية",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
+
+                            Text(
+                                text = "المسار الهدف: https://github.com/zxiu86/Data/tree/main\nيتم حفظ بيانات المستخدمين تلقائياً في user/user.json والبلاغات في data/reports.json.",
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                lineHeight = 16.sp
+                            )
+
+                            // Current Configuration Summary Card
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = SurfaceElevated,
+                                border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.3f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "المستودع المستهدف: $ghOwner / $ghRepo ($ghBranch)",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = NexusGold
+                                    )
+                                    val tokenStatus = if (ghToken.isNotBlank()) "🟢 الرمز موجود في التطبيق" else "🔴 الرمز غير مضبوط (يتطلب رمزاً بحسابك)"
+                                    Text(
+                                        text = "حالة الرمز: $tokenStatus",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+
+                            // GitHub Personal Access Token Field
+                            OutlinedTextField(
+                                value = ghToken,
+                                onValueChange = { ghToken = it.trim() },
+                                label = { Text("رمز الوصول (GitHub Personal Access Token)") },
+                                singleLine = true,
+                                visualTransformation = if (isTokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                trailingIcon = {
+                                    IconButton(onClick = { isTokenVisible = !isTokenVisible }) {
+                                        Icon(
+                                            imageVector = if (isTokenVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                            contentDescription = null,
+                                            tint = TextSecondary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = NexusGold,
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedLabelColor = NexusGold,
+                                    unfocusedLabelColor = TextSecondary,
+                                    cursorColor = NexusGold
+                                )
+                            )
+
+                            // Paste from clipboard button
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        val clip = clipboardManager.getText()?.text.orEmpty().trim()
+                                        if (clip.isNotBlank()) {
+                                            ghToken = clip
+                                            Toast.makeText(context, "تم لصق الرمز من الحافظة", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = null,
+                                        tint = NexusGold,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("لصق الرمز من الحافظة", fontSize = 11.sp, color = NexusGold)
+                                }
+                            }
+
+                            // Owner and Repo inputs
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = ghOwner,
+                                    onValueChange = { ghOwner = it.trim() },
+                                    label = { Text("المالك (Owner)") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                OutlinedTextField(
+                                    value = ghRepo,
+                                    onValueChange = { ghRepo = it.trim() },
+                                    label = { Text("المستودع (Repo)") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            }
+
+                            // Branch input
+                            OutlinedTextField(
+                                value = ghBranch,
+                                onValueChange = { ghBranch = it.trim() },
+                                label = { Text("الفرع (Branch)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            // Action Buttons: Test Connection & Save
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        onTestGitHubConnection(ghToken, ghOwner, ghRepo)
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceElevated),
+                                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)),
+                                    enabled = !isTestingGitHub && ghToken.isNotBlank()
+                                ) {
+                                    if (isTestingGitHub) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            color = NexusGold,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = NexusGold,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("فحص الاتصال", fontSize = 11.5.sp, color = TextPrimary, fontWeight = FontWeight.Bold)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        onSaveGitHubCredentials(ghToken, ghOwner, ghRepo, ghBranch)
+                                        Toast.makeText(context, "تم حفظ وتطبيق إعدادات GitHub بنجاح", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NexusGold)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Done,
+                                        contentDescription = null,
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("حفظ الإعدادات", fontSize = 11.5.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            // Connection Test Result Display
+                            if (gitHubTestResult != null) {
+                                val isSuccess = gitHubTestResult.success
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSuccess) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f),
+                                    border = BorderStroke(1.dp, if (isSuccess) Color(0xFF10B981) else Color(0xFFEF4444)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = if (isSuccess) Color(0xFF10B981) else Color(0xFFEF4444),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = gitHubTestResult.message,
+                                            fontSize = 11.5.sp,
+                                            color = TextPrimary,
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Force Sync All Button
+                            Button(
+                                onClick = onForceSyncAllToGitHub,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(46.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = NexusOrange
+                                ),
+                                enabled = !isCloudSyncing
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (isCloudSyncing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            color = Color.White,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.CloudUpload,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isCloudSyncing) "جارِ إرسال وتحديث البيانات إلى GitHub..." else "مزامنة سحابية شاملة الآن (user/user.json)",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+
+                            // Sync Status Message Card
+                            if (!syncStatusMessage.isNullOrBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = SurfaceElevated,
+                                    border = BorderStroke(1.dp, NexusGold.copy(alpha = 0.5f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = syncStatusMessage,
+                                        fontSize = 11.sp,
+                                        color = NexusGold,
+                                        modifier = Modifier.padding(10.dp),
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+
+                            // Step-by-step Guide Card
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = SurfaceElevated.copy(alpha = 0.5f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "خطوات الحصول على الرمز (Token) بصلاحية الكتابة:",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NexusGold
+                                    )
+                                    Text(
+                                        text = "1. افتح GitHub ثم Settings > Developer Settings.\n2. اختر Personal access tokens > Tokens (classic).\n3. اضغط Generate new token وضع علامة على صلاحية (repo).\n4. انسخ الرمز والصقه هنا واضغط 'حفظ الإعدادات'.",
+                                        fontSize = 10.5.sp,
+                                        color = TextSecondary,
+                                        lineHeight = 15.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // TAB 4: Security & Cloud Rules
+                    4 -> {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(10.dp)

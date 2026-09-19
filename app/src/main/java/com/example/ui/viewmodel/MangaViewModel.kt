@@ -78,7 +78,10 @@ data class HomeUiState(
     val incomingReports: List<UserReport> = emptyList(),
     val activeSideNotificationReport: UserReport? = null,
     val reportTargetTitle: String = "",
-    val reportChapterNumber: String = ""
+    val reportChapterNumber: String = "",
+    val isTestingGitHub: Boolean = false,
+    val gitHubTestResult: com.example.data.network.GitHubConnectionTestResult? = null,
+    val gitHubSyncStatus: String? = null
 ) {
     val totalPages: Int
         get() = if (latestMangaGrid.isEmpty()) 1 else (latestMangaGrid.size + itemsPerPage - 1) / itemsPerPage
@@ -222,6 +225,11 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     private val _reportChapterNumber = MutableStateFlow("")
     private val _activeSideNotificationReport = MutableStateFlow<UserReport?>(null)
 
+    // GitHub Management State Flows
+    private val _isTestingGitHub = MutableStateFlow(false)
+    private val _gitHubTestResult = MutableStateFlow<com.example.data.network.GitHubConnectionTestResult?>(null)
+    private val _gitHubSyncStatus = MutableStateFlow<String?>(null)
+
     private data class DialogState(
         val isRefreshing: Boolean,
         val showUpdate: Boolean,
@@ -316,7 +324,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         val showUserReportsDialog: Boolean = false,
         val activeSideNotificationReport: UserReport? = null,
         val reportTargetTitle: String = "",
-        val reportChapterNumber: String = ""
+        val reportChapterNumber: String = "",
+        val isTestingGitHub: Boolean = false,
+        val gitHubTestResult: com.example.data.network.GitHubConnectionTestResult? = null,
+        val gitHubSyncStatus: String? = null
     )
 
     private val _authCoreFlow = combine(
@@ -356,12 +367,21 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
         title to chapter
     }
 
+    private val _gitHubFlow = combine(
+        _isTestingGitHub,
+        _gitHubTestResult,
+        _gitHubSyncStatus
+    ) { testing, testResult, syncStatus ->
+        Triple(testing, testResult, syncStatus)
+    }
+
     private val _authCombinedFlow = combine(
         _authCoreFlow,
         _authDialogFlow,
         _reportsFlow,
-        _reportsMetaFlow
-    ) { core, dlg, rep, meta ->
+        _reportsMetaFlow,
+        _gitHubFlow
+    ) { core, dlg, rep, meta, gh ->
         AuthCombinedState(
             currentUser = core.first.first,
             isFirebaseConfigured = core.first.second,
@@ -379,7 +399,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             showUserReportsDialog = rep.second.first,
             activeSideNotificationReport = rep.second.second,
             reportTargetTitle = meta.first,
-            reportChapterNumber = meta.second
+            reportChapterNumber = meta.second,
+            isTestingGitHub = gh.first,
+            gitHubTestResult = gh.second,
+            gitHubSyncStatus = gh.third
         )
     }
 
@@ -455,7 +478,10 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
             incomingReports = authState.incomingReports,
             activeSideNotificationReport = authState.activeSideNotificationReport,
             reportTargetTitle = authState.reportTargetTitle,
-            reportChapterNumber = authState.reportChapterNumber
+            reportChapterNumber = authState.reportChapterNumber,
+            isTestingGitHub = authState.isTestingGitHub,
+            gitHubTestResult = authState.gitHubTestResult,
+            gitHubSyncStatus = authState.gitHubSyncStatus
         )
     }.stateIn(
         viewModelScope,
@@ -1209,5 +1235,66 @@ class MangaViewModel(application: Application) : AndroidViewModel(application) {
     fun dismissSideReportNotification(reportId: String) {
         _activeSideNotificationReport.value = null
         reportsRepository.dismissSideNotification(reportId)
+    }
+
+    // ==========================================
+    // GitHub Cloud Sync & Token Actions
+    // ==========================================
+
+    fun testGitHubConnection(token: String, owner: String, repo: String) {
+        viewModelScope.launch {
+            _isTestingGitHub.value = true
+            _gitHubTestResult.value = null
+            try {
+                val res = com.example.data.network.GitHubNetworkModule.testGitHubConnection(token = token, owner = owner, repo = repo)
+                _gitHubTestResult.value = res
+            } catch (e: Exception) {
+                _gitHubTestResult.value = com.example.data.network.GitHubConnectionTestResult(
+                    success = false,
+                    message = "خطأ غير متوقع أثناء فحص الاتصال: ${e.message}"
+                )
+            } finally {
+                _isTestingGitHub.value = false
+            }
+        }
+    }
+
+    fun saveGitHubCredentials(token: String, owner: String, repo: String, branch: String) {
+        com.example.data.network.GitHubNetworkModule.saveCustomCredentials(token, owner, repo, branch)
+    }
+
+    fun forceSyncAllWithGitHub() {
+        viewModelScope.launch {
+            _gitHubSyncStatus.value = "جارِ المزامنة الشاملة مع مستودع GitHub..."
+            try {
+                // 1. Sync users database (user/user.json & users/users.json)
+                val userRes = authRepository.forceSyncUsersWithGitHub()
+                // 2. Sync reports database (data/reports.json)
+                val repRes = reportsRepository.forceSyncReportsWithGitHub()
+                // 3. Sync manga catalog
+                syncFromCloudAndMerge()
+
+                val summary = buildString {
+                    append("اكتملت محاولة المزامنة:\n")
+                    if (userRes.isSuccess) {
+                        append("• قاعدة المستخدمين: ${userRes.getOrNull()}\n")
+                    } else {
+                        append("• قاعدة المستخدمين: ${userRes.exceptionOrNull()?.message}\n")
+                    }
+                    if (repRes.isSuccess) {
+                        append("• البلاغات: ${repRes.getOrNull()}")
+                    } else {
+                        append("• البلاغات: ${repRes.exceptionOrNull()?.message}")
+                    }
+                }
+                _gitHubSyncStatus.value = summary
+            } catch (e: Exception) {
+                _gitHubSyncStatus.value = "فشل المزامنة: ${e.message}"
+            }
+        }
+    }
+
+    fun clearGitHubTestResult() {
+        _gitHubTestResult.value = null
     }
 }

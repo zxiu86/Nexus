@@ -104,5 +104,17 @@ interface GitHubApiService {
         @Path(value = "path", encoded = true) path: String,
         @retrofit2.http.Body body: okhttp3.RequestBody
     ): Response<ResponseBody>
+
+    /**
+     * Deletes file in repository via GitHub Contents API
+     */
+    @retrofit2.http.HTTP(method = "DELETE", path = "repos/{owner}/{repo}/contents/{path}", hasBody = true)
+    @Headers("Accept: application/vnd.github.v3+json, application/json")
+    suspend fun deleteFileContent(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @retrofit2.http.Body body: okhttp3.RequestBody
+    ): Response<ResponseBody>
 }
 

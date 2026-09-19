@@ -141,14 +141,15 @@ class ReportsRepository(
             chapterNumber = chapterNumber.trim(),
             details = details.trim(),
             createdAt = now,
-            scheduledSendTime = now + CACHE_DELAY_MILLIS,
-            isDispatched = false,
+            scheduledSendTime = now,
+            isDispatched = true,
             status = ReportStatus.PENDING.name
         )
 
         val updated = listOf(report) + _userReportsFlow.value.filter { it.id != report.id }
         saveReportsToLocalCache(updated)
-        Log.d(TAG, "Report saved to local 30-min cache: ${report.id}, will dispatch at ${report.scheduledSendTime}")
+        Log.d(TAG, "Report saved locally and dispatching immediately to remote: ${report.id}")
+        dispatchReportToRemote(report)
         report
     }
 
@@ -231,36 +232,38 @@ class ReportsRepository(
     }
 
     private suspend fun writeReportsToGitHub(reports: List<UserReport>): Boolean = withContext(Dispatchers.IO) {
+        val jsonStr = jsonAdapter.toJson(reports)
+        val res = GitHubNetworkModule.pushOrUpdateFileToGitHub(
+            path = REPORTS_GITHUB_PATH,
+            contentString = jsonStr,
+            commitMessage = "[Nexus 2.0.1] Sync reports database (${reports.size} items)"
+        )
+        if (res.isSuccess) {
+            Log.d(TAG, "Successfully committed reports to GitHub: $REPORTS_GITHUB_PATH")
+            true
+        } else {
+            Log.w(TAG, "Notice: Reports commit to GitHub: ${res.exceptionOrNull()?.message}")
+            false
+        }
+    }
+
+    suspend fun forceSyncReportsWithGitHub(): Result<String> = withContext(Dispatchers.IO) {
+        val token = GitHubNetworkModule.getActiveToken()
+        if (token.isEmpty()) {
+            return@withContext Result.failure(IllegalStateException("رمز الوصول (GitHub Token) غير مضبوط. يرجى ضبط الرمز من لوحة المشرف لإتمام المزامنة السحابية."))
+        }
+
         try {
-            val owner = GitHubNetworkModule.getConfiguredOwner()
-            val repo = GitHubNetworkModule.getDataRepo()
-            val branch = GitHubNetworkModule.getConfiguredBranch()
-
-            val jsonStr = jsonAdapter.toJson(reports)
-            val base64Content = Base64.encodeToString(jsonStr.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
-
-            // Try to get sha of existing data/reports.json
-            var sha: String? = null
-            try {
-                val metaResp = GitHubNetworkModule.apiService.getFileMetadata(owner, repo, REPORTS_GITHUB_PATH, branch)
-                if (metaResp.isSuccessful && metaResp.body() != null) {
-                    val metaObj = JSONObject(metaResp.body()!!.string())
-                    sha = metaObj.optString("sha").takeIf { it.isNotBlank() }
-                }
-            } catch (_: Exception) {}
-
-            val commitObj = JSONObject().apply {
-                put("message", "[Nexus] Sync reports.json (${reports.size} reports)")
-                put("content", base64Content)
-                if (sha != null) put("sha", sha)
-                put("branch", branch)
+            refreshReportsFromGitHubAndFirestore()
+            val list = _allIncomingReportsFlow.value
+            val success = writeReportsToGitHub(list)
+            if (success) {
+                Result.success("تمت مزامنة البلاغات بنجاح مع GitHub (${list.size} بلاغ).")
+            } else {
+                Result.failure(Exception("فشل إرسال ملف data/reports.json إلى GitHub. تحقق من صلاحية الرمز."))
             }
-            val requestBody = commitObj.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-            val updateResp = GitHubNetworkModule.apiService.updateFileContent(owner, repo, REPORTS_GITHUB_PATH, requestBody)
-            return@withContext updateResp.isSuccessful
         } catch (e: Exception) {
-            Log.w(TAG, "writeReportsToGitHub error: ${e.message}")
-            return@withContext false
+            Result.failure(e)
         }
     }
 

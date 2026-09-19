@@ -229,6 +229,15 @@ fun NexusNavGraph(
                     },
                     onDismissSideReportNotification = { reportId ->
                         viewModel.dismissSideReportNotification(reportId)
+                    },
+                    onTestGitHubConnection = { token, owner, repo ->
+                        viewModel.testGitHubConnection(token, owner, repo)
+                    },
+                    onSaveGitHubCredentials = { token, owner, repo, branch ->
+                        viewModel.saveGitHubCredentials(token, owner, repo, branch)
+                    },
+                    onForceSyncAllToGitHub = {
+                        viewModel.forceSyncAllWithGitHub()
                     }
                 )
             }
