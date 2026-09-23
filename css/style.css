@@ -85,6 +85,39 @@ img {
   gap: 10px;
 }
 
+.logo-fox-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(212, 173, 0, 0.4);
+  box-shadow: 0 0 16px rgba(212, 173, 0, 0.3);
+}
+
+.hero-brand {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.modal-logo-wrap {
+  margin: 0 auto 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-fox-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 2px solid rgba(212, 173, 0, 0.5);
+  box-shadow: 0 0 28px rgba(212, 173, 0, 0.4);
+}
+
 .logo-badge {
   width: 36px;
   height: 36px;

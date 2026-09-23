@@ -169,8 +169,8 @@
       <div class="modal" id="downloadModal" aria-hidden="true">
         <div class="modal-card">
           <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
-          <div class="modal-logo">
-            <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18l6-4 6 4V3l-6 4-6-4z"/></svg>
+          <div class="modal-logo-wrap">
+            <img src="assets/icon-192.png" alt="Nexus Fox Logo" class="modal-fox-icon" width="68" height="68" />
           </div>
           <div class="modal-badge-status">
             <span class="pulse-dot"></span> جاري بدء التنزيل المباشر...
