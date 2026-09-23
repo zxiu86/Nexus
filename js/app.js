@@ -14,8 +14,8 @@
   /* إعدادات التقسيم (Pagination) والتنزيل المباشر */
   const ITEMS_PER_PAGE = 15;
   const CHAPTERS_WINDOW = 9;
-  const DIRECT_APK_URL = 'https://github.com/zxiu86/Nexus/releases/latest/download/nexus.apk';
-  const RELEASES_PAGE = 'https://github.com/zxiu86/Nexus/releases/latest';
+  const DIRECT_APK_URL = 'https://github.com/zxiu86/Nexusap/releases/latest/download/nexus.apk';
+  const RELEASES_PAGE = 'https://github.com/zxiu86/Nexusap/releases/latest';
 
   let allWorks = [];
   let filteredWorks = [];
