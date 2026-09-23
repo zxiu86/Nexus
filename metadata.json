@@ -1,0 +1,6 @@
+{
+  "name": "Nexus",
+  "description": "اقرأ المانجا والمانهوا بجودة فائقة - Manga & Manhwa Reader",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

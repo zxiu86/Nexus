@@ -3,36 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexus — اقرأ المانجا والمانهوا بجودة فائقة | حمّل التطبيق</title>
-  <meta name="description" content="Nexus — أفضل تطبيق لقراءة المانجا والمانهوا والمانهوا الكورية مترجمة بالعربية. آلاف الأعمال، تحديثات فورية، بدون إعلانات. حمّله مجاناً الآن." />
-  <meta name="keywords" content="مانجا, مانجا اون لاين, مانهوا, مانهوا كورية, قراءة مانجا, Nexus, تطبيق مانجا, solo leveling, manga arabic" />
-  <meta property="og:title" content="Nexus — عالم المانجا والمانهوا بين يديك" />
-  <meta property="og:description" content="حمّل تطبيق Nexus واقرأ آلاف الأعمال المترجمة بجودة فائقة." />
+  
+  <!-- العنوان الرسمي والظهور في محركات البحث -->
+  <title>Nexus — تطبيق قراءة المانجا والمانهوا المترجمة | الموقع الرسمي</title>
+  <meta name="description" content="الموقع الرسمي لتطبيق Nexus. اقرأ وحمّل آلاف فصول المانجا والمانهوا الكورية المترجمة بجودة فائقة وبدون إعلانات. حمّل التطبيق مجاناً برابط تحميل مباشر بصيغة APK." />
+  <meta name="keywords" content="Nexus, تطبيق Nexus, مانجا, مانهوا, قراءة مانجا, مانهوا كورية, مانجا مترجمة, تحميل تطبيق nexus, nexus apk" />
+  <meta name="author" content="Nexus Team" />
+  <meta name="application-name" content="Nexus" />
+  <meta name="apple-mobile-web-app-title" content="Nexus" />
+  <meta name="theme-color" content="#090a0f" />
+  <meta name="msapplication-TileColor" content="#090a0f" />
+  <meta name="msapplication-TileImage" content="assets/icon-192.png" />
+  
+  <!-- تعليمات روبوتات جوجل لمحركات البحث -->
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow" />
+  
+  <!-- الأيقونات الرسمية لظهور أيقونة التطبيق في نتائج بحث جوجل وجميع المتصفحات -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  
+  <!-- البطاقات الاجتماعية Open Graph و Twitter -->
+  <meta property="og:site_name" content="Nexus" />
+  <meta property="og:title" content="Nexus — تطبيق قراءة المانجا والمانهوا المترجمة" />
+  <meta property="og:description" content="الموقع الرسمي لتطبيق Nexus. اقرأ آلاف فصول المانجا والمانهوا المترجمة بجودة فائقة وبدون إعلانات مزعجة. حمّل التطبيق مجاناً الآن." />
   <meta property="og:type" content="website" />
-  <meta name="robots" content="index, follow" />
-  <link rel="icon" href="assets/icon.jpg" type="image/jpeg" />
+  <meta property="og:locale" content="ar_AR" />
+  <meta property="og:image" content="assets/icon-512.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:image:alt" content="شعار تطبيق Nexus الرسمي" />
+  
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Nexus — تطبيق قراءة المانجا والمانهوا" />
+  <meta name="twitter:description" content="الموقع الرسمي لتطبيق Nexus. قراءة المانجا والمانهوا بجودة فائقة وبدون إعلانات." />
+  <meta name="twitter:image" content="assets/icon-512.png" />
+
   <link rel="stylesheet" href="css/style.css" />
-  <!-- JSON-LD: Organization + WebSite -->
+
+  <!-- البيانات المنظمة لنتائج بحث جوجل (JSON-LD) لتثبيت هوية التطبيق الرسمية وأيقونته -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Nexus",
-    "alternateName": "نكسس",
-    "url": "https://nexus-app.example/",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://nexus-app.example/?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://zxiu86.github.io/nexusweb/#organization",
+        "name": "Nexus",
+        "alternateName": ["نكسس", "تطبيق نكسس", "Nexus Manga"],
+        "url": "https://zxiu86.github.io/nexusweb/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://zxiu86.github.io/nexusweb/assets/icon-512.png",
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://zxiu86.github.io/nexusweb/#website",
+        "url": "https://zxiu86.github.io/nexusweb/",
+        "name": "Nexus",
+        "description": "الموقع الرسمي لتطبيق Nexus لقراءة وتحميل المانجا والمانهوا المترجمة",
+        "publisher": { "@id": "https://zxiu86.github.io/nexusweb/#organization" },
+        "inLanguage": "ar"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://zxiu86.github.io/nexusweb/#application",
+        "name": "Nexus",
+        "alternateName": "Nexus Manga & Manhwa",
+        "operatingSystem": "Android",
+        "applicationCategory": "EntertainmentApplication",
+        "image": "https://zxiu86.github.io/nexusweb/assets/icon-512.png",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "ratingCount": "15400"
+        },
+        "downloadUrl": "https://github.com/zxiu86/Nexus/releases/latest/download/nexus.apk"
+      }
+    ]
   }
   </script>
 </head>
 <body>
 
-  <!-- خلفية الأورورا المتحركة -->
+  <!-- خلفية هادئة مريحة للعين بدون تشتيت بصري -->
   <div class="aurora" aria-hidden="true"></div>
-  <div class="grid-overlay" aria-hidden="true"></div>
 
   <!-- شريط التنقل -->
   <nav class="nav" id="nav">
@@ -45,40 +111,43 @@
     <div class="nav-links">
       <a href="#library">المكتبة</a>
       <a href="#features">المميزات</a>
-      <a href="#faq">الأسئلة</a>
+      <a href="#faq">الأسئلة الشائعة</a>
     </div>
-    <button class="btn btn-sm" data-download>حمّل التطبيق</button>
+    <button class="btn btn-sm btn-primary" data-download>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
+      حمّل التطبيق
+    </button>
   </nav>
 
-  <!-- الهيرو -->
+  <!-- الهيرو الرئيسي -->
   <header class="hero">
     <div class="hero-inner">
-      <div class="eyebrow"><span class="pulse-dot"></span> منصة القراءة الأولى عربياً</div>
+      <div class="eyebrow"><span class="pulse-dot"></span> تطبيق القراءة الرسمي الأول عربياً</div>
       <h1 class="hero-title">
-        اقرأ <span class="grad-text">المانجا والمانهوا</span><br />بجودة تخطف الأنفاس
+        عالم <span class="grad-text">المانجا والمانهوا</span><br />بجودة فائقة وتجربة استثنائية
       </h1>
       <p class="hero-sub">
-        Nexus يجمع لك آلاف الأعمال من أشهر المصادر العالمية، بترجمة احترافية وتجربة قراءة سلسة — بدون إعلانات، بدون مقاطعة، قراءة لا تنتهي.
+        تطبيق Nexus يضع بين يديك آلاف الأعمال المترجمة باحترافية، بتحديثات فورية وقراءة نقية تماماً دون إعلانات مزعجة. حمّل التطبيق الآن واستمتع بالقراءة مباشرة.
       </p>
       <div class="hero-cta">
         <button class="btn btn-primary btn-lg" data-download>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
-          تنزيل التطبيق مجاناً
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
+          تنزيل التطبيق المباشر (APK)
         </button>
         <a class="btn btn-ghost btn-lg" href="#library">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.5 3a8.5 8.5 0 1 0 5.6 15l3 3a.9.9 0 1 0 1.3-1.3l-3-3A8.5 8.5 0 0 0 11.5 3Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
-          استكشف المكتبة
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.5 3a8.5 8.5 0 1 0 5.6 15l3 3a.9.9 0 1 0 1.3-1.3l-3-3A8.5 8.5 0 0 0 11.5 3Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
+          استعراض الأعمال
         </a>
       </div>
       <div class="hero-stats">
         <div class="stat"><b data-count="12000">0</b><span>عمل مترجم</span></div>
         <div class="stat"><b data-count="800000">0</b><span>قارئ نشط</span></div>
-        <div class="stat"><b>4.9★</b><span>تقييم المستخدمين</span></div>
-        <div class="stat"><b>24/7</b><span>تحديثات فورية</span></div>
+        <div class="stat"><b>4.9★</b><span>تقييم التطبيق</span></div>
+        <div class="stat"><b>24/7</b><span>تحديثات مستمرة</span></div>
       </div>
     </div>
 
-    <!-- هاتف معاينة ثلاثي الأبعاد -->
+    <!-- هاتف المعاينة -->
     <div class="hero-device" aria-hidden="true">
       <div class="phone">
         <div class="phone-notch"></div>
@@ -94,111 +163,149 @@
     </div>
   </header>
 
-  <!-- شريط متحرك -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      <span>مانجا ⚡ مانهوا ⚡ مانhua ⚡ أكتيون ⚡ فانتازيا ⚡ رومانسي ⚡ دراما ⚡ خيال علمي ⚡</span>
-      <span>مانجا ⚡ مانهوا ⚡ مانhua ⚡ أكتيون ⚡ فانتازيا ⚡ رومانسي ⚡ دراما ⚡ خيال علمي ⚡</span>
+  <!-- شريط تصنيفات هادئ -->
+  <div class="tags-strip" aria-hidden="true">
+    <div class="tags-strip-inner">
+      <span>مانجا</span><span>•</span>
+      <span>مانهوا كورية</span><span>•</span>
+      <span>أكشن</span><span>•</span>
+      <span>فانتازيا</span><span>•</span>
+      <span>فنون قتالية</span><span>•</span>
+      <span>رومانسي</span><span>•</span>
+      <span>خيال علمي</span><span>•</span>
+      <span>مغامرات</span><span>•</span>
+      <span>غموض</span>
     </div>
   </div>
 
-  <!-- المكتبة: تُملأ من works.json عبر JS -->
+  <!-- قسم المكتبة: 15 عملاً في الصفحة مع نظام تنقل (Pagination) -->
   <section class="section" id="library">
     <div class="section-head">
-      <h2>الأعمال الرائجة الآن</h2>
-      <span class="section-note">مباشرة من works.json ←</span>
+      <div>
+        <h2>مكتبة الأعمال</h2>
+        <p class="section-desc">تصفح أحدث وأبرز المانجا والمانهوا المتاحة داخل تطبيق Nexus</p>
+      </div>
+      <span class="section-note" id="libraryStats">جاري تحميل الأعمال...</span>
     </div>
-    <div class="cards-grid" id="worksGrid">
-      <!-- تُبنى البطاقات ديناميكياً -->
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-    </div>
+
+    <!-- شريط البحث السريع -->
     <div class="search-wrap">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.5 3a8.5 8.5 0 1 0 5.6 15l3 3a.9.9 0 1 0 1.3-1.3l-3-3A8.5 8.5 0 0 0 11.5 3Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
-      <input type="search" id="searchInput" placeholder="ابحث عن مانجا أو مانهوا..." autocomplete="off" />
+      <input type="search" id="searchInput" placeholder="ابحث عن مانجا أو مانهوا باسم العمل..." autocomplete="off" />
+      <button type="button" id="searchClearBtn" class="search-clear" aria-label="مسح البحث" style="display:none;">✕</button>
     </div>
-    <div class="cards-grid cards-grid-all" id="worksGridAll"></div>
+
+    <!-- شبكة الـ 15 عملاً -->
+    <div class="cards-grid" id="worksGrid">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+
+    <!-- شريط التنقل بين الصفحات (Pagination) -->
+    <div class="pagination-wrap" id="paginationWrap" style="display:none;">
+      <div class="pagination" id="pagination"></div>
+    </div>
   </section>
 
-  <!-- المميزات -->
+  <!-- قسم مميزات التطبيق -->
   <section class="section" id="features">
-    <div class="section-head"><h2>لماذا Nexus؟</h2><span class="section-note">تجربة قراءة من الطراز الرفيع</span></div>
+    <div class="section-head">
+      <div>
+        <h2>لماذا تختار تطبيق Nexus؟</h2>
+        <p class="section-desc">صُمم التطبيق بعناية ليمنحك تجربة قراءة لا مثيل لها على هاتفك</p>
+      </div>
+    </div>
     <div class="features-grid">
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.8 2.2c1 .1 2.2.8 2.8 2l6.6 13.2c.6 1.2.6 2.7 0 3.9-.6 1.2-1.8 1.9-2.8 1.9H5.3c-1 0-2.2-.7-2.8-1.9-.6-1.2-.6-2.7 0-3.9L9.1 4.2c.6-1.2 1.8-1.9 2.7-2Z"/></svg>
         </div>
-        <h3>جودة فائقة HD</h3>
-        <p>صور بدقة تصل إلى 4K مع ضغط ذكي يحافظ على أدق التفاصيل الفنية.</p>
+        <h3>جودة فائقة HD و 4K</h3>
+        <p>صفحات بدقة عالية وتفاصيل دقيقة مع تقنية ضغط ذكية تضمن سلاسة التحميل وتوفير البيانات.</p>
       </article>
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 16.1c.5 0 .9.4.9.9s-.4.9-.9.9h-4a.9.9 0 1 1 0-1.8h4ZM7 2.9h10a4 4 0 0 1 4 4v10.2a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V6.9a4 4 0 0 1 4-4Z"/></svg>
         </div>
         <h3>وضع القراءة الليلي</h3>
-        <p>فلاتر دافئة وتحكم كامل بالسطوع لراحة عينيك في القراءة المطوّلة.</p>
+        <p>فلتر دافئ مريح للعينين وتخصيص كامل لدرجة السطوع ونمط التمرير العمودي أو تقليب الصفحات.</p>
       </article>
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.2 16.9c.5-.3 1.1-.3 1.7 0l5.1 2.6c.1 0 .1-.1.1-.1V5.3c0-.8-.7-1.5-1.5-1.5H7.4c-.8 0-1.5.7-1.5 1.5v14.1c0 .1.1.2.1.1l5.2-2.6Z"/></svg>
         </div>
-        <h3>مكتبة شخصية</h3>
-        <p>احفظ تقدمك، علاماتك، ومفضلاتك ومزامنتها عبر جميع أجهزتك.</p>
+        <h3>مكتبة وحفظ التقدم التلقائي</h3>
+        <p>حفظ تلقائي لآخر فصل قرأته وإمكانية إضافة أعمالك للمفضلة للوصول السريع إليها بلمسة واحدة.</p>
       </article>
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.9 6.8c.5 0 .9.4.9.9v4l1.9 1.9a.9.9 0 1 1-1.3 1.3l-2.4-2.4a.9.9 0 0 1-.3-.7V7.7c0-.5.4-.9.9-.9Z"/><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z"/></svg>
         </div>
-        <h3>تحديثات فورية</h3>
-        <p>إشعارات لحظية عند صدور فصل جديد من أعمالك المفضلة.</p>
+        <h3>تحديثات فورية مستمرة</h3>
+        <p>إشعارات فورية وتحديثات مستمرة عند صدور أي فصل جديد مترجم لأعمالك المفضلة.</p>
       </article>
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M17 3.8H7a2.2 2.2 0 0 0-2.2 2.2v9.8c0 .8.4 1.6 1.2 2l4.5 2.5c.7.4 1.5.4 2.3 0l4.5-2.5c.7-.4 1.2-1.2 1.2-2V6c0-1.2-1-2.2-2.2-2.2Z"/></svg>
         </div>
-        <h3>قراءة آمنة 100%</h3>
-        <p>بدون إعلانات مزعجة أو نوافذ منبثقة — قراءة نقية تماماً.</p>
+        <h3>بدون إعلانات مزعجة</h3>
+        <p>تجربة قراءة نظيفة تماماً بدون أي نوافذ منبثقة أو مقاطعة للمتعة.</p>
       </article>
       <article class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.8 3.1h8.4a4 4 0 0 1 4 4v9.8a4 4 0 0 1-4 4H7.8a4 4 0 0 1-4-4V7.1a4 4 0 0 1 4-4Zm.2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H8Z"/></svg>
         </div>
-        <h3>تحميل للقراءة دون اتصال</h3>
-        <p>حمّل الفصول واقرأها لاحقاً بدون إنترنت — مثالي للسفر.</p>
+        <h3>قراءة أوفلاين دون إنترنت</h3>
+        <p>إمكانية تنزيل الفصول مسبقاً وقراءتها أينما كنت بدون الحاجة لأي اتصال بالإنترنت.</p>
       </article>
     </div>
   </section>
 
-  <!-- دعوة أخيرة -->
+  <!-- دعوة التنزيل المباشر -->
   <section class="cta-final">
     <div class="cta-box">
-      <h2>جاهز تبدأ رحلتك؟</h2>
-      <p>انضم لأكثر من 800 ألف قارئ يعيشون عالم Nexus كل يوم.</p>
-      <button class="btn btn-primary btn-lg" data-download>حمّل Nexus مجاناً الآن</button>
+      <h2>ابدأ قراءة أعمالك المفضلة الآن</h2>
+      <p>انضم إلى مئات آلاف القراء واستمتع بأفضل تجربة مانجا في العالم العربي.</p>
+      <button class="btn btn-primary btn-lg" data-download>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
+        تنزيل التطبيق مجاناً (APK مباشر)
+      </button>
     </div>
   </section>
 
-  <!-- أسئلة شائعة -->
+  <!-- الأسئلة الشائعة -->
   <section class="section" id="faq">
-    <div class="section-head"><h2>أسئلة شائعة</h2></div>
+    <div class="section-head">
+      <div>
+        <h2>الأسئلة الشائعة</h2>
+        <p class="section-desc">إجابات على أكثر الاستفسارات تكراراً حول تطبيق Nexus</p>
+      </div>
+    </div>
     <div class="faq-list">
-      <details>
-        <summary>هل تطبيق Nexus مجاني؟</summary>
-        <p>نعم، التطبيق مجاني بالكامل مع خيارات اشتراك اختيارية لدعم الفريق والحصول على مميزات إضافية.</p>
+      <details open>
+        <summary>هل تطبيق Nexus مجاني بالكامل؟</summary>
+        <p>نعم، التطبيق مجاني بالكامل 100% لقراءة وتصفح وتحميل جميع فصول المانجا والمانهوا بدون أي رسوم إجبارية وبدون إعلانات مزعجة.</p>
       </details>
       <details>
-        <summary>هل يتوفر على iOS و Android؟</summary>
-        <p>نعم، Nexus متوفر على كلا المنصتين — اضغط زر التنزيل وسيتم توجيهك تلقائياً لمتجر جهازك.</p>
+        <summary>كيف أقوم بتثبيت التطبيق على هاتفي؟</summary>
+        <p>بمجرد الضغط على زر "تنزيل التطبيق"، سيبدأ تحميل ملف التثبيت (nexus.apk) مباشرة على جهازك. عند اكتمال التحميل افتح الملف واضغط "تثبيت".</p>
       </details>
       <details>
-        <summary>هل الترجمات احترافية؟</summary>
-        <p>نعمل مع فرق ترجمة محترفة لضمان أعلى جودة ترجمة للأعمال العربية.</p>
+        <summary>هل الترجمات الموجودة احترافية ومدققة؟</summary>
+        <p>نعم، يجمع التطبيق ترجمات من أفضل وأقوى فرق الترجمة العربية المعتمدة، مع تدقيق لغوي وجودة صورة فائقة الوضوح.</p>
+      </details>
+      <details>
+        <summary>هل يمكنني قراءة الفصول بدون اتصال بالإنترنت؟</summary>
+        <p>نعم، يوفر التطبيق ميزة التحميل المباشر للفصول بنقرة واحدة لقراءتها في أي وقت دون الحاجة لشبكة إنترنت.</p>
       </details>
     </div>
   </section>
 
+  <!-- الفوتر -->
   <footer class="footer">
     <div class="logo">
       <span class="logo-badge">
@@ -206,22 +313,50 @@
       </span>
       <span class="logo-text">NEXUS</span>
     </div>
-    <p>© 2026 Nexus — صُنع بشغف لعشاق القراءة</p>
+    <p>© 2026 تطبيق Nexus — المنصة الرسمية لقراءة المانجا والمانهوا المترجمة</p>
+    <p class="footer-sub">مجاني وآمن 100% • متوافق مع نظام أندرويد • تحديثات مستمرة</p>
   </footer>
 
-  <!-- نافذة التنزيل -->
+  <!-- نافذة التنزيل المباشر والتأكيد -->
   <div class="modal" id="downloadModal" aria-hidden="true">
     <div class="modal-card">
       <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
       <div class="modal-logo">
-        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="url(#g1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="g1" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#E97131"/></linearGradient></defs><path d="M6 3v18l6-4 6 4V3l-6 4-6-4z"/></svg>
+        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18l6-4 6 4V3l-6 4-6-4z"/></svg>
       </div>
-      <h3>حمّل تطبيق Nexus</h3>
-      <p>اختر منصتك وسنحوّلك للمتجر مباشرة</p>
+      <div class="modal-badge-status">
+        <span class="pulse-dot"></span> جاري بدء التنزيل المباشر...
+      </div>
+      <h3>تحميل تطبيق Nexus الرسمي</h3>
+      <p class="modal-instruction">
+        تم إرسال أمر تنزيل ملف <b>nexus.apk</b> تلقائياً إلى متصفحك. إذا لم يبدأ التنزيل خلال ثوانٍ، اضغط على الزر أدناه:
+      </p>
+
       <div class="store-buttons">
-        <a class="store-btn store-btn-single" href="#" id="directDownloadBtn">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
-          <span><small>مجاني وآمن</small><b>تنزيل التطبيق</b></span>
+        <a class="btn btn-primary btn-lg store-btn-single" href="https://github.com/zxiu86/Nexus/releases/latest/download/nexus.apk" id="directDownloadBtn" download="nexus.apk">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.9c.5 0 .9.4.9.9v8.5l2.9-2.9a.9.9 0 1 1 1.3 1.3l-4.4 4.4a.9.9 0 0 1-1.3 0l-4.4-4.4a.9.9 0 1 1 1.3-1.3l2.9 2.9V3.8c0-.5.4-.9.9-.9ZM4.5 16.2c0-.5.4-.9.9-.9h13.2c.5 0 .9.4.9.9v2.4c0 1.3-1.1 2.4-2.4 2.4H6.9a2.4 2.4 0 0 1-2.4-2.4v-2.4Z"/></svg>
+          <span><b>اضغط هنا للتحميل المباشر (nexus.apk)</b><small>حجم الحزمة ~66MB • خالي من الإعلانات تماماً</small></span>
+        </a>
+      </div>
+
+      <div class="install-steps">
+        <div class="install-step">
+          <span class="step-num">1</span>
+          <span>افتح ملف <b>nexus.apk</b> بعد اكتمال التنزيل</span>
+        </div>
+        <div class="install-step">
+          <span class="step-num">2</span>
+          <span>اضغط "تثبيت" (اسمح بالتثبيت إذا طُلب منك)</span>
+        </div>
+        <div class="install-step">
+          <span class="step-num">3</span>
+          <span>افتح Nexus واستمتع بآلاف الفصول مجاناً!</span>
+        </div>
+      </div>
+
+      <div class="modal-footer-link">
+        <a href="https://github.com/zxiu86/Nexus/releases/latest" target="_blank" rel="noopener noreferrer">
+          عرض تفاصيل أحدث إصدار على GitHub Releases ←
         </a>
       </div>
     </div>
